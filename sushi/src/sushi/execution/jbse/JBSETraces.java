@@ -1,0 +1,82 @@
+package sushi.execution.jbse;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
+
+import sushi.configure.JBSEParameters;
+import sushi.exceptions.JBSEException;
+import sushi.logging.Logger;
+import sushi.util.DirectoryUtils;
+
+public final class JBSETraces extends JBSEAbstract {
+	private static final Logger logger = new Logger(JBSETraces.class);
+	
+	private List<Integer> tasks = null;
+	private List<Integer> methodNumbers = null;
+	private List<Integer> traceNumbersLocal = null;
+	private List<String> traceIds = null;
+
+	public JBSETraces() {
+		super(true, false);
+	}
+
+	@Override
+	public List<Integer> tasks() {
+		if (this.tasks == null) {
+			populateTestMethods();
+
+			this.tasks = new ArrayList<>();
+			this.methodNumbers = new ArrayList<>();
+			this.traceNumbersLocal = new ArrayList<>();
+			final ArrayList<Integer> traceNumbersGlobal = new ArrayList<>();
+			try (final BufferedReader r = Files.newBufferedReader(DirectoryUtils.I().getMinimizerOutFilePath())) {
+				String line;
+				int task = 0;
+				while ((line = r.readLine()) != null) {
+					this.tasks.add(task);
+					final String[] fields = line.split(",");
+					traceNumbersGlobal.add(Integer.parseInt(fields[0].trim()));
+					this.methodNumbers.add(Integer.parseInt(fields[1].trim()));
+					this.traceNumbersLocal.add(Integer.parseInt(fields[2].trim()));
+					++task;						
+				}
+			} catch (IOException e) {
+				logger.error("Unable to find and open minimizer output file " + DirectoryUtils.I().getMinimizerOutFilePath().toString());
+				throw new JBSEException(e);
+			}
+
+			this.traceIds = new ArrayList<>();
+			try (final BufferedReader r = Files.newBufferedReader(DirectoryUtils.I().getTracesFilePath())) {
+				String line;					
+				int currentPos = 0;
+				while ((line = r.readLine()) != null) {
+					if (traceNumbersGlobal.contains(currentPos)) {
+						final String[] fields = line.split(",");
+						String traceId = fields[2].split(" ")[1].trim();
+						this.traceIds.add(traceId);
+					}
+					++currentPos;
+				}
+			} catch (IOException e) {
+				logger.error("Unable to find and open traces output file " + DirectoryUtils.I().getTracesFilePath().toString());
+				throw new JBSEException(e);
+			}
+		}
+
+		return this.tasks;
+	}
+
+	@Override
+	public JBSEParameters getInvocationParameters(int taskNumber) {
+		final JBSEParameters p = super.getInvocationParameters(this.methodNumbers.get(taskNumber));
+		p.setIdentifierSubregion(this.traceIds.get(taskNumber));
+		p.setTraceCounterStart(this.traceNumbersLocal.get(taskNumber));
+
+		return p;
+	}
+	
+	//TODO getTimeBudget(), degreeOfParallelism()
+}
