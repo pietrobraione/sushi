@@ -32,7 +32,7 @@ dependencies are the [GNU Linear Programming Kit (GLPK)](https://www.gnu.org/sof
 [GLPK-Java](http://glpk-java.sourceforge.net/). If your operating system is Debian or Ubuntu you can install the libglpk 
 and libglpk-java packages. Under OSX there is a GLPK package under Macports, but no package for GLPK-Java.
 In the worst case you will need to install GLPK and/or GLPK-Java from sources, in which case consider that both have many
-dependency on their own. Once done that you need to reconfigure the Eclipse SUSHI project so it uses the GLPK you installed.
+dependencies on their own. Once done that you need to reconfigure the Eclipse SUSHI project so it uses the GLPK you installed.
 Note that the SUSHI Eclipse project contains a glpk-java.jar library, but you do *not* want to use that. So right-click the 
 SUSHI Eclipse project in the Eclipse package explorer, and select Build Path > Configure Build Path... from the contextual menu.
 Then select the Libraries tab, remove the reference to glpk-java.jar, and add a new reference to the glpk-java.jar you previously 
@@ -48,11 +48,11 @@ EvoSuite jar (EvoSuite is launched in separate processes). Now you can launch SU
 
     $ java sushi.Main
     
-This will print a help screen that lists a lot of options. The most important are:
+This will print a help screen that lists a lot of options. The indispensable ones, that you must set in order for SUSHI to work, are:
 
 * `-classes`: a semicolon separated list of paths; It is the classpath of the software to test.
 * `-target_class`: the name in [internal classfile format](http://docs.oracle.com/javase/specs/jvms/se6/html/ClassFile.doc.html#14757) of the class to test: SUSHI will generate tests for all the methods in the class. Or alternatively:
-* `-target_method`: the signature of a method to test. The signature is a semicolon-separated list of: the name of the container class in internal classfile format; the [descriptor](http://docs.oracle.com/javase/specs/jvms/se6/html/ClassFile.doc.html#1169) of the method; the name of the method. You can use the `javap` command, included with every JDK setup, to obtain the internal format signatures of methods: `javap -s my.Class` prints the list of all the methods in my.Class with their signatures in internal format.
+* `-target_method`: the signature of a method to test. The signature is a semicolon-separated list of: the name of the container class in internal classfile format; the [descriptor](http://docs.oracle.com/javase/specs/jvms/se6/html/ClassFile.doc.html#1169) of the method; the name of the method. You can use the `javap` command, included with every JDK setup, to obtain the internal format signatures of methods: `javap -s my.Class` prints the list of all the methods in `my.Class` with their signatures in internal format.
 * `-evosuite`: the path of the EvoSuite jar file contained in the lib/ folder.
 * `-jbse_lib`: this must be set to the path of the JBSE jar in the lib/ folder.
 * `-sushi_lib`: this must be set to the path of sushi-lib.jar.
