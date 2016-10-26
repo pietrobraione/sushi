@@ -44,11 +44,15 @@ and enter the location of the JNI libraries produced by GLPK-Java.
 There is not a real install procedure. Double-click the sushi-jar.jardesc to produce a jar file sushi.jar. Do the same with the
 sushi-lib project, and emit a sushi-lib.jar file. The lib/ folder contains all the remaining dependencies. To setup a command line 
 you need to put in the classpath sushi.jar, sushi-lib.jar and all the jarfiles in the lib/ folder with the exclusion of the 
-EvoSuite jar (EvoSuite is launched in separate processes). Now you can launch SUSHI as follows:
+EvoSuite jar (EvoSuite is launched in separate processes). 
 
-    $ java sushi.Main
+## Usage
+
+Once set the classpath you can launch SUSHI as follows:
+
+    $ java sushi.Main <options>
     
-This will print a help screen that lists a lot of options. The indispensable ones, that you must set in order for SUSHI to work, are:
+If you launch SUSHI without options it will print a help screen that lists all the available options. The indispensable ones, that you *must* set in order for SUSHI to work, are:
 
 * `-classes`: a semicolon separated list of paths; It is the classpath of the software to test.
 * `-target_class`: the name in [internal classfile format](http://docs.oracle.com/javase/specs/jvms/se6/html/ClassFile.doc.html#14757) of the class to test: SUSHI will generate tests for all the methods in the class. Or alternatively:
