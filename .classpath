@@ -4,12 +4,12 @@
 	<classpathentry kind="lib" path="lib/args4j-2.32.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/javassist.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/jbse"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/sushi-lib"/>
 	<classpathentry kind="lib" path="lib/glpk-java.jar">
 		<attributes>
 			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="/usr/local/lib/jni"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="lib/jbse.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

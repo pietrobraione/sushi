@@ -32,4 +32,22 @@ where the SUSHI project resides (with identical procedure). The second and third
 [GLPK-Java](http://glpk-java.sourceforge.net/). If your operating system is Debian or Ubuntu you can install the libglpk 
 and libglpk-java packages. Under OSX there is a GLPK package under Macports, but no package for GLPK-Java.
 In the worst case you will need to install GLPK and GLPK-Java from the sources, in which case consider that both have many
-dependency on their own. Once done that you need to reconfigure the Eclipse SUSHI project so it uses the GLPK 
+dependency on their own. Once done that you need to reconfigure the Eclipse SUSHI project so it uses the GLPK you installed.
+Note that the SUSHI Eclipse project contains a glpk-java.jar library, but you do *not* want to use that. So right-click the 
+SUSHI Eclipse project in the Eclipse package explorer, and select Build Path > Configure Build Path... from the contextual menu.
+Then select the Libraries tab, remove the reference to glpk-java.jar, and add a new reference to the glpk-java.jar you previously 
+installed. Finally, click the triangle on the left of the added reference, select Native Library Location, click the Edit button 
+and enter the location of the JNI libraries produced by GLPK-Java.
+
+## Install
+
+There is not a real install procedure. Double-click the sushi-jar.jardesc to produce a jar file sushi.jar. Do the same with the
+sushi-lib project, and emit a sushi-lib.jar file. The lib folder contains all the remaining dependencies. To setup a command line 
+you need to put in the classpath sushi.jar, sushi-lib.jar and all the jarfiles in the lib folder with the exclusion of the 
+EvoSuite jar (that is launched in a separate process). Now you can launch SUSHI as follows:
+
+    $ java sushi.Main
+    
+This will print a help screen that lists a lot of options. The most important are:
+
+ 
