@@ -24,14 +24,14 @@ the SUSHI project in the current Eclipse workspace.
 
 ## Dependencies
 
-SUSHI depends on some software packages, most of which are already included in the repository. You will need to fix three
+SUSHI depends on some software packages, most of which are already included in the repository. You will need to fix four
 dependencies manually. The first is on the SUSHI runtime library, that resides on another repository at 
-[this](https://github.com/pietrobraione/sushi-lib) URI. It must be installed as an Eclipse project in the same workspace
-where the SUSHI project resides (with identical procedure). The second and third dependencies are the 
-[GNU Linear Programming Kit (GLPK)](https://www.gnu.org/software/glpk/) and its Java wrapper 
+[this](https://github.com/pietrobraione/sushi-lib) URI. It must be installed (with identical procedure) as an Eclipse project 
+in the same workspace where the SUSHI project resides. The second dependency is [Z3](https://github.com/Z3Prover/z3). The third and fourth 
+dependencies are the [GNU Linear Programming Kit (GLPK)](https://www.gnu.org/software/glpk/) and its Java wrapper 
 [GLPK-Java](http://glpk-java.sourceforge.net/). If your operating system is Debian or Ubuntu you can install the libglpk 
 and libglpk-java packages. Under OSX there is a GLPK package under Macports, but no package for GLPK-Java.
-In the worst case you will need to install GLPK and GLPK-Java from the sources, in which case consider that both have many
+In the worst case you will need to install GLPK and/or GLPK-Java from sources, in which case consider that both have many
 dependency on their own. Once done that you need to reconfigure the Eclipse SUSHI project so it uses the GLPK you installed.
 Note that the SUSHI Eclipse project contains a glpk-java.jar library, but you do *not* want to use that. So right-click the 
 SUSHI Eclipse project in the Eclipse package explorer, and select Build Path > Configure Build Path... from the contextual menu.
@@ -42,12 +42,30 @@ and enter the location of the JNI libraries produced by GLPK-Java.
 ## Install
 
 There is not a real install procedure. Double-click the sushi-jar.jardesc to produce a jar file sushi.jar. Do the same with the
-sushi-lib project, and emit a sushi-lib.jar file. The lib folder contains all the remaining dependencies. To setup a command line 
-you need to put in the classpath sushi.jar, sushi-lib.jar and all the jarfiles in the lib folder with the exclusion of the 
-EvoSuite jar (that is launched in a separate process). Now you can launch SUSHI as follows:
+sushi-lib project, and emit a sushi-lib.jar file. The lib/ folder contains all the remaining dependencies. To setup a command line 
+you need to put in the classpath sushi.jar, sushi-lib.jar and all the jarfiles in the lib/ folder with the exclusion of the 
+EvoSuite jar (EvoSuite is launched in separate processes). Now you can launch SUSHI as follows:
 
     $ java sushi.Main
     
 This will print a help screen that lists a lot of options. The most important are:
 
- 
+* `-classes`: a semicolon separated list of paths; It is the classpath of the software to test.
+* `-target_class`: the name in [internal classfile format](http://docs.oracle.com/javase/specs/jvms/se6/html/ClassFile.doc.html#14757) of the class to test: SUSHI will generate tests for all the methods in the class. Or alternatively:
+* `-target_method`: the signature of a method to test. The signature is a semicolon-separated list of: the name of the container class in internal classfile format; the [descriptor](http://docs.oracle.com/javase/specs/jvms/se6/html/ClassFile.doc.html#1169) of the method; the name of the method. You can use the `javap` command, included with every JDK setup, to obtain the internal format signatures of methods: `javap -s my.Class` prints the list of all the methods in my.Class with their signatures in internal format.
+* `-evosuite`: the path of the EvoSuite jar file contained in the lib/ folder.
+* `-jbse_lib`: this must be set to the path of the JBSE jar in the lib/ folder.
+* `-sushi_lib`: this must be set to the path of sushi-lib.jar.
+* `-z3`:  the path to the Z3 binary (you can omit it if Z3 is on the system PATH).
+* `-tmp_base`: a path to a temporary directory; SUSHI needs to create many files for its intermediate results, and 
+will put them in a subdirectory of `-tmp_base`.
+* `-out`: a path to a directory where the generated tests will be put.
+
+An alternative way to configure SUSHI is to define a subclass of the class `sushi.configure.ParametersModifier` contained 
+in the sushi-lib project. The subclass should override the `modify` methods that receive as input a  parameter object, and modify it
+by setting the parameters of interest. In this case SUSHI must be invoked by specifying the following options:
+
+* `-params_modifier_path`: the path where your custom subclass of  `sushi.configure.ParametersModifier` is.
+* `-params_modifier_class`: the name of your custom subclass of  `sushi.configure.ParametersModifier`.
+
+You will find examples of this way of configuring SUSHI in the sushi-experiment, sushi-experiment-closure01 and sushi-experiment-closure72 projects.
