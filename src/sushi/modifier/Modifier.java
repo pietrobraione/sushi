@@ -7,11 +7,11 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.List;
 
-import jbse.apps.settings.ParseException;
 import sushi.configure.JBSEParameters;
 import sushi.configure.MinimizerParameters;
 import sushi.configure.Options;
 import sushi.configure.ParametersModifier;
+import sushi.configure.ParseException;
 import sushi.execution.jbse.JBSEMethods;
 import sushi.logging.Logger;
 

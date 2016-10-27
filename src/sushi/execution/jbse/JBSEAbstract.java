@@ -6,12 +6,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import jbse.apps.settings.ParseException;
 import sushi.configure.Coverage;
 import sushi.configure.JBSEParameters;
 import sushi.configure.JBSEParameters.DecisionProcedureType;
 import sushi.configure.JBSEParameters.StateFormatMode;
 import sushi.configure.Options;
+import sushi.configure.ParseException;
 import sushi.configure.Visibility;
 import sushi.exceptions.JBSEException;
 import sushi.execution.Tool;
