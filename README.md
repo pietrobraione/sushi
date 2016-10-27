@@ -15,12 +15,13 @@ allowing, for instance, to automatically test compiler passes taking parse trees
 
 SUSHI is a research prototype. As such, it is more focused on functionality than on usability.
 
-## Installing
+## Checking out the project
 
 Currently SUSHI is distributed as an [Eclipse](http://www.eclipse.org/) project. Install Eclipse and the EGit plugin, 
 then on the main menu select File > Import... and in the dialog select Projects from Git. Insert the URI of this 
 repository, and when asked for a wizard for importing projects answer Import Existing Eclipse Projects. This will import
-the SUSHI project in the current Eclipse workspace.
+the SUSHI project in the current Eclipse workspace. Hopefully in the same workspace you will already have checked out
+the SUSHI-lib project, see the next section for more details. 
 
 ## Dependencies
 
@@ -39,7 +40,7 @@ Then select the Libraries tab, remove the reference to glpk-java.jar, and add a 
 installed. Finally, click the triangle on the left of the added reference, select Native Library Location, click the Edit button 
 and enter the location of the JNI libraries produced by GLPK-Java.
 
-## Install
+## Installing
 
 There is not a real install procedure. Double-click the sushi-jar.jardesc to produce a jar file sushi.jar. Do the same with the
 sushi-lib project, and emit a sushi-lib.jar file. The lib/ folder contains all the remaining dependencies. To setup a command line 
