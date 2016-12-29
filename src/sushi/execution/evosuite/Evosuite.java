@@ -8,6 +8,7 @@ import java.util.List;
 
 import sushi.configure.Options;
 import sushi.exceptions.EvosuiteException;
+import sushi.execution.Coordinator;
 import sushi.execution.Tool;
 import sushi.execution.Worker;
 import sushi.logging.Logger;
@@ -178,6 +179,11 @@ public class Evosuite extends Tool<String[]> {
 	@Override
 	public Worker getWorker(int taskNumber) {
 		return new EvosuiteWorker(this, taskNumber);
+	}
+	
+	@Override
+	public Coordinator getCoordinator() {
+		return new EvosuiteCoordinator();
 	}
 	
 	@Override

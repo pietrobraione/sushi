@@ -14,7 +14,7 @@ public class MinimizerWorker extends Worker {
 	@Override
 	public ExecutionResult call() {
 		startTimeout(this.minimizer.getTimeBudget());
-		final MinimizerParameters p = minimizer.getInvocationParameters(this.taskNumber);
+		final MinimizerParameters p = this.minimizer.getInvocationParameters(this.taskNumber);
 		final RunMinimizer r = new RunMinimizer(p);
 		final int exitStatus = r.run();
 		final ExecutionResult result = new ExecutionResult();

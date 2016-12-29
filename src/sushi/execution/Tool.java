@@ -15,6 +15,8 @@ public abstract class Tool<T> {
 	public abstract int getTimeBudget();
 	
 	public abstract Worker getWorker(int taskNumber);
+	
+	public Coordinator getCoordinator() { return new DefaultCoordinator(); } 
 
 	public int degreeOfParallelism() { return 1; }
 	
