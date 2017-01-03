@@ -18,13 +18,13 @@ import sushi.util.DirectoryUtils;
 import sushi.util.IOUtils;
 
 public class Evosuite extends Tool<String[]> {
+	private static final Logger logger = new Logger(Evosuite.class);
+	
 	private String commandLine;
 	private ArrayList<Integer> tasks = null;
 
 	public Evosuite() { }
 
-	private static final Logger logger = new Logger(Evosuite.class);
-	
 	public String getCommandLine() {
 		return this.commandLine; 
 	}
@@ -183,7 +183,7 @@ public class Evosuite extends Tool<String[]> {
 	
 	@Override
 	public Coordinator getCoordinator() {
-		return new EvosuiteCoordinator();
+		return new EvosuiteCoordinator(this);
 	}
 	
 	@Override

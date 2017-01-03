@@ -8,6 +8,7 @@ import java.net.URLClassLoader;
 import java.util.List;
 
 import sushi.configure.JBSEParameters;
+import sushi.configure.MergerParameters;
 import sushi.configure.MinimizerParameters;
 import sushi.configure.Options;
 import sushi.configure.ParametersModifier;
@@ -76,6 +77,10 @@ public class Modifier {
 	
 	public void modify(JBSEParameters p)
 	throws FileNotFoundException, ParseException, IOException { 
+		this.modi.modify(p);
+	}
+	
+	public void modify(MergerParameters p) {
 		this.modi.modify(p);
 	}
 	

@@ -9,8 +9,6 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.TreeSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.gnu.glpk.*;
 
@@ -47,19 +45,19 @@ public class RunMinimizer {
 			branchNumbers.add(branchNumber);
 		}
 		
-		//the branches to ignore are those that the user do not want to cover
-		final TreeSet<Integer> branchNumbersToIgnore;
-		try {
-			branchNumbersToIgnore = branchNumbersToIgnore(branchNumbers);
-		} catch (IOException e) {
-			e.printStackTrace();
-			return 1;
-		}
-		
 		//trace numbers are just all the numbers between 0 and nTraces - 1
 		final TreeSet<Integer> traceNumbers = new TreeSet<>();
 		for (int traceNumber = 0; traceNumber < nTraces; ++traceNumber) {
 			traceNumbers.add(traceNumber);
+		}
+		
+		//the branches to ignore are those that the user do not want to cover
+		final TreeSet<Integer> branchNumbersToIgnore;
+		try {
+			branchNumbersToIgnore = branchNumbersToIgnore();
+		} catch (IOException e) {
+			e.printStackTrace();
+			return 1;
 		}
 		
 		//the set of solutions to ignore is, initially, empty 
@@ -145,40 +143,14 @@ public class RunMinimizer {
 		return 0;
 	}
 	
-	private TreeSet<Integer> branchNumbersToIgnore(TreeSet<Integer> branchNumbers) throws IOException {
-		final TreeSet<Integer> retVal;
-		if (this.parameters.getBranchesToIgnore() != null) {
-			retVal = new TreeSet<>();
-			try (final BufferedReader r = Files.newBufferedReader(this.parameters.getBranchesFilePath())) {
-				final Pattern p = this.parameters.getBranchesToIgnore();
-				int branchNumber = 0;
-				String line;
-				while ((line = r.readLine()) != null) {
-					final Matcher m = p.matcher(line.trim());
-					if (m.matches()) {
-						retVal.add(branchNumber);
-					}
-					++branchNumber;
-				}
+	private TreeSet<Integer> branchNumbersToIgnore() throws IOException {
+		final TreeSet<Integer> retVal = new TreeSet<>();
+		try (final BufferedReader r = Files.newBufferedReader(this.parameters.getBranchesToIgnoreFilePath())) {
+			String line;
+			while ((line = r.readLine()) != null) {
+				retVal.add(Integer.parseInt(line.trim()));
 			}
-		} else if (this.parameters.getBranchesToCover() != null) {
-			retVal = new TreeSet<>(branchNumbers);
-			try (final BufferedReader r = Files.newBufferedReader(this.parameters.getBranchesFilePath())) {
-				final Pattern p = this.parameters.getBranchesToCover();
-				int branchNumber = 0;
-				String line;
-				while ((line = r.readLine()) != null) {
-					final Matcher m = p.matcher(line.trim());
-					if (m.matches()) {
-						retVal.remove(branchNumber);
-					}
-					++branchNumber;
-				}
-			}
-		} else {
-			retVal = new TreeSet<>();
 		}
-
 		return retVal;
 	}
 	

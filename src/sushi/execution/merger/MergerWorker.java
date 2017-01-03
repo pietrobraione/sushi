@@ -7,7 +7,10 @@ import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import sushi.configure.MergerParameters;
 import sushi.exceptions.MergerException;
 import sushi.execution.ExecutionResult;
 import sushi.execution.Worker;
@@ -17,15 +20,15 @@ import sushi.logging.Logger;
 public class MergerWorker extends Worker {
 	private static final Logger logger = new Logger(ListPathsWorker.class);
 	
-	private final Merger listPaths;
+	private final Merger merger;
 
 	public MergerWorker(Merger listPaths) {
-		this.listPaths = listPaths;
+		this.merger = listPaths;
 	}
 
 	@Override
 	public ExecutionResult call() throws MergerException {
-		final MergerParameters p = this.listPaths.getInvocationParameters(this.taskNumber);
+		final MergerParameters p = this.merger.getInvocationParameters(this.taskNumber);
 
 		final int methods;
 		try {
@@ -112,7 +115,7 @@ public class MergerWorker extends Worker {
 				logger.error("I/O error while reading " + p.getTracesFilePathLocal(method).toString() + " or writing " + p.getTracesFilePathGlobal().toString());
 				throw new MergerException(e);
 			}
-}
+		}
 		
 		//emits the global branches file
 		try (final BufferedWriter w = Files.newBufferedWriter(p.getBranchesFilePathGlobal())) {
@@ -123,6 +126,45 @@ public class MergerWorker extends Worker {
 		} catch (IOException e) {
 			logger.error("I/O error while writing " + p.getBranchesFilePathGlobal().toString());
 			throw new MergerException(e);
+		}
+		
+		//emits the branches to ignore file
+		final Pattern pt;
+		final boolean toCover;
+		if (p.getBranchesToIgnore() != null) {
+			pt = p.getBranchesToIgnore();
+			toCover = false;
+		} else if (p.getBranchesToCover() != null) {
+			pt = p.getBranchesToCover();
+			toCover = true;
+		} else {
+			pt = null;
+			toCover = false;
+		}
+		if (pt == null) {
+			//creates an empty file
+			try {
+				Files.deleteIfExists(p.getBranchesToIgnoreFilePath());
+				Files.createFile(p.getBranchesToIgnoreFilePath());
+			} catch (IOException e) {
+				logger.error("I/O error while deleting/creating " + p.getBranchesToIgnoreFilePath().toString());
+				throw new MergerException(e);
+			}
+		} else {
+			try (final BufferedWriter w = Files.newBufferedWriter(p.getBranchesToIgnoreFilePath())) {
+				int branchNumber = 0;
+				for (String branch : branches) {
+					final Matcher m = pt.matcher(branch);
+					if ((toCover ? !m.matches() : m.matches())) {
+						w.write(Integer.toString(branchNumber));
+						w.newLine();
+					}
+					++branchNumber;
+				}
+			} catch (IOException e) {
+				logger.error("I/O error while writing " + p.getBranchesToIgnoreFilePath().toString());
+				throw new MergerException(e);
+			}
 		}
 		
 		final ExecutionResult result = new ExecutionResult();

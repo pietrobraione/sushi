@@ -17,20 +17,25 @@ import sushi.execution.Tool;
 import sushi.logging.Logger;
 import sushi.util.DirectoryUtils;
 
-public class EvosuiteCoordinator implements Coordinator {
+public class EvosuiteCoordinator extends Coordinator {
 	private static final Logger logger = new Logger(EvosuiteCoordinator.class);
 	
 	private final HashSet<Integer> coveredBranches = new HashSet<>();
 	private ArrayList<ArrayList<Future<ExecutionResult>>> tasksFutures; //alias for coordination
 	private ArrayList<HashSet<Integer>> coverageData;
 	private ArrayList<Integer> traceOfTask;
+	private HashSet<Integer> branchesToIgnore;
+	
+	public EvosuiteCoordinator(Tool<?> tool) { super(tool); }
 	
 	@Override
-	public void start(Tool<?> tool, ArrayList<ArrayList<Future<ExecutionResult>>> tasksFutures, ExecutionResult[] toReturn) {
+	public ExecutionResult[] start(ArrayList<ArrayList<Future<ExecutionResult>>> tasksFutures) {
+		final ExecutionResult[] retVal = new ExecutionResult[this.tool.tasks().size() * this.tool.redundance()];
 		this.tasksFutures = tasksFutures;
 		try {
 			loadCoverageData();
 			loadTraceOfTask();
+			loadBranchesToIgnore();
 		} catch (IOException e) {
 			logger.fatal("Error occurred while reading coverage or minimizer data");
 			throw new CoordinatorException(e);
@@ -40,20 +45,20 @@ public class EvosuiteCoordinator implements Coordinator {
 		}
 		//from here this.coverageData and this.traceOfTask are read-only
 		
-		final Thread[] takers = new Thread[toReturn.length];
+		final Thread[] takers = new Thread[retVal.length];
 		for (int i = 0; i < takers.length; ++i) {
 			final int threadNumber = i; //to make the compiler happy
-			final int taskNumber = threadNumber / tool.redundance();
-			final Future<ExecutionResult> thisThreadFuture = tasksFutures.get(taskNumber).get(threadNumber % tool.redundance());
+			final int taskNumber = threadNumber / this.tool.redundance();
+			final Future<ExecutionResult> thisThreadFuture = tasksFutures.get(taskNumber).get(threadNumber % this.tool.redundance());
 			takers[i] = new Thread(() -> {
 				//waits for the result of its worker
 				try {
-					toReturn[threadNumber] = thisThreadFuture.get();
+					retVal[threadNumber] = thisThreadFuture.get();
 				} catch (CancellationException e) {
 					//the worker was cancelled: nothing left to do
 					return;
 				} catch (ExecutionException e) {
-					logger.fatal("Error occurred during execution of tool " + tool.getName());
+					logger.fatal("Error occurred during execution of tool " + this.tool.getName());
 					throw new WorkerException(e);
 				} catch (InterruptedException e)  {
 					//should never happen, but if it happens
@@ -80,6 +85,8 @@ public class EvosuiteCoordinator implements Coordinator {
 				//does nothing
 			}
 		}
+		
+		return retVal;
 	}
 	
 	private void loadCoverageData() throws IOException, NumberFormatException {
@@ -108,6 +115,16 @@ public class EvosuiteCoordinator implements Coordinator {
 		}
 	}
 	
+	private void loadBranchesToIgnore() throws IOException, NumberFormatException {
+		this.branchesToIgnore = new HashSet<>();
+		try (final BufferedReader r = Files.newBufferedReader(DirectoryUtils.I().getBranchesToIgnoreFilePath())) {
+			String line;
+			while ((line = r.readLine()) != null) {
+				this.branchesToIgnore.add(Integer.parseInt(line.trim()));
+			}
+		}
+	}
+	
 	private synchronized void addCoveredBranches(int taskNumber) {
 		this.coveredBranches.addAll(coverageOfTask(taskNumber));
 	}
@@ -125,7 +142,8 @@ public class EvosuiteCoordinator implements Coordinator {
 	}
 	
 	private synchronized boolean taskCovered(int taskNumber) {
-		final HashSet<Integer> coverageOfTask = coverageOfTask(taskNumber);
+		final HashSet<Integer> coverageOfTask = new HashSet<>(coverageOfTask(taskNumber));
+		coverageOfTask.removeAll(this.branchesToIgnore);
 		return this.coveredBranches.containsAll(coverageOfTask);
 	}
 }

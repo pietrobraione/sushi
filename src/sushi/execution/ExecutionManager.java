@@ -23,9 +23,8 @@ public class ExecutionManager {
 		}
 		executor.shutdown();
 
-		final ExecutionResult[] toReturn = new ExecutionResult[tool.tasks().size() * tool.redundance()];
 		final Coordinator coordinator = tool.getCoordinator();
-		coordinator.start(tool, tasksFutures, toReturn);
-		return toReturn;
+		final ExecutionResult[] retVal = coordinator.start(tasksFutures);
+		return retVal;
 	}
 }
