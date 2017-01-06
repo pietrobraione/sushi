@@ -63,46 +63,13 @@ public class RunMinimizer {
 		//the set of solutions to ignore is, initially, empty 
 		final ArrayList<ArrayList<Integer>> solutionsToIgnore = new ArrayList<>();
 		
-		//generates the optimal solution and emits it
-		ArrayList<Integer> solution;
-		final HashSet<Integer> emittedRows = new HashSet<>();
-		{
-			//makes the GLPK problem
-			final glp_prob p;
-			try {
-				p = makeProblem(nBranches, nTraces, branchNumbers, traceNumbers, branchNumbersToIgnore, solutionsToIgnore);
-			} catch (IOException | NumberFormatException e) {
-				e.printStackTrace();
-				return 1;
-			}
-
-			//solves it
-			final glp_iocp iocp = new glp_iocp();
-			GLPK.glp_init_iocp(iocp);
-			iocp.setPresolve(GLPK.GLP_ON);
-			final int res = GLPK.glp_intopt(p, iocp);
-			if (res != 0) {
-				return 1;
-			}
-
-			//writes the result
-			solution = makeSolution(p, nTraces);
-			solutionsToIgnore.add(solution);
-			try {
-				emitSolution(solution, false);
-			} catch (IOException e) {
-				e.printStackTrace();
-				return 1;
-			}
-			emittedRows.addAll(solution);
-
-			//disposes garbage
-			GLPK.glp_delete_prob(p);
-		}
-		
+		//generates the optimal solution and emits it; then
 		//generates more solutions until the emitted rows
 		//saturate the number of available tasks
-		while (emittedRows.size() < parameters.getNumberOfTasks()) {
+		ArrayList<Integer> solution;
+		final HashSet<Integer> emittedRows = new HashSet<>();
+		boolean firstIteration = true;
+		do {
 			//makes the GLPK problem
 			final glp_prob p;
 			try {
@@ -111,24 +78,26 @@ public class RunMinimizer {
 				e.printStackTrace();
 				return 1;
 			}
-			
+
 			//solves it
 			final glp_iocp iocp = new glp_iocp();
 			GLPK.glp_init_iocp(iocp);
 			iocp.setPresolve(GLPK.GLP_ON);
 			final int res = GLPK.glp_intopt(p, iocp);
 			if (res != 0) {
-				return 0;
+				return (firstIteration ? 1 : 0);
 			}
 
-			//gets the solution
+			//gets the solution and adds it to the set of solutions
+			//to ignore for the next iteration
 			solution = makeSolution(p, nTraces);
 			solutionsToIgnore.add(solution);
 			
+			//emits the rows of the solution not already emitted
 			final ArrayList<Integer> toEmit = new ArrayList<>(solution);
 			toEmit.removeAll(emittedRows);
 			try {
-				emitSolution(toEmit, true);
+				emitSolution(toEmit, !firstIteration);
 			} catch (IOException e) {
 				e.printStackTrace();
 				return 1;
@@ -138,7 +107,8 @@ public class RunMinimizer {
 			//disposes garbage
 			GLPK.glp_delete_prob(p);
 			
-		}
+			firstIteration = false;
+		} while (emittedRows.size() < parameters.getNumberOfTasks());
 		
 		return 0;
 	}
