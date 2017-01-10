@@ -14,6 +14,7 @@ import org.gnu.glpk.*;
 
 import sushi.configure.MinimizerParameters;
 import sushi.exceptions.MinimizerException;
+import sushi.exceptions.TerminationException;
 
 public class RunMinimizer {
 	private final MinimizerParameters parameters;
@@ -94,7 +95,11 @@ public class RunMinimizer {
 			iocp.setPresolve(GLPK.GLP_ON);
 			final int res = GLPK.glp_intopt(p, iocp);
 			if (res != 0) {
-				return (firstIteration ? 1 : 0);
+				return 1;
+			}
+			final int status = GLPK.glp_mip_status(p);
+			if (status != GLPK.GLP_OPT && status != GLPK.GLP_FEAS) {
+				throw new TerminationException("Minimizer was unable to find a set of traces that covers the uncovered branches");
 			}
 
 			//gets the solution and adds it to the set of solutions

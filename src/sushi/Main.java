@@ -98,6 +98,9 @@ public class Main {
 				try {
 					result = ExecutionManager.execute(tool);
 				} catch (TerminationException e) {
+					if (e.getMessage() != null) {
+						logger.info(e.getMessage());
+					}
 					break;
 				}
 				tool.reset();

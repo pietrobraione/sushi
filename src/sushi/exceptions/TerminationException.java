@@ -7,4 +7,7 @@ public class TerminationException extends RuntimeException {
 	public TerminationException() {
 		super();
 	}
+	public TerminationException(String cause) {
+		super(cause);
+	}
 }

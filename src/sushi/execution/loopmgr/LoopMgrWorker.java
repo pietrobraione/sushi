@@ -70,8 +70,10 @@ public class LoopMgrWorker extends Worker {
 		//decides whether to terminate
 		branchNumbers.removeAll(branchNumbersToIgnore);
 		traceNumbers.removeAll(traceNumbersToIgnore);
-		if (branchNumbers.isEmpty() || traceNumbers.isEmpty()) {
-			throw new TerminationException();
+		if (branchNumbers.isEmpty()) {
+			throw new TerminationException("All branches covered");
+		} else if (traceNumbers.isEmpty()) {
+			throw new TerminationException("Traces exhausted");
 		}
 		
 		//emits the files
