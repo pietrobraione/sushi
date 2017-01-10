@@ -34,9 +34,6 @@ public abstract class JBSEAbstract extends Tool<JBSEParameters> {
 	protected JBSEAbstract(boolean emitWrappers, boolean mustLogCoverageData) { 
 		this.emitWrappers = emitWrappers;
 		this.mustLogCoverageData = mustLogCoverageData;
-	}
-	
-	protected void populateTestMethods() {
 		final Options options = Options.I();
 		if (options.getTargetMethod() == null) {
 			final String targetClass = options.getTargetClass();
@@ -110,7 +107,6 @@ public abstract class JBSEAbstract extends Tool<JBSEParameters> {
 		}
 	}
 	
-	//TODO
 	@Override
 	public int getTimeBudget() {
 		return Options.I().getJBSEBudget();
@@ -121,7 +117,6 @@ public abstract class JBSEAbstract extends Tool<JBSEParameters> {
 		return new JBSEWorker(this, taskNumber);
 	}
 	
-	//TODO
 	@Override
 	public int degreeOfParallelism() {
 		return (Options.I().getParallelismJBSE() == 0 ? tasks().size() * redundance() : Options.I().getParallelismJBSE());

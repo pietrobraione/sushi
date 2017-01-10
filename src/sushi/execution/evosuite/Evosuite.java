@@ -172,6 +172,11 @@ public class Evosuite extends Tool<String[]> {
 	}
 	
 	@Override
+	public void reset() {
+		this.tasks = null;
+	}
+	
+	@Override
 	public int getTimeBudget() {
 		return Options.I().getEvosuiteBudget();
 	}

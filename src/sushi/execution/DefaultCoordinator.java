@@ -5,6 +5,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import sushi.exceptions.TerminationException;
 import sushi.exceptions.WorkerException;
 import sushi.logging.Logger;
 
@@ -12,9 +13,12 @@ public class DefaultCoordinator extends Coordinator {
 	private static final Logger logger = new Logger(DefaultCoordinator.class);
 	
 	public DefaultCoordinator(Tool<?> tool) { super(tool); }
+	
+	private boolean terminate;
 
 	@Override
 	public ExecutionResult[] start(ArrayList<ArrayList<Future<ExecutionResult>>> tasksFutures) {
+		this.terminate = false;
 		final ExecutionResult[] retVal = new ExecutionResult[this.tool.tasks().size() * this.tool.redundance()];
 		final Thread[] takers = new Thread[retVal.length];
 		for (int i = 0; i < takers.length; ++i) {
@@ -28,8 +32,16 @@ public class DefaultCoordinator extends Coordinator {
 					//the worker was cancelled: nothing left to do
 					return;
 				} catch (ExecutionException e) {
-					logger.fatal("Error occurred during execution of tool " + this.tool.getName());
-					throw new WorkerException(e);
+					if (e.getCause() instanceof TerminationException) {
+						synchronized (this) {
+							this.terminate = true;
+						}
+						//then, falls through and cancels redundant workers
+						//TODO cancel *all* the workers
+					} else {
+						logger.fatal("Error occurred during execution of tool " + this.tool.getName());
+						throw new WorkerException(e);
+					}
 				} catch (InterruptedException e)  {
 					//should never happen, but if it happens
 					//it's ok to fall through to shutdown
@@ -48,6 +60,10 @@ public class DefaultCoordinator extends Coordinator {
 			} catch (InterruptedException e) {
 				//does nothing
 			}
+		}
+		
+		if (this.terminate) {
+			throw new TerminationException();
 		}
 		
 		return retVal;

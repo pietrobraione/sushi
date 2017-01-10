@@ -68,6 +68,11 @@ public final class Javac extends Tool<String[]> {
 		this.commandLine = "javac " + javac.toString().replaceAll("\\[", "").replaceAll("\\]", "").replaceAll(",", "");
 		return javac.toArray(ArrayUtils.EMPTY_STRING_ARRAY);
 	}
+	
+	@Override
+	public void reset() {
+		this.tasks = null;
+	}
 
 	@Override
 	public int getTimeBudget() {

@@ -18,7 +18,6 @@ public class JBSEWorker extends Worker {
 	@Override
 	public ExecutionResult call() {
 		//TODO run in spawned process or make RunJBSE_Sushi friendlier with the rest of sushi
-		startTimeout(this.jbse.getTimeBudget());
 		final JBSEParameters p = this.jbse.getInvocationParameters(this.taskNumber);
 		final RunJBSE_Sushi r = new RunJBSE_Sushi(p);
 		final long start = System.currentTimeMillis();

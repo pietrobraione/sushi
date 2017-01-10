@@ -418,6 +418,12 @@ public class RunJBSE_Sushi {
 				}
 			}
 		}
+		
+		@Override
+		public void atTimeout() {
+			//same as atEnd;
+			atEnd();
+		}
 	}
 
 	/**

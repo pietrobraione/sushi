@@ -14,16 +14,15 @@ import sushi.configure.MergerParameters;
 import sushi.exceptions.MergerException;
 import sushi.execution.ExecutionResult;
 import sushi.execution.Worker;
-import sushi.execution.listpaths.ListPathsWorker;
 import sushi.logging.Logger;
 
 public class MergerWorker extends Worker {
-	private static final Logger logger = new Logger(ListPathsWorker.class);
+	private static final Logger logger = new Logger(MergerWorker.class);
 	
 	private final Merger merger;
 
-	public MergerWorker(Merger listPaths) {
-		this.merger = listPaths;
+	public MergerWorker(Merger merger) {
+		this.merger = merger;
 	}
 
 	@Override
@@ -167,6 +166,15 @@ public class MergerWorker extends Worker {
 			}
 		}
 		
+		//emits the traces to ignore (empty) file
+		try {
+			Files.deleteIfExists(p.getTracesToIgnoreFilePath());
+			Files.createFile(p.getTracesToIgnoreFilePath());
+		} catch (IOException e) {
+			logger.error("I/O error while deleting/creating " + p.getTracesToIgnoreFilePath().toString());
+			throw new MergerException(e);
+		}
+
 		final ExecutionResult result = new ExecutionResult();
 		result.setExitStatus(0);
 

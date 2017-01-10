@@ -18,6 +18,7 @@ public class Minimizer extends Tool<MinimizerParameters> {
 		p.setCoverageFilePath(dirs.getCoverageFilePath());
 		p.setOutputFilePath(dirs.getMinimizerOutFilePath());
 		p.setBranchesToIgnoreFilePath(dirs.getBranchesToIgnoreFilePath());
+		p.setTracesToIgnoreFilePath(dirs.getTracesToIgnoreFilePath());
 		p.setNumberOfTasks(Options.I().getParallelismEvosuite() / Options.I().getRedundanceEvosuite());
 		
 		setUserDefinedParameters(p);

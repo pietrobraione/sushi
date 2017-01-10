@@ -1,6 +1,7 @@
 package sushi;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -11,6 +12,7 @@ import org.kohsuke.args4j.ParserProperties;
 
 import sushi.configure.Options;
 import sushi.exceptions.InternalUnexpectedException;
+import sushi.exceptions.TerminationException;
 import sushi.execution.ExecutionManager;
 import sushi.execution.ExecutionResult;
 import sushi.execution.Tool;
@@ -20,6 +22,8 @@ import sushi.execution.javac.Javac;
 import sushi.execution.jbse.JBSEMethods;
 import sushi.execution.jbse.JBSETraces;
 import sushi.execution.listpaths.ListPaths;
+import sushi.execution.loopend.LoopEnd;
+import sushi.execution.loopmgr.LoopMgr;
 import sushi.execution.merger.Merger;
 import sushi.execution.minimizer.Minimizer;
 import sushi.logging.Logger;
@@ -62,15 +66,19 @@ public class Main {
 		ClasspathUtils.checkClasspath();
 		
 		final Tool<?>[] tools;
+		final int repeatFrom;
 		switch (options.getCoverage()) {
 		case PATHS:
-			tools = new Tool[]{ new JBSEMethods(true), new Merger(), new ListPaths(), new Javac(), new Evosuite() };
+			tools = new Tool[]{ new JBSEMethods(true), new Merger(), new ListPaths(), new Javac(), new Evosuite(), new LoopEnd() };
+			repeatFrom = -1;
 			break;
 		case UNSAFE:
-			tools = new Tool[]{ new JBSEMethods(false), new Merger(), new BestPath(), new JBSETraces(), new Javac(), new Evosuite() };
+			tools = new Tool[]{ new JBSEMethods(false), new Merger(), new BestPath(), new JBSETraces(), new Javac(), new Evosuite(), new LoopEnd() };
+			repeatFrom = -1;
 			break;
 		case BRANCHES:
-			tools = new Tool[]{ new JBSEMethods(false), new Merger(), new Minimizer(), new JBSETraces(), new Javac(), new Evosuite() };
+			tools = new Tool[]{ new JBSEMethods(false), new Merger(), new Minimizer(), new JBSETraces(), new Javac(), new Evosuite(), new LoopMgr() };
+			repeatFrom = 2;
 			break;
 		default:
 			logger.error("Unexpected internal error: unexpected value for -emit option");
@@ -80,18 +88,30 @@ public class Main {
 		final boolean doEverything = (options.getPhases() == null);
 		
 		int currentPhase = 1;
-		for (Tool<?> tool : tools) {
+		int nextToolIndex = 0;
+		int lastRequiredPhase = (doEverything ? -1 : Collections.max(options.getPhases()));
+		while (true) {
+			final Tool<?> tool = tools[nextToolIndex];
 			if (doEverything || options.getPhases().contains(currentPhase)) {
 				logger.info("Phase " + currentPhase +": executing tool " + tool.getName());
-				final ExecutionResult[] result = ExecutionManager.execute(tool);
+				final ExecutionResult[] result;
+				try {
+					result = ExecutionManager.execute(tool);
+				} catch (TerminationException e) {
+					break;
+				}
+				tool.reset();
 				for (int i = 0; i < result.length; ++i) {
 					if (result[i] != null && result[i].getExitStatus() != 0) {
 						logger.error("Tool " + tool.getName() + " task " + tool.tasks().get(i / tool.redundance()) + " terminated with exit status " + result[i].getExitStatus());
 						System.exit(1);
 					}
 				}
+			} else if (currentPhase > lastRequiredPhase) {
+				break;
 			}
 			++currentPhase;
+			nextToolIndex = (nextToolIndex == tools.length - 1 ? repeatFrom : nextToolIndex + 1);
 		}
 
 		logger.info("Sushi terminates");

@@ -22,7 +22,6 @@ public final class JBSEMethods extends JBSEAbstract {
 	@Override
 	public List<Integer> tasks() {
 		if (this.tasks == null) {
-			populateTestMethods();
 			this.tasks = new ArrayList<>(this.testMethods.size());
 			for (int i = 0; i < this.testMethods.size(); ++i) {
 				this.tasks.add(i);
@@ -43,6 +42,11 @@ public final class JBSEMethods extends JBSEAbstract {
 			}
 		}
 		return this.tasks;
+	}
+	
+	@Override
+	public void reset() {
+		this.tasks = null;
 	}
 	
 	//TODO getTimeBudget(), degreeOfParallelism()

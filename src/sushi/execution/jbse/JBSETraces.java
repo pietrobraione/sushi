@@ -26,8 +26,6 @@ public final class JBSETraces extends JBSEAbstract {
 	@Override
 	public List<Integer> tasks() {
 		if (this.tasks == null) {
-			populateTestMethods();
-
 			this.tasks = new ArrayList<>();
 			this.methodNumbers = new ArrayList<>();
 			this.traceNumbersLocal = new ArrayList<>();
@@ -76,6 +74,11 @@ public final class JBSETraces extends JBSEAbstract {
 		p.setTraceCounterStart(this.traceNumbersLocal.get(taskNumber));
 
 		return p;
+	}
+	
+	@Override
+	public void reset() {
+		this.tasks = null;
 	}
 	
 	//TODO getTimeBudget(), degreeOfParallelism()

@@ -7,8 +7,8 @@ import sushi.execution.Worker;
 public class MinimizerWorker extends Worker {
 	private final Minimizer minimizer;
 
-	public MinimizerWorker(Minimizer jbse) {
-		this.minimizer = jbse;
+	public MinimizerWorker(Minimizer minimizer) {
+		this.minimizer = minimizer;
 	}
 
 	@Override

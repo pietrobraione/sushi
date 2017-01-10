@@ -1,6 +1,7 @@
 package sushi.execution.evosuite;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -86,6 +87,16 @@ public class EvosuiteCoordinator extends Coordinator {
 			}
 		}
 		
+		this.coveredBranches.removeAll(branchesToIgnore);
+		try (final BufferedWriter w = Files.newBufferedWriter(DirectoryUtils.I().getCoveredByTestFilePath())) {
+			for (Integer branch : this.coveredBranches) {
+				w.write(branch.toString());
+				w.newLine();
+			}
+		} catch (IOException e) {
+			logger.error("I/O error while writing " + DirectoryUtils.I().getCoveredByTestFilePath().toString());
+			throw new CoordinatorException(e);
+		}
 		return retVal;
 	}
 	

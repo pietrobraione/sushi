@@ -20,6 +20,7 @@ public final class Merger extends Tool<MergerParameters> {
 		p.setCoverageFilePathLocal(dirUtils::getCoverageFilePath);
 		p.setTracesFilePathLocal(dirUtils::getTracesFilePath);
 		p.setBranchesToIgnoreFilePath(dirUtils.getBranchesToIgnoreFilePath());
+		p.setTracesToIgnoreFilePath(dirUtils.getTracesToIgnoreFilePath());
 		
 		setUserDefinedParameters(p);
 

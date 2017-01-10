@@ -11,6 +11,12 @@ public abstract class Tool<T> {
 	public List<Integer> tasks() { return Collections.singletonList(0); }
 	
 	public abstract T getInvocationParameters(int taskNumber);
+	
+	/**
+	 * Invoked after a tool is used, in case the tool could be executed
+	 * more than one time, so it is brought back in a pristine state.
+	 */
+	public void reset() { }
 
 	public abstract int getTimeBudget();
 	

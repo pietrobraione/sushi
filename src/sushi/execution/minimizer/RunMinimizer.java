@@ -60,12 +60,21 @@ public class RunMinimizer {
 			return 1;
 		}
 		
+		//the branches to ignore are those that the user do not want to cover
+		final TreeSet<Integer> traceNumbersToIgnore;
+		try {
+			traceNumbersToIgnore = traceNumbersToIgnore();
+		} catch (IOException e) {
+			e.printStackTrace();
+			return 1;
+		}
+		
 		//the set of solutions to ignore is, initially, empty 
 		final ArrayList<ArrayList<Integer>> solutionsToIgnore = new ArrayList<>();
 		
 		//generates the optimal solution and emits it; then
 		//generates more solutions until the emitted rows
-		//saturate the number of available tasks
+		//saturate the number of tasks
 		ArrayList<Integer> solution;
 		final HashSet<Integer> emittedRows = new HashSet<>();
 		boolean firstIteration = true;
@@ -73,7 +82,7 @@ public class RunMinimizer {
 			//makes the GLPK problem
 			final glp_prob p;
 			try {
-				p = makeProblem(nBranches, nTraces, branchNumbers, traceNumbers, branchNumbersToIgnore, solutionsToIgnore);
+				p = makeProblem(nBranches, nTraces, branchNumbers, traceNumbers, branchNumbersToIgnore, traceNumbersToIgnore, solutionsToIgnore);
 			} catch (IOException | NumberFormatException e) {
 				e.printStackTrace();
 				return 1;
@@ -124,6 +133,17 @@ public class RunMinimizer {
 		return retVal;
 	}
 	
+	private TreeSet<Integer> traceNumbersToIgnore() throws IOException {
+		final TreeSet<Integer> retVal = new TreeSet<>();
+		try (final BufferedReader r = Files.newBufferedReader(this.parameters.getTracesToIgnoreFilePath())) {
+			String line;
+			while ((line = r.readLine()) != null) {
+				retVal.add(Integer.parseInt(line.trim()));
+			}
+		}
+		return retVal;
+	}
+	
 	/**
 	 * Builds a MIP problem for detecting the optimal subset of all 
 	 * traces that covers the same set of branches. The MIP problem 
@@ -131,9 +151,9 @@ public class RunMinimizer {
 	 * <pre>
 	 * Minimize c_1 * x_1 + c_2 * x_2 + ... c_t * x_t
 	 * subject to
-	 *   a_1_1 * x_1 + ... a_1_t * x_t >= 1 (or 0)
+	 *   a_1_1 * x_1 + ... + a_1_t * x_t >= 1 (or 0)
 	 *   ...
-	 *   a_b_1 * x_1 + ... a_b_t * x_t >= 1 (or 0)
+	 *   a_b_1 * x_1 + ... + a_b_t * x_t >= 1 (or 0)
 	 * where
 	 *   x_1 binary
 	 *   ...
@@ -147,9 +167,14 @@ public class RunMinimizer {
 	 * must be covered, >= 0 if the branch is not a coverage target or is 
 	 * not covered by any trace in the set of all the traces. Actually the
 	 * problem is slightly more complex than that because the method allows
-	 * to generate multiple solutions through multiple invocations. The problem
-	 * therefore has further constraints to exclude previous solutions to be
-	 * emitted.
+	 * to exclude some solutions and some traces. The problem therefore has 
+	 * further constraints at the purpose. The constraint to eliminate a 
+	 * solution is:
+	 * 
+	 *   D_1 + ... + D_t >= 0
+	 *   
+	 * where D_j = (1 - x_j) if in the solution the variable x_j has value 1, 
+	 * and D_j = x_j if in the solution the variable x_j has value 0.
 	 * 
 	 * @param nBranches the number of branches.
 	 * @param nTraces the number of traces.
@@ -157,13 +182,16 @@ public class RunMinimizer {
 	 * @param traceNumbers the set of all the trace numbers.
 	 * @param branchNumbersToIgnore the set of all the branch numbers that
 	 *        must be ignored because they are not coverage targets.
+	 * @param branchNumbersToIgnore the set of all the trace numbers that
+	 *        must be ignored because they have been already tried.
 	 * @param solutionsToIgnore a list of solutions of the MIP problem
 	 *        that must be ignored.
 	 * @return a GLPK problem.
 	 * @throws IOException if reading some file fails.
 	 * @throws NumberFormatException if some file has wrong format.
 	 */
-	private glp_prob makeProblem(int nBranches, int nTraces, TreeSet<Integer> branchNumbers, TreeSet<Integer> traceNumbers, TreeSet<Integer> branchNumbersToIgnore, ArrayList<ArrayList<Integer>> solutionsToIgnore) 
+	private glp_prob makeProblem(int nBranches, int nTraces, TreeSet<Integer> branchNumbers, TreeSet<Integer> traceNumbers, 
+			TreeSet<Integer> branchNumbersToIgnore, TreeSet<Integer> traceNumbersToIgnore, ArrayList<ArrayList<Integer>> solutionsToIgnore) 
 	throws IOException, NumberFormatException {
 		final ArrayList<Integer> costs = new ArrayList<>();  //list of all costs
 		//the next three arrays encode the [a_i_j] matrix of the linear constraints. 
@@ -172,7 +200,7 @@ public class RunMinimizer {
 		//ia = {1,     ..., 1    , 2,     ..., 2,     ...}
 		//ja = {1,     ..., t    , 1,     ..., t,     ...}
 		//(actually, they are not in this exact order)
-		final int rows = nBranches + solutionsToIgnore.size(); //the number of rows
+		final int rows = nBranches + solutionsToIgnore.size() + traceNumbersToIgnore.size(); //the number of rows
 		final int cols = nTraces; //the number of cols
 		final SWIGTYPE_p_int ia = GLPK.new_intArray(rows * cols); //the row (i) indices of the a_i_k coefficients
 		final SWIGTYPE_p_int ja = GLPK.new_intArray(rows * cols); //the column (j) indices of the a_i_k coefficients
@@ -195,14 +223,14 @@ public class RunMinimizer {
 					final int branchNumber = Integer.parseInt(fields[i].trim());
 					uncoveredByTraceBranchNumbers.remove(branchNumber);
 					uncoveredBranchNumbers.remove(branchNumber);
-					//sets a_i_k to 1
+					//sets a_i_j to 1
 					GLPK.intArray_setitem(ia, pos + 1, branchNumber + 1);
 					GLPK.intArray_setitem(ja, pos + 1, traceNumber + 1);
 					GLPK.doubleArray_setitem(ar, pos + 1, 1.0);
 					++pos;
 				}
 				for (int branchNumber : uncoveredByTraceBranchNumbers) {
-					//sets a_i_k to 0
+					//sets a_i_j to 0
 					GLPK.intArray_setitem(ia, pos + 1, branchNumber + 1);
 					GLPK.intArray_setitem(ja, pos + 1, traceNumber + 1);
 					GLPK.doubleArray_setitem(ar, pos + 1, 0.0);
@@ -219,17 +247,39 @@ public class RunMinimizer {
 				final TreeSet<Integer> notInSolutionTraceNumbers = new TreeSet<>(traceNumbers); //the branch numbers not in this solution
 				for (int traceNumber : solution) {
 					notInSolutionTraceNumbers.remove(traceNumber);
-					//sets a_i_k to -1
+					//sets a_i_j to -1
 					GLPK.intArray_setitem(ia, pos + 1, row);
 					GLPK.intArray_setitem(ja, pos + 1, traceNumber + 1);
 					GLPK.doubleArray_setitem(ar, pos + 1, -1.0);
 					++pos;
 				}
 				for (int traceNumber : notInSolutionTraceNumbers) {
-					//sets a_i_k to 1
+					//sets a_i_j to 1
 					GLPK.intArray_setitem(ia, pos + 1, row);
 					GLPK.intArray_setitem(ja, pos + 1, traceNumber + 1);
 					GLPK.doubleArray_setitem(ar, pos + 1, 1.0);
+					++pos;
+				}
+				++row;
+			}
+		}
+		
+		//generates the constraint matrix rows for the trace numbers to ignore
+		{
+			int row = nBranches + solutionsToIgnore.size() + 1; 
+			for (final Integer traceNumberToIgnore : traceNumbersToIgnore) {
+				//sets a_i_j to 1
+				GLPK.intArray_setitem(ia, pos + 1, row);
+				GLPK.intArray_setitem(ja, pos + 1, traceNumberToIgnore + 1);
+				GLPK.doubleArray_setitem(ar, pos + 1, 1.0);
+				++pos;
+				final TreeSet<Integer> notToIgnoreTraceNumbers = new TreeSet<>(traceNumbers); //the trace numbers different from this trace
+				notToIgnoreTraceNumbers.remove(traceNumberToIgnore);
+				for (int traceNumber : notToIgnoreTraceNumbers) {
+					//sets a_i_j to 0
+					GLPK.intArray_setitem(ia, pos + 1, row);
+					GLPK.intArray_setitem(ja, pos + 1, traceNumber + 1);
+					GLPK.doubleArray_setitem(ar, pos + 1, 0);
 					++pos;
 				}
 				++row;
@@ -250,11 +300,16 @@ public class RunMinimizer {
 				GLPK.glp_set_row_bnds(p, row, GLPK.GLP_LO, 1.0, 0.0);
 			}
 		}
-		for (int row = nBranches + 1; row <= rows; ++row) {
+		for (int row = nBranches + 1; row <= nBranches + solutionsToIgnore.size(); ++row) {
 			final int solutionNumber = row - nBranches - 1;
 			GLPK.glp_set_row_name(p, row, "solution" + solutionNumber);
 			final int nTracesInSolution = solutionsToIgnore.get(solutionNumber).size();
 			GLPK.glp_set_row_bnds(p, row, GLPK.GLP_LO, (- nTracesInSolution) + 1.0, 0.0);
+		}
+		for (int row = nBranches + solutionsToIgnore.size() + 1; row <= rows; ++row) {
+			final int traceNumber = row - nBranches - solutionsToIgnore.size() - 1;
+			GLPK.glp_set_row_name(p, row, "trace" + traceNumber);
+			GLPK.glp_set_row_bnds(p, row, GLPK.GLP_FX, 0.0, 0.0);
 		}
 		GLPK.glp_add_cols(p, cols);
 		for (int col = 1; col <= cols; ++col) {

@@ -22,7 +22,9 @@ public class DirectoryUtils {
 	private static final String tracesFileName = "alltraces.txt"; 
 	private static final String tracesFileNamePattern = "alltraces_$.txt"; 
 	private static final String branchesToIgnoreFileName = "branches_to_ignore.txt"; 
+	private static final String tracesToIgnoreFileName = "traces_to_ignore.txt"; 
 	private static final String minimizerOutFileName = "traces.txt"; 
+	private static final String coveredByTestFileName = "covered_by_test.txt"; 
 	
 	public static DirectoryUtils I() {
 		if (instance == null) {
@@ -95,7 +97,15 @@ public class DirectoryUtils {
 		return getTmpDirPath().resolve(branchesToIgnoreFileName);
 	}
 	
+	public Path getTracesToIgnoreFilePath() {
+		return getTmpDirPath().resolve(tracesToIgnoreFileName);
+	}
+	
 	public Path getMinimizerOutFilePath() {
 		return getTmpDirPath().resolve(minimizerOutFileName);
+	}
+	
+	public Path getCoveredByTestFilePath() {
+		return getTmpDirPath().resolve(coveredByTestFileName);
 	}
 }
