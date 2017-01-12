@@ -28,20 +28,19 @@ public abstract class Worker implements Callable<ExecutionResult> {
 		if (timeout > 0) {
 			//waits for futureTimeout
 			boolean noFuture;
-			synchronized (this) {
-				noFuture = (this.futureTimeout == null);
-			}
-			while (noFuture) {
+			do {
 				try {
-					Thread.sleep(1000);
+					Thread.sleep(100);
 					synchronized (this) {
 						noFuture = (this.futureTimeout == null);
 					}
 				} catch (InterruptedException e) {
 					//should never happen, but if it happens 
-					//we fall through
+					//we return (so the while loop condition
+					//is always reached by an initialized noFuture)
+					return;
 				}
-			}
+			} while (noFuture);
 
 			//spawns the timeout thread
 			final Thread countdown = new Thread(() -> {
