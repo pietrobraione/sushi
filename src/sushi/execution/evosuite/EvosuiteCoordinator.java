@@ -21,8 +21,8 @@ import sushi.util.DirectoryUtils;
 public class EvosuiteCoordinator extends Coordinator {
 	private static final Logger logger = new Logger(EvosuiteCoordinator.class);
 	
-	private final HashSet<Integer> coveredBranches = new HashSet<>();
 	private ArrayList<ArrayList<Future<ExecutionResult>>> tasksFutures; //alias for coordination
+	private final HashSet<Integer> coveredBranches = new HashSet<>();
 	private ArrayList<HashSet<Integer>> coverageData;
 	private ArrayList<Integer> traceOfTask;
 	private HashSet<Integer> branchesToIgnore;
@@ -70,11 +70,7 @@ public class EvosuiteCoordinator extends Coordinator {
 				addCoveredBranches(taskNumber);
 				
 				//cancels all tasks that have been fully covered
-				for (int task = 0; task < traceOfTask.size(); ++task) {
-					if (taskCovered(task)) {
-						cancelTask(task);
-					}
-				}
+				cancelCovered();
 			});
 			takers[i].start();
 		}
@@ -140,14 +136,19 @@ public class EvosuiteCoordinator extends Coordinator {
 		this.coveredBranches.addAll(coverageOfTask(taskNumber));
 	}
 	
-	private synchronized void cancelTask(int taskNumber) {
-		final ArrayList<Future<ExecutionResult>> futures = this.tasksFutures.get(taskNumber);
-		for (Future<ExecutionResult> f : futures) {
-			f.cancel(true);
+	private synchronized void cancelCovered() {
+		for (int task = 0; task < this.traceOfTask.size(); ++task) {
+			if (taskCovered(task)) {
+				final ArrayList<Future<ExecutionResult>> futures = this.tasksFutures.get(task);
+				for (Future<ExecutionResult> f : futures) {
+					f.cancel(true);
+				}
+			}
 		}
 	}
 	
 	//here synchronization is possibly redundant
+
 	private synchronized HashSet<Integer> coverageOfTask(int taskNumber) {
 		return this.coverageData.get(this.traceOfTask.get(taskNumber));
 	}

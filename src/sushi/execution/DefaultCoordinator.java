@@ -18,7 +18,7 @@ public class DefaultCoordinator extends Coordinator {
 
 	@Override
 	public ExecutionResult[] start(ArrayList<ArrayList<Future<ExecutionResult>>> tasksFutures) {
-		this.terminate = false;
+		setTerminate(false);
 		final ExecutionResult[] retVal = new ExecutionResult[this.tool.tasks().size() * this.tool.redundance()];
 		final Thread[] takers = new Thread[retVal.length];
 		for (int i = 0; i < takers.length; ++i) {
@@ -33,11 +33,12 @@ public class DefaultCoordinator extends Coordinator {
 					return;
 				} catch (ExecutionException e) {
 					if (e.getCause() instanceof TerminationException) {
-						synchronized (this) {
-							this.terminate = true;
-						}
-						//then, falls through and cancels redundant workers
-						//TODO cancel *all* the workers
+						//schedules relaunch of exception
+						setTerminate(true);
+						
+						//cancels all the workers and exits
+						cancelAll(tasksFutures);
+						return;
 					} else {
 						logger.fatal("Error occurred during execution of tool " + this.tool.getName());
 						throw new WorkerException(e);
@@ -47,13 +48,12 @@ public class DefaultCoordinator extends Coordinator {
 					//it's ok to fall through to shutdown
 				}
 				//cancels redundant workers
-				for (final Future<ExecutionResult> f : futures) {
-					f.cancel(true);
-				}
+				cancelReplicas(futures);
 			});
 			takers[i].start();
 		}
 		
+		//waits
 		for (int i = 0; i < takers.length; ++i) {
 			try {
 				takers[i].join();
@@ -62,10 +62,29 @@ public class DefaultCoordinator extends Coordinator {
 			}
 		}
 		
+		//if a thread required termination, launches the exception
 		if (this.terminate) {
 			throw new TerminationException();
 		}
 		
 		return retVal;
+	}
+	
+	private synchronized void setTerminate(boolean terminate) {
+		this.terminate = terminate;
+	}
+	
+	private synchronized void cancelAll(ArrayList<ArrayList<Future<ExecutionResult>>> tasksFutures) {
+		for (final ArrayList<Future<ExecutionResult>> group : tasksFutures) {
+			for (final Future<ExecutionResult> f : group) {
+				f.cancel(true);
+			}
+		}
+	}
+	
+	private synchronized void cancelReplicas(ArrayList<Future<ExecutionResult>> futures) {
+		for (final Future<ExecutionResult> f : futures) {
+			f.cancel(true);
+		}
 	}
 }
