@@ -127,13 +127,13 @@ public class Evosuite extends Tool<String[]> {
 		evo.add("-DCP=" + getClassPath(taskNumber));
 		evo.add("-Dassertions=false");
 		evo.add("-Dhtml=false");
-		evo.add("-Dglobal_timeout=" + getTimeBudget());
+		evo.add("-Dglobal_timeout=" + getTimeBudget() * 2);  //double timeout so it does not terminate (must be killed by the coordinator upon timeout)
 		evo.add("-Dreport_dir=" + DirectoryUtils.I().getTmpDirPath().toString());
 		evo.add("-Djunit_suffix=" /*+ "_output_"*/ + "_" + 
 				targetMethodSignature.substring(0, targetMethodSignature.indexOf('(')) + "_" +
 				"PC_" + targetMethodNumber + "_" + traceNumberLocal + "_" 
 				/*+ Thread.currentThread().getName().replace('-', '_')*/ + "Test");
-		evo.add("-Dsearch_budget=" + getTimeBudget());
+		evo.add("-Dsearch_budget=" + getTimeBudget() * 2);  //double timeout so it does not terminate (must be killed by the coordinator upon timeout)
 		//evo.add("-Dtarget_method_prefix=test");
 		evo.add("-Dtest_dir=" + Options.I().getOutDirectory());
 		evo.add("-Dvirtual_fs=false");

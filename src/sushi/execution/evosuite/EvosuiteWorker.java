@@ -21,6 +21,7 @@ public class EvosuiteWorker extends Worker {
 
 	@Override
 	public ExecutionResult call() throws EvosuiteException, InterruptedException {
+		startTimeout(this.evosuite.getTimeBudget());
 		final String[] p = this.evosuite.getInvocationParameters(this.taskNumber);
 		logger.debug("Task " + this.taskNumber + ": invoking " + this.evosuite.getCommandLine());
 		
