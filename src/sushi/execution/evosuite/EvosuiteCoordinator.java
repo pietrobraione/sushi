@@ -26,6 +26,7 @@ public class EvosuiteCoordinator extends Coordinator {
 	private ArrayList<HashSet<Integer>> coverageData;
 	private ArrayList<Integer> traceOfTask;
 	private HashSet<Integer> branchesToIgnore;
+	private HashSet<Integer> cancelledTasks = new HashSet<>();
 	
 	public EvosuiteCoordinator(Tool<?> tool) { super(tool); }
 	
@@ -68,6 +69,9 @@ public class EvosuiteCoordinator extends Coordinator {
 				
 				//updates total coverage
 				addCoveredBranches(taskNumber);
+				
+				//cancel this task's redundant threads
+				cancelTask(taskNumber);
 				
 				//cancels all tasks that have been fully covered
 				cancelCovered();
@@ -136,13 +140,19 @@ public class EvosuiteCoordinator extends Coordinator {
 		this.coveredBranches.addAll(coverageOfTask(taskNumber));
 	}
 	
+	private synchronized void cancelTask(int task) {
+		final ArrayList<Future<ExecutionResult>> futures = this.tasksFutures.get(task);
+		for (Future<ExecutionResult> f : futures) {
+			f.cancel(true);
+		}
+		this.cancelledTasks.add(task);
+	}
+	
 	private synchronized void cancelCovered() {
 		for (int task = 0; task < this.traceOfTask.size(); ++task) {
-			if (taskCovered(task)) {
-				final ArrayList<Future<ExecutionResult>> futures = this.tasksFutures.get(task);
-				for (Future<ExecutionResult> f : futures) {
-					f.cancel(true);
-				}
+			if (taskCovered(task) && !this.cancelledTasks.contains(task)) {
+				cancelTask(task);
+				logger.info("Task " + task + " cancelled");
 			}
 		}
 	}
