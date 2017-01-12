@@ -15,10 +15,11 @@ public class DefaultCoordinator extends Coordinator {
 	public DefaultCoordinator(Tool<?> tool) { super(tool); }
 	
 	private boolean terminate;
+	private String message;
 
 	@Override
 	public ExecutionResult[] start(ArrayList<ArrayList<Future<ExecutionResult>>> tasksFutures) {
-		setTerminate(false);
+		setTerminate(false, null);
 		final ExecutionResult[] retVal = new ExecutionResult[this.tool.tasks().size() * this.tool.redundance()];
 		final Thread[] takers = new Thread[retVal.length];
 		for (int i = 0; i < takers.length; ++i) {
@@ -34,7 +35,7 @@ public class DefaultCoordinator extends Coordinator {
 				} catch (ExecutionException e) {
 					if (e.getCause() instanceof TerminationException) {
 						//schedules relaunch of exception
-						setTerminate(true);
+						setTerminate(true, e.getCause().getMessage());
 						
 						//cancels all the workers and exits
 						cancelAll(tasksFutures);
@@ -64,14 +65,15 @@ public class DefaultCoordinator extends Coordinator {
 		
 		//if a thread required termination, launches the exception
 		if (this.terminate) {
-			throw new TerminationException();
+			throw new TerminationException(this.message);
 		}
 		
 		return retVal;
 	}
 	
-	private synchronized void setTerminate(boolean terminate) {
+	private synchronized void setTerminate(boolean terminate, String message) {
 		this.terminate = terminate;
+		this.message = message;
 	}
 	
 	private synchronized void cancelAll(ArrayList<ArrayList<Future<ExecutionResult>>> tasksFutures) {
