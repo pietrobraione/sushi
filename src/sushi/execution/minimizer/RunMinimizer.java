@@ -210,9 +210,11 @@ public class RunMinimizer {
 		//(actually, they are not in this exact order)
 		final int rows = nBranches + solutionsToIgnore.size() + traceNumbersToIgnore.size(); //the number of rows
 		final int cols = nTraces; //the number of cols
-		final SWIGTYPE_p_int ia = GLPK.new_intArray(rows * cols); //the row (i) indices of the a_i_k coefficients
-		final SWIGTYPE_p_int ja = GLPK.new_intArray(rows * cols); //the column (j) indices of the a_i_k coefficients
-		final SWIGTYPE_p_double ar = GLPK.new_doubleArray(rows * cols); //all the a_i_j coefficients
+		final SWIGTYPE_p_int ia = GLPK.new_intArray(rows * cols + 1); //the row (i) indices of the a_i_k coefficients
+		final SWIGTYPE_p_int ja = GLPK.new_intArray(rows * cols + 1); //the column (j) indices of the a_i_k coefficients
+		final SWIGTYPE_p_double ar = GLPK.new_doubleArray(rows * cols + 1); //all the a_i_j coefficients
+		//the three arrays above have 1 element more than rows * cols because GLPK
+		//strangely wants you to store everything starting from position 1
 		final TreeSet<Integer> uncoveredBranchNumbers = new TreeSet<>(branchNumbers); //the branch numbers not covered by any trace
 		int pos = 0;
 		
