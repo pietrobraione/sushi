@@ -5,6 +5,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.TreeSet;
 
 import sushi.exceptions.LoopMgrException;
@@ -66,6 +67,33 @@ public class LoopMgrWorker extends Worker {
 			logger.error("I/O error while reading " + p.getTracesToIgnoreFilePath().toString());
 			throw new LoopMgrException(e);
 		}
+		
+		//reads the coverage file and detects whether there are traces that cover
+		//only branches to ignore, and adds them to the traces to ignore
+		try (final BufferedReader r = Files.newBufferedReader(p.getCoverageFilePath())) {
+			String line;
+			int traceNumber = 0;
+			while ((line = r.readLine()) != null) {
+				final String[] fields = line.split(",");
+				final HashSet<Integer> traceCoverage = new HashSet<>();
+				for (int i = 3; i < fields.length; ++i) {
+					final int branchNumber = Integer.parseInt(fields[i].trim());
+					traceCoverage.add(branchNumber);
+				}
+				traceCoverage.removeAll(branchNumbersToIgnore);
+				if (traceCoverage.isEmpty()) {
+					traceNumbersToIgnore.add(traceNumber);
+				}
+				++traceNumber;
+			}
+		} catch (IOException e) {
+			logger.error("I/O error while reading " + p.getCoverageFilePath().toString());
+			throw new LoopMgrException(e);
+		}
+		
+		//some logging
+		logger.info("Branches to cover: " + (nBranches - branchNumbersToIgnore.size()) + 
+					 ", traces to explore: " + (nTraces - traceNumbersToIgnore.size()));
 
 		//decides whether to terminate
 		branchNumbers.removeAll(branchNumbersToIgnore);
