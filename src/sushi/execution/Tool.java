@@ -17,6 +17,8 @@ public abstract class Tool<T> {
 	 * more than one time, so it is brought back in a pristine state.
 	 */
 	public void reset() { }
+	
+	public boolean delegateTimeoutToCoordinator() { return false; } 
 
 	public abstract int getTimeBudget();
 	

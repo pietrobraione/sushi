@@ -177,6 +177,11 @@ public class Evosuite extends Tool<String[]> {
 	}
 	
 	@Override
+	public boolean delegateTimeoutToCoordinator() {
+		return true; //pleonastic because the EvosuiteCoordinator knows it has to manage timeout
+	}
+	
+	@Override
 	public int getTimeBudget() {
 		return Options.I().getEvosuiteBudget();
 	}

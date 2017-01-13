@@ -31,6 +31,11 @@ public class Minimizer extends Tool<MinimizerParameters> {
 	}
 	
 	@Override
+	public boolean delegateTimeoutToCoordinator() {
+		return true;
+	}
+	
+	@Override
 	public int getTimeBudget() {
 		return Options.I().getMinimizerBudget();
 	}

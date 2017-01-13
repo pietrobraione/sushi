@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.TimeUnit;
 
 import sushi.exceptions.TerminationException;
 import sushi.exceptions.WorkerException;
@@ -24,11 +26,22 @@ public class DefaultCoordinator extends Coordinator {
 		final Thread[] takers = new Thread[retVal.length];
 		for (int i = 0; i < takers.length; ++i) {
 			final int threadNumber = i; //to make the compiler happy
-			final ArrayList<Future<ExecutionResult>> futures = tasksFutures.get(threadNumber / this.tool.redundance());
+			final int taskNumber = threadNumber / this.tool.redundance();
+			final int replicaNumber = threadNumber % this.tool.redundance();
+			final ArrayList<Future<ExecutionResult>> futures = tasksFutures.get(taskNumber);
+			final Future<ExecutionResult> thisThreadFuture = futures.get(replicaNumber);
 			takers[i] = new Thread(() -> {
 				//waits for the result of its worker
 				try {
-					retVal[threadNumber] = futures.get(threadNumber % this.tool.redundance()).get();
+					if (this.tool.delegateTimeoutToCoordinator()) {
+						retVal[threadNumber] = thisThreadFuture.get();
+					} else {
+						retVal[threadNumber] = thisThreadFuture.get(this.tool.getTimeBudget(), TimeUnit.SECONDS);
+					}
+				} catch (TimeoutException e) {
+					logger.debug("Task " + taskNumber + " replica " + replicaNumber + " timed out");
+					thisThreadFuture.cancel(true);
+					return;
 				} catch (CancellationException e) {
 					//the worker was cancelled: nothing left to do
 					return;

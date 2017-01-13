@@ -9,6 +9,8 @@ import java.util.HashSet;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import sushi.exceptions.CoordinatorException;
 import sushi.exceptions.WorkerException;
@@ -51,11 +53,16 @@ public class EvosuiteCoordinator extends Coordinator {
 		for (int i = 0; i < takers.length; ++i) {
 			final int threadNumber = i; //to make the compiler happy
 			final int taskNumber = threadNumber / this.tool.redundance();
-			final Future<ExecutionResult> thisThreadFuture = tasksFutures.get(taskNumber).get(threadNumber % this.tool.redundance());
+			final int replicaNumber = threadNumber % this.tool.redundance();
+			final Future<ExecutionResult> thisThreadFuture = tasksFutures.get(taskNumber).get(replicaNumber);
 			takers[i] = new Thread(() -> {
 				//waits for the result of its worker
 				try {
-					retVal[threadNumber] = thisThreadFuture.get();
+					retVal[threadNumber] = thisThreadFuture.get(this.tool.getTimeBudget(), TimeUnit.SECONDS);
+				} catch (TimeoutException e) {
+					logger.debug("Task " + taskNumber + " replica " + replicaNumber + " timed out");
+					thisThreadFuture.cancel(true);
+					return;
 				} catch (CancellationException e) {
 					//the worker was cancelled: nothing left to do
 					return;

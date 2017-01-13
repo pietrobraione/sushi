@@ -16,7 +16,6 @@ public class ExecutionManager {
 			for (int i = 1; i <= tool.redundance(); ++i) {
 				final Worker worker = tool.getWorker(task);
 				final Future<ExecutionResult> f = pool.submit(worker);
-				worker.setFutureTimeout(f);
 				futures.add(f);
 			}
 			tasksFutures.add(futures);
