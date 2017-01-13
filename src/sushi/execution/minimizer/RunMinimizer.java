@@ -97,6 +97,9 @@ public class RunMinimizer {
 			if (res != 0) {
 				return 1;
 			}
+			if (Thread.interrupted()) {
+				return (firstIteration ? 1 : 0);
+			}
 			final int status = GLPK.glp_mip_status(p);
 			if (status != GLPK.GLP_OPT && status != GLPK.GLP_FEAS) {
 				throw new TerminationException("Minimizer was unable to find a set of traces that covers the uncovered branches");
