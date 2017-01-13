@@ -6,7 +6,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import sushi.configure.Coverage;
 import sushi.configure.JBSEParameters;
 import sushi.configure.JBSEParameters.DecisionProcedureType;
 import sushi.configure.JBSEParameters.StateFormatMode;
@@ -72,10 +71,6 @@ public abstract class JBSEAbstract extends Tool<JBSEParameters> {
 		p.setCoverageFilePathBuilder(utils::getCoverageFilePath);
 		p.setBranchesFilePathBuilder(utils::getBranchesFilePath);
 		p.setTracesFilePathBuilder(utils::getTracesFilePath);
-		p.setShowSafe(options.getCoverage() == Coverage.UNSAFE ? false : true);
-		p.setShowUnsafe(true);
-		p.setShowOutOfScope(false);
-		p.setShowContradictory(false);
 		p.setStateFormatMode(this.emitWrappers ? StateFormatMode.SUSHI_PATH_CONDITION : null);
 		//BEGIN settings for debugging with jbse.run.Run
 		/*p.setOutputFileName(DirectoryUtils.I().getExperimentDirPath().resolve("foo.txt").toString());

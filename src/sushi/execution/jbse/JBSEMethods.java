@@ -6,6 +6,9 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
+import sushi.configure.Coverage;
+import sushi.configure.JBSEParameters;
+import sushi.configure.Options;
 import sushi.exceptions.JBSEException;
 import sushi.logging.Logger;
 import sushi.util.DirectoryUtils;
@@ -42,6 +45,16 @@ public final class JBSEMethods extends JBSEAbstract {
 			}
 		}
 		return this.tasks;
+	}
+	
+	@Override
+	public JBSEParameters getInvocationParameters(int taskNumber) {
+		JBSEParameters p = super.getInvocationParameters(taskNumber);
+		p.setShowSafe(Options.I().getCoverage() == Coverage.UNSAFE ? false : true);
+		p.setShowUnsafe(true);
+		p.setShowOutOfScope(false);
+		p.setShowContradictory(false);
+		return p;
 	}
 	
 	@Override

@@ -17,7 +17,7 @@ public final class JBSETraces extends JBSEAbstract {
 	private List<Integer> tasks = null;
 	private List<Integer> methodNumbers = null;
 	private List<Integer> traceNumbersLocal = null;
-	private List<String> traceIds = null;
+	private String[] traceIds = null;
 
 	public JBSETraces() {
 		super(true, false);
@@ -46,7 +46,7 @@ public final class JBSETraces extends JBSEAbstract {
 				throw new JBSEException(e);
 			}
 
-			this.traceIds = new ArrayList<>();
+			this.traceIds = new String[traceNumbersGlobal.size()];
 			try (final BufferedReader r = Files.newBufferedReader(DirectoryUtils.I().getTracesFilePath())) {
 				String line;					
 				int currentPos = 0;
@@ -54,7 +54,7 @@ public final class JBSETraces extends JBSEAbstract {
 					if (traceNumbersGlobal.contains(currentPos)) {
 						final String[] fields = line.split(",");
 						String traceId = fields[2].split(" ")[1].trim();
-						this.traceIds.add(traceId);
+						this.traceIds[traceNumbersGlobal.indexOf(currentPos)] = traceId;
 					}
 					++currentPos;
 				}
@@ -70,9 +70,8 @@ public final class JBSETraces extends JBSEAbstract {
 	@Override
 	public JBSEParameters getInvocationParameters(int taskNumber) {
 		final JBSEParameters p = super.getInvocationParameters(this.methodNumbers.get(taskNumber));
-		p.setIdentifierSubregion(this.traceIds.get(taskNumber));
+		p.setIdentifierSubregion(this.traceIds[taskNumber]);
 		p.setTraceCounterStart(this.traceNumbersLocal.get(taskNumber));
-
 		return p;
 	}
 	
