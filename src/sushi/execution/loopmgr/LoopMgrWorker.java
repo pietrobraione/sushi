@@ -5,7 +5,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.TreeSet;
 
 import sushi.exceptions.LoopMgrException;
@@ -68,20 +68,23 @@ public class LoopMgrWorker extends Worker {
 			throw new LoopMgrException(e);
 		}
 		
-		//reads the coverage file and detects whether there are traces that cover
-		//only branches to ignore, and adds them to the traces to ignore
+		//detects the traces that cover only branches to ignore and adds them 
+		//to the traces to ignore
+		final ArrayList<TreeSet<Integer>> coverage = new ArrayList<>();
 		try (final BufferedReader r = Files.newBufferedReader(p.getCoverageFilePath())) {
 			String line;
 			int traceNumber = 0;
 			while ((line = r.readLine()) != null) {
 				final String[] fields = line.split(",");
-				final HashSet<Integer> traceCoverage = new HashSet<>();
+				final TreeSet<Integer> traceCoverage = new TreeSet<>();
 				for (int i = 3; i < fields.length; ++i) {
 					final int branchNumber = Integer.parseInt(fields[i].trim());
 					traceCoverage.add(branchNumber);
 				}
-				traceCoverage.removeAll(branchNumbersToIgnore);
-				if (traceCoverage.isEmpty()) {
+				coverage.add(traceCoverage);
+				final TreeSet<Integer> traceCoverageRelevant = new TreeSet<>(traceCoverage);
+				traceCoverageRelevant.removeAll(branchNumbersToIgnore);
+				if (traceCoverageRelevant.isEmpty()) {
 					traceNumbersToIgnore.add(traceNumber);
 				}
 				++traceNumber;
@@ -91,13 +94,37 @@ public class LoopMgrWorker extends Worker {
 			throw new LoopMgrException(e);
 		}
 		
+		//finished calculation of traceNumbersToIgnore:
+		//sets traceNumbers to the set of relevant traces 
+		traceNumbers.removeAll(traceNumbersToIgnore);
+
+		//detects the branches that are not covered by any trace and
+		//adds them to the branches to ignore
+		final TreeSet<Integer> branchNumbersToCover = new TreeSet<>(branchNumbers);
+		branchNumbersToCover.removeAll(branchNumbersToIgnore);
+		for (int branchNumber : branchNumbersToCover) {
+			boolean mayBeCovered = false;
+			for (int traceNumber : traceNumbers) {
+				final TreeSet<Integer> traceCoverage = coverage.get(traceNumber);
+				if (traceCoverage.contains(branchNumber)) {
+					mayBeCovered = true;
+					break;
+				}
+			}
+			if (!mayBeCovered) {
+				branchNumbersToIgnore.add(branchNumber);
+				logger.info("Unable to cover branch #" + branchNumber);
+			}
+		}
+		
+		//finished calculation of branchNumbersToIgnore:
+		//sets branchNumbers to the set of relevant branches 
+		branchNumbers.removeAll(branchNumbersToIgnore);
+
 		//some logging
-		logger.info("Branches to cover: " + (nBranches - branchNumbersToIgnore.size()) + 
-					 ", traces to explore: " + (nTraces - traceNumbersToIgnore.size()));
+		logger.info("Branches to cover: " + branchNumbers.size() + ", traces to explore: " + traceNumbers.size());
 
 		//decides whether to terminate
-		branchNumbers.removeAll(branchNumbersToIgnore);
-		traceNumbers.removeAll(traceNumbersToIgnore);
 		if (branchNumbers.isEmpty()) {
 			throw new TerminationException("All branches covered");
 		} else if (traceNumbers.isEmpty()) {
