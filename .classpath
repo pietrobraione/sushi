@@ -10,6 +10,6 @@
 			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="/usr/local/lib/jni"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="lib/jbse.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/jbse"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
