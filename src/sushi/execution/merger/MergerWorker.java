@@ -49,6 +49,7 @@ public class MergerWorker extends Worker {
 
 		final ArrayList<String> branches = new ArrayList<>();
 		final TreeMap<String, Integer> branchNumbers = new TreeMap<>();
+		int nTraces = 0;
 		for (int method = 0; method < methods; ++method) {
 			final ArrayList<Integer> localToGlobal = new ArrayList<>();
 			
@@ -90,6 +91,7 @@ public class MergerWorker extends Worker {
 						w.write(Integer.toString(localToGlobal.get(branchNumberLocal)));
 					}
 					w.newLine();
+					++nTraces;
 				}
 			} catch (IOException e) {
 				logger.error("I/O error while reading " + p.getCoverageFilePathLocal(method).toString() + " or writing " + p.getCoverageFilePathGlobal().toString());
@@ -140,6 +142,7 @@ public class MergerWorker extends Worker {
 			pt = null;
 			toCover = false;
 		}
+		int nBranchesToCover = branches.size();
 		if (pt == null) {
 			//creates an empty file
 			try {
@@ -157,6 +160,7 @@ public class MergerWorker extends Worker {
 					if ((toCover ? !m.matches() : m.matches())) {
 						w.write(Integer.toString(branchNumber));
 						w.newLine();
+						--nBranchesToCover;
 					}
 					++branchNumber;
 				}
@@ -174,7 +178,9 @@ public class MergerWorker extends Worker {
 			logger.error("I/O error while deleting/creating " + p.getTracesToIgnoreFilePath().toString());
 			throw new MergerException(e);
 		}
-
+		
+		//some logging
+		logger.info("Branches to cover: " + nBranchesToCover + ", traces to explore: " + nTraces);
 		final ExecutionResult result = new ExecutionResult();
 		result.setExitStatus(0);
 
