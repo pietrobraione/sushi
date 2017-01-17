@@ -127,9 +127,10 @@ public class RunMinimizer {
 			final glp_iocp iocp = new glp_iocp();
 			GLPK.glp_init_iocp(iocp);
 			iocp.setMsg_lev(GLPK.GLP_MSG_OFF);
+			iocp.setTm_lim(60_000); //1 min
 			iocp.setPresolve(GLPK.GLP_ON);
 			final int res = GLPK.glp_intopt(p, iocp);
-			if (res != 0) {
+			if (res != 0 && res != GLPK.GLP_ETMLIM) {
 				return (firstIteration ? 1 : 0);
 			}
 			if (Thread.interrupted()) {
