@@ -34,9 +34,9 @@ public class DefaultCoordinator extends Coordinator {
 				//waits for the result of its worker
 				try {
 					if (this.tool.delegateTimeoutToCoordinator()) {
-						retVal[threadNumber] = thisThreadFuture.get();
-					} else {
 						retVal[threadNumber] = thisThreadFuture.get(this.tool.getTimeBudget(), TimeUnit.SECONDS);
+					} else {
+						retVal[threadNumber] = thisThreadFuture.get();
 					}
 				} catch (TimeoutException e) {
 					logger.debug("Task " + taskNumber + " replica " + replicaNumber + " timed out");
