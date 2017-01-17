@@ -32,6 +32,8 @@ import sushi.util.ClasspathUtils;
 
 public class Main {
 	private static final String VERSION = "0.1";
+	
+	private boolean timeout;
 
 	public Main() { }
 
@@ -87,6 +89,20 @@ public class Main {
 		
 		final boolean doEverything = (options.getPhases() == null);
 		
+		this.timeout = false;
+		if (options.getGlobalBudget() > 0) {
+			Thread chrono = new Thread(() -> {
+				try {
+					Thread.sleep(options.getGlobalBudget() * 1000);
+				} catch (InterruptedException e) {
+					//should never happen, in any case fallthrough
+					//should be ok
+				}
+				setTimeout();
+			});
+			chrono.start();
+		}
+		
 		int currentPhase = 1;
 		int nextToolIndex = 0;
 		int lastRequiredPhase = (doEverything ? -1 : Collections.max(options.getPhases()));
@@ -115,6 +131,10 @@ public class Main {
 			}
 			++currentPhase;
 			nextToolIndex = (nextToolIndex == tools.length - 1 ? repeatFrom : nextToolIndex + 1);
+			if (timedOut()) {
+				logger.info("Global time budget exhausted");
+				break;
+			}
 		}
 
 		logger.info("Sushi terminates");
@@ -150,5 +170,13 @@ public class Main {
 		System.err.println("where <options> are:");
 		// print the list of available options
 		parser.printUsage(System.err);
+	}
+	
+	private synchronized void setTimeout() {
+		this.timeout = true;
+	}
+	
+	private synchronized boolean timedOut() {
+		return this.timeout;
 	}
 }
