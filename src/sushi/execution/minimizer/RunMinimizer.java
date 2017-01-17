@@ -111,7 +111,6 @@ public class RunMinimizer {
 		//generates the optimal solution and emits it; then
 		//generates more solutions until the emitted rows
 		//saturate the number of tasks
-		ArrayList<Integer> solution;
 		int emittedRows = 0;
 		boolean firstIteration = true;
 		do {
@@ -142,13 +141,13 @@ public class RunMinimizer {
 			}
 
 			//gets the solution and emits it
-			solution = makeSolution(p);
+			final ArrayList<Integer> solution = makeSolution(p);
 			try {
 				emitSolution(solution, !firstIteration);
 				this.traceNumbersToIgnore.addAll(solution);
 				this.branchNumbersToIgnore.addAll(notCoveredBranches());
 				emittedRows += solution.size();
-			} catch (IOException e) {
+			} catch (IOException | NumberFormatException e) {
 				e.printStackTrace();
 				return 1;
 			}
@@ -378,7 +377,7 @@ public class RunMinimizer {
 		}
 	}
 	
-	private TreeSet<Integer> notCoveredBranches() throws IOException {
+	private TreeSet<Integer> notCoveredBranches() throws IOException, NumberFormatException {
 		final TreeSet<Integer> mayBeCovered = new TreeSet<>();
 		try (final BufferedReader r = Files.newBufferedReader(this.parameters.getCoverageFilePath())) {
 			String line;
