@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -50,6 +51,7 @@ public class MergerWorker extends Worker {
 		final ArrayList<String> branches = new ArrayList<>();
 		final TreeMap<String, Integer> branchNumbers = new TreeMap<>();
 		int nTraces = 0;
+		final TreeSet<Integer> mayBeCoveredBranches = new TreeSet<>();
 		for (int method = 0; method < methods; ++method) {
 			final ArrayList<Integer> localToGlobal = new ArrayList<>();
 			
@@ -88,7 +90,9 @@ public class MergerWorker extends Worker {
 					for (int i = 2; i < fieldsRead.length; ++i) {
 						w.write(", ");
 						final int branchNumberLocal = Integer.parseInt(fieldsRead[i].trim());
-						w.write(Integer.toString(localToGlobal.get(branchNumberLocal)));
+						final Integer branchNumberGlobal = localToGlobal.get(branchNumberLocal); 
+						w.write(branchNumberGlobal.toString());
+						mayBeCoveredBranches.add(branchNumberGlobal);
 					}
 					w.newLine();
 					++nTraces;
@@ -157,7 +161,7 @@ public class MergerWorker extends Worker {
 				int branchNumber = 0;
 				for (String branch : branches) {
 					final Matcher m = pt.matcher(branch);
-					if ((toCover ? !m.matches() : m.matches())) {
+					if ((toCover ? !m.matches() : m.matches()) || !mayBeCoveredBranches.contains(branchNumber)) {
 						w.write(Integer.toString(branchNumber));
 						w.newLine();
 						--nBranchesToCover;
