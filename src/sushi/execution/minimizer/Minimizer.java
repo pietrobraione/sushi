@@ -20,6 +20,7 @@ public class Minimizer extends Tool<MinimizerParameters> {
 		p.setBranchesToIgnoreFilePath(dirs.getBranchesToIgnoreFilePath());
 		p.setTracesToIgnoreFilePath(dirs.getTracesToIgnoreFilePath());
 		p.setNumberOfTasks(Options.I().getParallelismEvosuite() / Options.I().getRedundanceEvosuite());
+		p.setTimeout(Options.I().getMinimizerBudget());
 		
 		setUserDefinedParameters(p);
 		
@@ -28,11 +29,6 @@ public class Minimizer extends Tool<MinimizerParameters> {
 	
 	private void setUserDefinedParameters(MinimizerParameters p) {
 	    Modifier.I().modify(p);
-	}
-	
-	@Override
-	public boolean delegateTimeoutToCoordinator() {
-		return true;
 	}
 	
 	@Override

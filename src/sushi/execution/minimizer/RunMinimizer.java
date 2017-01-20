@@ -71,6 +71,8 @@ public class RunMinimizer {
 	 * @return 0 if everything ok, >=1 if some error.
 	 */
 	public int run() {
+		final long start = System.currentTimeMillis();
+		
 		//nBranches is the total number of branches, nTraces is the total number of traces
 		try {
 			this.nBranches = (int) Files.lines(this.parameters.getBranchesFilePath()).count();
@@ -126,14 +128,11 @@ public class RunMinimizer {
 			//solves it
 			final glp_iocp iocp = new glp_iocp();
 			GLPK.glp_init_iocp(iocp);
-			iocp.setMsg_lev(GLPK.GLP_MSG_OFF);
-			iocp.setTm_lim(60_000); //1 min
+			//iocp.setMsg_lev(GLPK.GLP_MSG_OFF);
+			iocp.setTm_lim(this.parameters.getTimeout() * 200);
 			iocp.setPresolve(GLPK.GLP_ON);
 			final int res = GLPK.glp_intopt(p, iocp);
 			if (res != 0 && res != GLPK.GLP_ETMLIM) {
-				return (firstIteration ? 1 : 0);
-			}
-			if (Thread.interrupted()) {
 				return (firstIteration ? 1 : 0);
 			}
 			final int status = GLPK.glp_mip_status(p);
@@ -157,6 +156,9 @@ public class RunMinimizer {
 			GLPK.glp_delete_prob(p);
 			
 			firstIteration = false;
+			if (System.currentTimeMillis() - start > this.parameters.getTimeout() * 1000) {
+				return 0;
+			}
 		} while (emittedRows < this.parameters.getNumberOfTasks());
 		
 		return 0;
