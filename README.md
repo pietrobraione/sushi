@@ -106,8 +106,8 @@ root to the classpath andqualify the class name of the test suite with the
 package name, e.g.:
 
 
-    $ javac -cp junit.jar:/code/avltrees
+    $ javac -cp junit.jar:avltree.jar
         /your/out/dir/avl_tree/AvlTree_findMax_PC_2_1_Test.java
-    $ java -cp junit.jar:/code/avltrees:/your/out/dir
+    $ java -cp junit.jar:avltree.jar:/your/out/dir
         org.junit.runner.JUnitCore avl_tree.AvlTree_findMax_PC_2_1_Test
 
