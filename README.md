@@ -63,7 +63,7 @@ If you launch SUSHI without options it will print a help screen that lists all t
 * `-sushi_lib`: this must be set to the path of sushi-lib.jar.
 * `-z3`:  the path to the Z3 binary (you can omit it if Z3 is on the system PATH).
 * `-tmp_base`: a path to a temporary directory; SUSHI needs to create many files for its intermediate results, and 
-will put them in a subdirectory of `-tmp_base`.
+will put them in a subdirectory of `-tmp_base` having as name the date and time it was launched.
 * `-out`: a path to a directory where the generated tests will be put.
 
 An alternative way to configure SUSHI is to define a subclass of the class `sushi.configure.ParametersModifier` contained 
@@ -106,8 +106,8 @@ root to the classpath andqualify the class name of the test suite with the
 package name, e.g.:
 
 
-    $ javac -cp junit.jar:avltree.jar
+    $ javac -cp junit.jar:evosuite-shaded-1.0.3.jar:avltree.jar
         /your/out/dir/avl_tree/AvlTree_findMax_PC_2_1_Test.java
-    $ java -cp junit.jar:avltree.jar:/your/out/dir
+    $ java -cp junit.jar:evosuite-shaded-1.0.3.jar:avltree.jar:/your/out/dir
         org.junit.runner.JUnitCore avl_tree.AvlTree_findMax_PC_2_1_Test
 
