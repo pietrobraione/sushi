@@ -75,7 +75,7 @@ by setting the parameters of interest. In this case SUSHI must be invoked by spe
 
 You will find examples of this way of configuring SUSHI in the sushi-experiment, sushi-experiment-closure01 and sushi-experiment-closure72 projects.
 
-# Generated tests
+## Generated tests
 The tests are generated in EvoSuite format: Each suite produces two classes,
 one scaffolding class and the suite containing all the test cases. SUSHI
 will produce many suites each containing exactly one test, so if SUSHI
