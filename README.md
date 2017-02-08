@@ -102,7 +102,7 @@ members of the class under test. This means, for example, that a generated .java
 for an `avl_tree.AvlTree` class under test, if you have specified the option 
 `-out /your/out/dir`, could be something like `/your/out/dir/avl_tree/AvlTree_findMax_PC_2_1_Test.java`. 
 If you want to compile and execute the test suites add the right
-root to the classpath andqualify the class name of the test suite with the 
+root to the classpath and qualify the class name of the test suite with the 
 package name, e.g.:
 
 
