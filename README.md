@@ -94,7 +94,7 @@ The generated files have names structured as follows:
     <class name>_<method name>_PC_<number>_<number>_Test.java             //the suite
 
 where <class name> is the name of the class under test, <method name> is the name
-of the method under test, and the PC_<number>_<number> identifies the trace along 
+of the method under test, and the `PC_<number>_<number>` identifies the trace along 
 which the test executes (you don’t need this information so we will not elaborate
 on it further). Note that the scaffolding and test suite classes are declared in the 
 same package as the class under test, so they can access the package-level
