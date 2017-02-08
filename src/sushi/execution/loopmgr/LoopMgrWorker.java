@@ -122,11 +122,11 @@ public class LoopMgrWorker extends Worker {
 		branchNumbers.removeAll(branchNumbersToIgnore);
 
 		//some logging
-		logger.info("Branches to cover: " + branchNumbers.size() + ", traces to explore: " + traceNumbers.size());
+		logger.info("Targets to cover: " + branchNumbers.size() + ", traces to explore: " + traceNumbers.size());
 
 		//decides whether to terminate
 		if (branchNumbers.isEmpty()) {
-			throw new TerminationException("All branches covered");
+			throw new TerminationException("All targets covered");
 		} else if (traceNumbers.isEmpty()) {
 			throw new TerminationException("Traces exhausted");
 		}
