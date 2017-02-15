@@ -147,6 +147,7 @@ public class Evosuite extends Tool<String[]> {
 		evo.add("-Dno_change_iterations_before_reset=30");
 		evo.add("-Dmax_size=1");
 		evo.add("-Dmax_initial_tests=1");
+		evo.add("-Dinline=false");
 		//evo.add("-Dsushi_modifiers_local_search=true"); does not work
 
 		setUserDefinedParameters(evo);
