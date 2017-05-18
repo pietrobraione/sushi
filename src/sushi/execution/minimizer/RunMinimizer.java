@@ -84,13 +84,13 @@ public class RunMinimizer {
 		
 		//branch numbers are just all the numbers between 0 and nBranches - 1
 		this.branchNumbers = new TreeSet<>();
-		for (int branchNumber = 0; branchNumber < nBranches; ++branchNumber) {
+		for (int branchNumber = 0; branchNumber < this.nBranches; ++branchNumber) {
 			this.branchNumbers.add(branchNumber);
 		}
 		
 		//trace numbers are just all the numbers between 0 and nTraces - 1
 		this.traceNumbers = new TreeSet<>();
-		for (int traceNumber = 0; traceNumber < nTraces; ++traceNumber) {
+		for (int traceNumber = 0; traceNumber < this.nTraces; ++traceNumber) {
 			this.traceNumbers.add(traceNumber);
 		}
 		
@@ -109,7 +109,15 @@ public class RunMinimizer {
 			e.printStackTrace();
 			return 1;
 		}
-		
+
+		//calculates the number of rows and cols for the optimization problem
+		this.rows = this.nBranches - this.branchNumbersToIgnore.size();
+		this.cols = this.nTraces - this.traceNumbersToIgnore.size();
+		if (this.rows == 0 || this.cols == 0) {
+			throw new TerminationException("Minimizer invoked with no branches to cover and/or no traces that cover the uncovered branches");
+		}
+
+
 		//generates the optimal solution and emits it; then
 		//generates more solutions until the emitted rows
 		//saturate the number of tasks
@@ -159,7 +167,11 @@ public class RunMinimizer {
 			if (System.currentTimeMillis() - start > this.parameters.getTimeout() * 1000) {
 				return 0;
 			}
-		} while (emittedRows < this.parameters.getNumberOfTasks());
+
+			//calculates the number of rows and cols for the next iteration optimization problem
+			this.rows = this.nBranches - this.branchNumbersToIgnore.size();
+			this.cols = this.nTraces - this.traceNumbersToIgnore.size();
+		} while (emittedRows < this.parameters.getNumberOfTasks() && this.rows > 0 && this.cols > 0);
 		
 		return 0;
 	}
@@ -223,8 +235,6 @@ public class RunMinimizer {
 		//ia = {1,     ..., 1    , 2,     ..., 2,     ...}
 		//ja = {1,     ..., t    , 1,     ..., t,     ...}
 		//(actually, they are not in this exact order)
-		this.rows = this.nBranches - this.branchNumbersToIgnore.size(); //the number of rows
-		this.cols = this.nTraces - this.traceNumbersToIgnore.size();    //the number of cols
 		final SWIGTYPE_p_int ia = GLPK.new_intArray(this.rows * this.cols + 1); //the row (i) indices of the a_i_k coefficients
 		final SWIGTYPE_p_int ja = GLPK.new_intArray(this.rows * this.cols + 1); //the column (j) indices of the a_i_k coefficients
 		final SWIGTYPE_p_double ar = GLPK.new_doubleArray(this.rows * this.cols + 1); //all the a_i_j coefficients
