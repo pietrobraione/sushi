@@ -57,8 +57,8 @@ public abstract class JBSEAbstract extends Tool<JBSEParameters> {
 		final Options options = Options.I();
 		final JBSEParameters p = new JBSEParameters();
 		p.addClasspath(options.getJBSELibraryPath().toString()); //for Analysis.*
-		p.addClasspath(options.getJREPath().toString()); //for JRE
 		p.addClasspath(CollectionUtils.toStringArray(options.getClassesPath())); //target code
+		p.addClasspath(options.getJREPath().toString()); //for JRE
 		p.setMethodNumber(taskNumber);
 		final String[] methodSignature = this.testMethods.get(taskNumber).toArray(ArrayUtils.EMPTY_STRING_ARRAY);
 		p.setMethodSignature(methodSignature[0], methodSignature[1], methodSignature[2]);
