@@ -47,24 +47,20 @@ public final class StateFormatterSushiPathCondition implements FormatterSushi {
 	private final long methodNumber;
 	private final Supplier<Long> traceCounterSupplier;
 	private final Supplier<State> initialStateSupplier;
-	private final Supplier<Map<PrimitiveSymbolic, Simplex>> modelSupplier;
 	private StringBuilder output = new StringBuilder();
 	private int testCounter = 0;
 
 	public StateFormatterSushiPathCondition(long methodNumber,
 			                                Supplier<Long> traceCounterSupplier,
-			                                Supplier<State> initialStateSupplier, 
-			                                Supplier<Map<PrimitiveSymbolic, Simplex>> modelSupplier) {
+			                                Supplier<State> initialStateSupplier) {
 		this.methodNumber = methodNumber;
 		this.traceCounterSupplier = traceCounterSupplier;
 		this.initialStateSupplier = initialStateSupplier;
-		this.modelSupplier = modelSupplier;
 	}
 
 	public StateFormatterSushiPathCondition(int methodNumber,
-			                                Supplier<State> initialStateSupplier, 
-			                                Supplier<Map<PrimitiveSymbolic, Simplex>> modelSupplier) {
-		this(methodNumber, null, initialStateSupplier, modelSupplier);
+			                                Supplier<State> initialStateSupplier) {
+		this(methodNumber, null, initialStateSupplier);
 	}
 
 	@Override
@@ -95,7 +91,7 @@ public final class StateFormatterSushiPathCondition implements FormatterSushi {
 
 	@Override
 	public void formatState(State state) {
-		new MethodUnderTest(this.output, this.initialStateSupplier.get(), state, this.modelSupplier.get(), this.testCounter);
+		new MethodUnderTest(this.output, this.initialStateSupplier.get(), state, this.testCounter);
 		++this.testCounter;
 	}
 
@@ -145,7 +141,7 @@ public final class StateFormatterSushiPathCondition implements FormatterSushi {
 		private final ArrayList<String> evoSuiteInputVariables = new ArrayList<>();
 		private boolean panic = false;
 
-		MethodUnderTest(StringBuilder s, State initialState, State finalState, Map<PrimitiveSymbolic, Simplex> model, int testCounter) {
+		MethodUnderTest(StringBuilder s, State initialState, State finalState, int testCounter) {
 			this.s = s;
 			makeVariables(finalState);
 			appendMethodDeclaration(initialState, finalState, testCounter);

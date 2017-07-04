@@ -540,7 +540,7 @@ public class RunJBSE_Sushi {
         if (type == StateFormatMode.SUSHI_PARTIAL_HEAP) {
             this.formatter = new StateFormatterSushiPartialHeap(RunJBSE_Sushi.this.parameters.getMethodNumber(), this::getTraceCounter, this::getInitialState, this::getModel);
         } else if (type == StateFormatMode.SUSHI_PATH_CONDITION) {
-            this.formatter = new StateFormatterSushiPathCondition(RunJBSE_Sushi.this.parameters.getMethodNumber(), this::getTraceCounter, this::getInitialState, this::getModel);
+            this.formatter = new StateFormatterSushiPathCondition(RunJBSE_Sushi.this.parameters.getMethodNumber(), this::getTraceCounter, this::getInitialState);
         } else if (type != null) {
             throw new CannotBuildFormatterException("Wrong formatter type " + this.parameters.getStateFormatMode());
         }
