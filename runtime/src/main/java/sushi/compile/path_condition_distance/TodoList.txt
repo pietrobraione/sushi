@@ -1,0 +1,5 @@
+1) Ragionare sugli oggetti wrapper di primitivi rispetto alla gestione dei casi fresh/alias object. Ignorare gli alias? Come?
+
+2) Gestione String con hamming. TODO
+
+
