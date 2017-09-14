@@ -9,6 +9,7 @@
   </parent>
 
   <artifactId>sushi-shaded</artifactId>
+  <packaging>jar</packaging>
 
   <build>
     <plugins>
