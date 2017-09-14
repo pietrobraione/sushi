@@ -17,7 +17,7 @@ public class ClasspathUtils {
 				Options.I().getTargetClass() :
 				Options.I().getTargetMethod().get(0));
 		try {
-			final ClassLoader ic = ReflectionUtils.getInternalClassloader();
+			final ClassLoader ic = ClassReflectionUtils.getInternalClassloader();
 			ic.loadClass(className.replace('/', '.'));
 		} catch (ClassNotFoundException e) {
 			logger.error("Could not find class under test: " + className);

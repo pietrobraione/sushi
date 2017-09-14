@@ -20,7 +20,7 @@ import sushi.modifier.Modifier;
 import sushi.util.ArrayUtils;
 import sushi.util.CollectionUtils;
 import sushi.util.DirectoryUtils;
-import sushi.util.ReflectionUtils;
+import sushi.util.ClassReflectionUtils;
 
 public abstract class JBSEAbstract extends Tool<JBSEParameters> {	
 	private static final Logger logger = new Logger(JBSEAbstract.class);
@@ -41,7 +41,7 @@ public abstract class JBSEAbstract extends Tool<JBSEParameters> {
 				throw new JBSEException("ERROR: neither a target class nor a target method was specified.");
 			}
 			try {
-				this.testMethods = ReflectionUtils.getVisibleMethods(targetClass, options.getVisibility() == Visibility.PUBLIC);
+				this.testMethods = ClassReflectionUtils.getVisibleMethods(targetClass, options.getVisibility() == Visibility.PUBLIC);
 			} catch (ClassNotFoundException e) {
 				logger.error("Unexpected error: Cannot load the target class.");
 				throw new JBSEException(e);

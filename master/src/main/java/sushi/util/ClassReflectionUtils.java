@@ -18,8 +18,8 @@ import sushi.configure.Options;
 import sushi.exceptions.ReflectionUtilsException;
 import sushi.logging.Logger;
 
-public class ReflectionUtils {
-	private static final Logger logger = new Logger(ReflectionUtils.class);
+public class ClassReflectionUtils {
+	private static final Logger logger = new Logger(ClassReflectionUtils.class);
 	
 	private final static Set<String> excluded;
 	
@@ -60,7 +60,7 @@ public class ReflectionUtils {
 				for (File newPath : paths) {
 					urls.add(newPath.toURI().toURL());
 				}
-				classLoader = new URLClassLoader(urls.toArray(new URL[0]), ReflectionUtils.class.getClassLoader());
+				classLoader = new URLClassLoader(urls.toArray(new URL[0]), ClassReflectionUtils.class.getClassLoader());
 			}
 		} catch (MalformedURLException | SecurityException e) {
 			logger.error("Unable to load ClassLoader", e);
@@ -95,8 +95,8 @@ public class ReflectionUtils {
 					Arrays.stream(m.getParameterTypes())
 					.map(c -> c.getName())
 					.map(s -> s.replace('.', '/'))
-					.map(ReflectionUtils::convertPrimitiveTypes)
-					.map(ReflectionUtils::addReferenceMark)
+					.map(ClassReflectionUtils::convertPrimitiveTypes)
+					.map(ClassReflectionUtils::addReferenceMark)
 					.collect(Collectors.joining()) +
 					")" + addReferenceMark(convertPrimitiveTypes(m.getReturnType().getName().replace('.', '/'))));
 				methodSignature.add(m.getName());
