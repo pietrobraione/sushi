@@ -165,21 +165,6 @@ public class RunJBSE_Sushi {
 		
 		@Override
 		public boolean atStepPre() {
-			//steps the guidance, if case
-			if (RunJBSE_Sushi.this.guidance != null) {
-				try {
-				    if (RunJBSE_Sushi.this.engine.getCurrentState().getCurrentMethodSignature().equals( 
-				    		RunJBSE_Sushi.this.guidance.getCurrentMethodSignature())) {
-				    	RunJBSE_Sushi.this.guidance.step();
-				    }
-				} catch (GuidanceException | CannotManageStateException | ThreadStackEmptyException e) {
-					System.err.println("ERROR: exception raised:");
-					e.printStackTrace(System.err);
-					RunJBSE_Sushi.this.errorCodeAfterRun = 1;
-					return true;
-				}
-			}
-
 			//detects if the current bytecode is a jumping bytecode
 			try {
 				final State currentState = RunJBSE_Sushi.this.engine.getCurrentState();
@@ -469,7 +454,7 @@ public class RunJBSE_Sushi {
 		return retVal;
 	}
 	
-    private static final String COMMANDLINE_LAUNCH_Z3   = " -smt2 -in -t:10";
+    private static final String COMMANDLINE_LAUNCH_Z3   = System.getProperty("os.name").toLowerCase().contains("windows") ? " /smt2 /in /t:10" : " -smt2 -in -t:10";
     private static final String COMMANDLINE_LAUNCH_CVC4 = " --lang=smt2 --output-lang=smt2 --no-interactive --incremental --tlimit-per=10000";
     
 	/**
