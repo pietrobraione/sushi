@@ -69,54 +69,64 @@ public class RunJBSE_Sushi {
 	/** The {@link JBSEParameters} of the symbolic execution. */
 	private final JBSEParameters parameters;
 
-	/** The {@link Runner} used to run the method. */
-	private Runner runner = null; //TODO build run object during construction and make this final
+	/** Set by {@link #build()}, the {@link Runner} used to run the method. */
+	private Runner runner = null;
 	
-	/** The {@link Engine} underlying {@code runner}. */
-	private Engine engine = null; //TODO build run object during construction and make this final
+	/** Set by {@link #build()}, the {@link Engine} underlying {@code runner}. */
+	private Engine engine = null;
     
-    /** The {@link DecisionProcedure} used by {@code engine}. */
-    private DecisionProcedureAlgorithms decisionProcedure = null; //TODO build run object during construction and make this final
+    /** Set by {@link #build()}, the {@link DecisionProcedure} used by {@code engine}. */
+    private DecisionProcedureAlgorithms decisionProcedure = null;
 	
-	/** The {@link FormatterSushi} to output states. */
+	/** Set by {@link #build()}, the {@link FormatterSushi} to output states. */
 	private FormatterSushi formatter = null;
 
-	/** The {@link DecisionProcedureConservativeRepOk}, whenever this decision procedure is chosen. */
+	/** 
+	 * Set by {@link #build()}, the {@link DecisionProcedureConservativeRepOk}, whenever 
+	 * this decision procedure is chosen. 
+	 */
 	private DecisionProcedureConservativeRepOk consRepOk = null;
 	
-	/** The {@link DecisionProcedureGuidance}, whenever this method is chosen for stepping the {@link Engine}. */
+	/** 
+	 * Set by {@link #build()}, the {@link DecisionProcedureGuidance}, whenever this 
+	 * method is chosen for stepping the {@link Engine}. 
+	 */
 	private DecisionProcedureGuidance guidance = null;
 	
+	/** Set by {@link #run()}, the error code. */
+	private int errorCodeAfterRun = 0;
+	
+	/** Set by {@link #run()}, the final value of the trace counter. */
+	private long traceCounter;
 	
 	/**
 	 * Constructor.
+	 * 
+	 * @param parameters a {@link JBSEParameters} object. It must not be {@code null}.
 	 */
 	public RunJBSE_Sushi(JBSEParameters parameters) {
 		this.parameters = parameters;
+		this.traceCounter = parameters.getTraceCounterStart();
 	}
-
-	private int errorCodeAfterRun = 0;
-	private long traceCounter;
 	
 	private class ActionsRun extends Runner.Actions {
 		private TraceTypes traceKind;
 		private long branchCounter = 0;
-		final HashMap<String, Long> branchNumberOf = new HashMap<>();
-		final ArrayList<String> branchTargets = new ArrayList<>();
+		private final HashMap<String, Long> branchNumberOf = new HashMap<>();
+		private final ArrayList<String> branchTargets = new ArrayList<>();
+		private final HashMap<String, TreeSet<Long>> coverage = new HashMap<>();
+		private final HashMap<String, TreeSet<String>> stringLiterals = new HashMap<>();
+		private final HashMap<BranchPoint, Boolean> atJumpBacktrack = new HashMap<>();
+		private final HashMap<BranchPoint, Integer> jumpPCBacktrack = new HashMap<>();
 		private TreeSet<Long> coverageCurrentTrace = new TreeSet<>();
-		private HashMap<String, TreeSet<Long>> coverage = new HashMap<>();
 		private TreeSet<String> stringLiteralsCurrentTrace = new TreeSet<>();
-		private HashMap<String, TreeSet<String>> stringLiterals = new HashMap<>();
+		private Frame stringLiteralFrame = null;
 		private boolean atJump = false;
 		private int jumpPC = 0;
-		private HashMap<BranchPoint, Boolean> atJumpBacktrack = new HashMap<>();
-		private HashMap<BranchPoint, Integer> jumpPCBacktrack = new HashMap<>();
-		private boolean atLoad = false;
-		private Frame stringLiteralFrame;
+		private boolean atLoadConstant = false;
 		
 		@Override
 		public boolean atRoot() {
-			RunJBSE_Sushi.this.traceCounter = RunJBSE_Sushi.this.parameters.getTraceCounterStart();
 			if (RunJBSE_Sushi.this.parameters.getMustLogCoverageData()) {
 				try {
 					Files.deleteIfExists(RunJBSE_Sushi.this.parameters.getCoverageFilePath());
@@ -202,11 +212,11 @@ public class RunJBSE_Sushi {
 				}
 				
 				//detects whether we are at a load constant bytecode
-				this.atLoad = 
+				this.atLoadConstant = 
 						(currentBytecode == Opcodes.OP_LDC ||
 						currentBytecode == Opcodes.OP_LDC_W ||
 						currentBytecode == Opcodes.OP_LDC2_W);
-				if (this.atLoad) {
+				if (this.atLoadConstant) {
 					this.stringLiteralFrame = currentState.getCurrentFrame();
 				}
 			} catch (ThreadStackEmptyException e) {
@@ -243,7 +253,7 @@ public class RunJBSE_Sushi {
 			}
 			
 			//if we stepped a load constant bytecode, records string literals
-			if (this.atLoad) {
+			if (this.atLoadConstant) {
 				try {
 					if (currentState.getCurrentFrame() == this.stringLiteralFrame) {
 						final Value operand = this.stringLiteralFrame.operands(1)[0];
@@ -316,6 +326,12 @@ public class RunJBSE_Sushi {
 		@Override
 		public boolean atFailureException(FailureException e) {
 			this.traceKind = TraceTypes.UNSAFE;
+			return false;
+		}
+		
+		@Override
+		public boolean atCannotManageStateException(CannotManageStateException e) {
+			this.traceKind = TraceTypes.UNMANAGEABLE;
 			return false;
 		}
 		
