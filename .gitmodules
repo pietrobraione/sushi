@@ -1,3 +1,6 @@
 [submodule "jbse"]
 	path = jbse
 	url = git@github.com:pietrobraione/jbse.git
+[submodule "runtime"]
+	path = runtime
+	url = git@github.com:pietrobraione/sushi-lib.git
