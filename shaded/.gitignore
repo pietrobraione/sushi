@@ -1,7 +1,6 @@
-/bin/
-/.README.md.html
-/.TODO.md.html
 /.DS_Store
 /.classpath
 /.project
+/dependency-reduced-pom.xml
 /.settings/
+/target/
