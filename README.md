@@ -56,14 +56,15 @@ Once set the classpath you can launch SUSHI as follows:
     
 If you launch SUSHI without options it will print a help screen that lists all the available options. The indispensable ones, that you *must* set in order for SUSHI to work, are:
 
-* `-classes`: a semicolon separated list of paths; It is the classpath of the software to test.
+* `-classes`: a colon- or semicolon-separated (depending on the OS) list of paths; It is the classpath of the software to test.
 * `-target_class`: the name in [internal classfile format](http://docs.oracle.com/javase/specs/jvms/se6/html/ClassFile.doc.html#14757) of the class to test: SUSHI will generate tests for all the methods in the class. Or alternatively:
-* `-target_method`: the signature of a method to test. The signature is a semicolon-separated list of: the name of the container class in internal classfile format; the [descriptor](http://docs.oracle.com/javase/specs/jvms/se6/html/ClassFile.doc.html#1169) of the method; the name of the method. You can use the `javap` command, included with every JDK setup, to obtain the internal format signatures of methods: `javap -s my.Class` prints the list of all the methods in `my.Class` with their signatures in internal format.
+* `-target_method`: the signature of a method to test. The signature is a colon-separated list of: the name of the container class in internal classfile format; the [descriptor](http://docs.oracle.com/javase/specs/jvms/se6/html/ClassFile.doc.html#1169) of the method; the name of the method. You can use the `javap` command, included with every JDK setup, to obtain the internal format signatures of methods: `javap -s my.Class` prints the list of all the methods in `my.Class` with their signatures in internal format.
 * `-evosuite`: the path of the EvoSuite jar file contained in the `evosuite/` folder.
 * `-jbse_lib`: this must be set to the path of the `jbse.jar` file. You will find one in the `target` directory of the `sushi` submodule.
+* `-jbse_jre`: the path of a `rt.jar` that JBSE can use as a standard library for symbolic execution. You will find one in the `data/jre` subdirectory of the `jbse` submodule.
 * `-sushi_lib`: this must be set to the path of the `sushi-lib.jar` file. You will find one in the `target` directory of the `runtime` submodule.
 * `-z3`:  the path to the Z3 binary (you can omit it if Z3 is on the system PATH).
-* `-tmp_base`: a path to a temporary directory; SUSHI needs to create many files for its intermediate results, and 
+* `-tmp_base`: a path to a temporary directory; SUSHI needs to create many intermediate files, and 
 will put them in a subdirectory of `-tmp_base` having as name the date and time it was launched.
 * `-out`: a path to a directory where the generated tests will be put.
 
