@@ -36,6 +36,7 @@ To avoid conflicts we advise to import everything under an empty workspace.
 
 To provide its functionalities SUSHI depends on several software packages, most of which are automatically resolved by Maven or are included in the repository. These packages are:
 
+* [EvoSuite](http://www.evosuite.org/); SUSHI depends on a modified version of EvoSuite 1.0.3 that can be found in the `evosuite` subdirectory; This dependency is needed at runtime;
 * [args4j](http://args4j.kohsuke.org/) version 2.32; This dependency is needed at runtime;
 * [JaCoCo](http://www.eclemma.org/jacoco/) version 0.7.5; This dependency is needed at runtime;
 * [ASM](http://asm.ow2.org/) version 5.0.1; This dependency is needed at runtime;
@@ -45,7 +46,7 @@ Moreover there are two additional dependencies you will need to fix manually. Th
 
 * First, if you installed a version of GLPK-Java that is different from that indicated in the POM file of the sushi-master subproject (currently 1.10), you must modify the POM file so that it matches the version you installed on your system. Edit the `master/pom.xml` file and modify the `<version>` tag of the `org.gnu.glpk:glpk-java` artifact.
 * Second, you may need to regenerate the Eclipse project files: This is not necessary if you did not need to edit the `master/pom.xml` file, or if you edited it before importing the Eclipse projects in the workspace. Otherwise, run `mvn eclipse:clean eclipse:eclipse` from a console, and then do a refresh of the projects in the Eclipse package explorer. For maximum safety rebuild everything by running `mvn clean compile package`.
-* Finally, you need to tell Eclipse where the native libraries for GLPK-Java are. At the purpose right-click the sushi-master Eclipse project in the Eclipse package explorer, and select Build Path > Configure Build Path... from the contextual menu. Then select the Libraries tab, and find the `M2_REPO/org/gnu/glpk/glpk-java/...` entry, click the triangle on the left of it, select Native Library Location, click the Edit button and enter the location of the JNI libraries produced by GLPK-Java (refer to the GLPK-Java documentation for where this location is).
+* Finally, you need to tell Eclipse where the native libraries for GLPK-Java are. At the purpose right-click the sushi-master Eclipse project in the Eclipse package explorer, and select Build Path > Configure Build Path... from the contextual menu. Then select the Libraries tab, and find the `M2_REPO/org/gnu/glpk/glpk-java/...` entry, click the triangle on the left of it, select Native Library Location, click the Edit button and enter the location of the JNI libraries produced by GLPK-Java (the GLPK-Java documentation will tell you where this location is).
 
 ## Usage
 
