@@ -35,7 +35,7 @@ public class Evosuite extends Tool<String[]> {
 			this.tasks = new ArrayList<>();
 			final int numTasks;
 			try {
-				numTasks = (int) Files.lines(DirectoryUtils.I().getMinimizerOutFilePath()).count();
+				numTasks = Options.I().getUseMOSA() ? 1 : (int) Files.lines(DirectoryUtils.I().getMinimizerOutFilePath()).count();
 			} catch (IOException e) {
 				logger.error("Unable to find and open minimizer output file " + DirectoryUtils.I().getMinimizerOutFilePath().toString());
 				throw new EvosuiteException(e);
@@ -51,6 +51,8 @@ public class Evosuite extends Tool<String[]> {
 	public String[] getInvocationParameters(int taskNumber) {
 		final Options options = Options.I();
 
+		final ArrayList<Integer> targetMethodNumbers = new ArrayList<>();
+		final ArrayList<Integer> traceNumbersLocal = new ArrayList<>();
 		final int targetMethodNumber, traceNumberLocal;
 		{
 			Integer targetMethodNumber_ = null;
@@ -59,10 +61,17 @@ public class Evosuite extends Tool<String[]> {
 				int current = 0;
 				String line;
 				while ((line = r.readLine()) != null) {
-					if (current == taskNumber) {
-						String[] fields = line.split(",");
-						targetMethodNumber_ = Integer.parseInt(fields[1].trim());
-						traceNumberLocal_ = Integer.parseInt(fields[2].trim());
+					final String[] fields = line.split(",");
+					targetMethodNumber_ = Integer.parseInt(fields[1].trim());
+					traceNumberLocal_ = Integer.parseInt(fields[2].trim());
+					if (targetMethodNumber_ == null || traceNumberLocal_ == null) {
+						logger.error("Minimizer output file " + DirectoryUtils.I().getMinimizerOutFilePath().toString() + " ill-formed, or task number " + taskNumber + " is wrong");
+						throw new EvosuiteException("Minimizer output file " + DirectoryUtils.I().getMinimizerOutFilePath().toString() + " ill-formed, or task number " + taskNumber + " is wrong");
+					}
+					if (options.getUseMOSA()) {
+						targetMethodNumbers.add(targetMethodNumber_.intValue());
+						traceNumbersLocal.add(traceNumberLocal_.intValue());
+					} else if (current == taskNumber) {
 						break;
 					}
 					++current;
@@ -71,17 +80,17 @@ public class Evosuite extends Tool<String[]> {
 				logger.error("I/O error while reading " + DirectoryUtils.I().getMinimizerOutFilePath().toString());
 				throw new EvosuiteException(e);
 			}
-
-			if (targetMethodNumber_ == null || traceNumberLocal_ == null) {
-				logger.error("Minimizer output file " + DirectoryUtils.I().getMinimizerOutFilePath().toString() + " ill-formed, or task number " + taskNumber + " is wrong");
-				throw new EvosuiteException("Minimizer output file " + DirectoryUtils.I().getMinimizerOutFilePath().toString() + " ill-formed, or task number " + taskNumber + " is wrong");
-			}
-
+			//put here so the compiler does not complain that the variables are not initialized;
+			//their values really don't care in the MOSA case
 			targetMethodNumber = targetMethodNumber_.intValue();
 			traceNumberLocal = traceNumberLocal_.intValue();
 		}
 
+		final ArrayList<String> targetMethodSignatures = new ArrayList<>();
 		final String targetClassName, targetMethodSignature;
+		//currently SUSHI tests at most a single class, so whatever will be
+		//targetMethodName all the rows in the methods.txt file will have same
+		//class name and we don't need to take a list of target class names for MOSA
 		{
 			String[] signature = null;
 			if (options.getTargetMethod() == null) {
@@ -89,8 +98,11 @@ public class Evosuite extends Tool<String[]> {
 					int current = 0;
 					String line;
 					while ((line = r.readLine()) != null) {
-						if (current == targetMethodNumber) {
-							signature = line.split(":");
+						signature = line.split(":");
+						if (options.getUseMOSA()) {
+							targetMethodSignatures.add(signature[2] + signature[1]);
+						} else if (current == targetMethodNumber) {
+							break;
 						}
 						++current;
 					}
@@ -112,55 +124,73 @@ public class Evosuite extends Tool<String[]> {
 		}
 		
 		final List<String> evo = new ArrayList<String>();
-		if (options.getJava8Path() != null && !options.getJava8Path().equals("")) {
+		if (options.getJava8Path() != null && !options.getJava8Path().toString().equals("")) {
 			evo.add(Options.I().getJava8Path().resolve("bin/java").toString());
 		} else {
 			evo.add("java");
 		}
 		evo.add("-Xmx4G");
 		evo.add("-jar");
-		evo.add(Options.I().getEvosuitePath().toString());
+		evo.add(options.getEvosuitePath().toString());
 		evo.add("-class");
 		evo.add(targetClassName);
 		evo.add("-mem");
 		evo.add("2048");
-		evo.add("-DCP=" + getClassPath(taskNumber));
+		evo.add("-DCP=" + getClassPath());
 		evo.add("-Dassertions=false");
-		evo.add("-Dhtml=false");
 		evo.add("-Dglobal_timeout=" + getTimeBudget() * 2);  //double timeout so it does not terminate (must be killed by the coordinator upon timeout)
 		evo.add("-Dreport_dir=" + DirectoryUtils.I().getTmpDirPath().toString());
-		evo.add("-Djunit_suffix=" /*+ "_output_"*/ + "_" + 
-				targetMethodSignature.substring(0, targetMethodSignature.indexOf('(')) + "_" +
-				"PC_" + targetMethodNumber + "_" + traceNumberLocal + "_" 
-				/*+ Thread.currentThread().getName().replace('-', '_')*/ + "Test");
+		evo.add("-Djunit_suffix=_" + (options.getUseMOSA() ? "" : (targetMethodSignature.substring(0, targetMethodSignature.indexOf('(')) + "_" +
+				"PC_" + targetMethodNumber + "_" + traceNumberLocal) + "_") + "Test");
 		evo.add("-Dsearch_budget=" + getTimeBudget() * 2);  //double timeout so it does not terminate (must be killed by the coordinator upon timeout)
-		//evo.add("-Dtarget_method_prefix=test");
 		evo.add("-Dtest_dir=" + Options.I().getOutDirectory());
 		evo.add("-Dvirtual_fs=false");
 		evo.add("-Dselection_function=ROULETTEWHEEL");
-		evo.add("-Dcrossover_function=SINGLEPOINT");
 		evo.add("-Dcriterion=PATHCONDITION");		
-		evo.add("-Davoid_replicas_of_individuals=true"); 
 		evo.add("-Dsushi_statistics=true");
-		evo.add("-Dcrossover_implementation=SUSHI_HYBRID");
 		evo.add("-Duse_minimizer_during_crossover=true");
-		evo.add("-Dno_change_iterations_before_reset=30");
-		evo.add("-Dmax_size=1");
-		evo.add("-Dmax_initial_tests=1");
 		evo.add("-Dinline=false");
+		if (options.getUseMOSA()) {
+			evo.add("-Dcrossover_function=SUSHI_HYBRID");
+			evo.add("-Dalgorithm=DYNAMOSA");
+			evo.add("-generateMOSuite");
+		} else {
+			evo.add("-Dhtml=false");
+			evo.add("-Dcrossover_function=SINGLEPOINT");
+			evo.add("-Dcrossover_implementation=SUSHI_HYBRID");
+			evo.add("-Dno_change_iterations_before_reset=30");
+			evo.add("-Davoid_replicas_of_individuals=true"); 
+			evo.add("-Dmax_size=1");
+			evo.add("-Dmax_initial_tests=1");
+		}
 		//evo.add("-Dsushi_modifiers_local_search=true"); does not work
 
 		setUserDefinedParameters(evo);
 
 		this.commandLine = evo.toString().replaceAll("\\[", "").replaceAll("\\]", "").replaceAll(",", "");
 
-		evo.add("-Dpath_condition=" + targetClassName + "," + targetMethodSignature + "," + DirectoryUtils.I().getJBSEOutClass(targetMethodNumber, traceNumberLocal));
-		this.commandLine += " -Dpath_condition=" + targetClassName + "," + targetMethodSignature + "," + DirectoryUtils.I().getJBSEOutClass(targetMethodNumber, traceNumberLocal);
+		if (options.getUseMOSA()) {
+			final StringBuilder optionPC = new StringBuilder("-Dpath_condition=");
+			for (int i = 0; i < targetMethodNumbers.size(); ++i) {
+				if (i > 0) {
+					optionPC.append(":");
+				}
+				final int targetMethodNumber_i = targetMethodNumbers.get(i).intValue();
+				final int traceNumberLocal_i = traceNumbersLocal.get(i).intValue();
+				final String targetMethodSignature_i = targetMethodSignatures.get(targetMethodNumber_i);
+				optionPC.append(targetClassName + "," + targetMethodSignature_i + "," + DirectoryUtils.I().getJBSEOutClass(targetMethodNumber_i, traceNumberLocal_i));
+			}
+			evo.add(optionPC.toString());
+			this.commandLine += optionPC.toString();
+		} else {
+			evo.add("-Dpath_condition=" + targetClassName + "," + targetMethodSignature + "," + DirectoryUtils.I().getJBSEOutClass(targetMethodNumber, traceNumberLocal));
+			this.commandLine += " -Dpath_condition=" + targetClassName + "," + targetMethodSignature + "," + DirectoryUtils.I().getJBSEOutClass(targetMethodNumber, traceNumberLocal);
+		}
 
 		return evo.toArray(ArrayUtils.EMPTY_STRING_ARRAY);
 	}
 	
-	private String getClassPath(int i) {
+	private String getClassPath() {
 		return IOUtils.concatClassPath(
 					IOUtils.concatClassPath(Options.I().getClassesPath()),
 					IOUtils.concatClassPath(
