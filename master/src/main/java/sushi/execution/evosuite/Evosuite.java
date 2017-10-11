@@ -148,14 +148,15 @@ public class Evosuite extends Tool<String[]> {
 		evo.add("-Dselection_function=ROULETTEWHEEL");
 		evo.add("-Dcriterion=PATHCONDITION");		
 		evo.add("-Dsushi_statistics=true");
-		evo.add("-Duse_minimizer_during_crossover=true");
 		evo.add("-Dinline=false");
 		if (options.getUseMOSA()) {
+			evo.add("-Duse_minimizer_during_crossover=false"); //TODO temporary until Giovanni implements minimization during crossover
 			evo.add("-Dcrossover_function=SUSHI_HYBRID");
 			evo.add("-Dalgorithm=DYNAMOSA");
 			evo.add("-generateMOSuite");
 		} else {
 			evo.add("-Dhtml=false");
+			evo.add("-Duse_minimizer_during_crossover=true");
 			evo.add("-Dcrossover_function=SINGLEPOINT");
 			evo.add("-Dcrossover_implementation=SUSHI_HYBRID");
 			evo.add("-Dno_change_iterations_before_reset=30");
