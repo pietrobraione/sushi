@@ -149,22 +149,23 @@ public class Evosuite extends Tool<String[]> {
 		evo.add("-Dcriterion=PATHCONDITION");		
 		evo.add("-Dsushi_statistics=true");
 		evo.add("-Dinline=false");
+		evo.add("-Dsushi_modifiers_local_search=true");
+		//evo.add("-Dpath_condition_target=LAST_ONLY");  TODO this was for concolic, should we use it?
+		evo.add("-Duse_minimizer_during_crossover=true");
+		evo.add("-Davoid_replicas_of_individuals=true"); 
+		evo.add("-Dno_change_iterations_before_reset=30");
 		if (options.getUseMOSA()) {
-			evo.add("-Duse_minimizer_during_crossover=false"); //TODO temporary until Giovanni implements minimization during crossover
+			evo.add("-Demit_tests_incrementally=true");
 			evo.add("-Dcrossover_function=SUSHI_HYBRID");
 			evo.add("-Dalgorithm=DYNAMOSA");
 			evo.add("-generateMOSuite");
 		} else {
 			evo.add("-Dhtml=false");
-			evo.add("-Duse_minimizer_during_crossover=true");
 			evo.add("-Dcrossover_function=SINGLEPOINT");
 			evo.add("-Dcrossover_implementation=SUSHI_HYBRID");
-			evo.add("-Dno_change_iterations_before_reset=30");
-			evo.add("-Davoid_replicas_of_individuals=true"); 
 			evo.add("-Dmax_size=1");
 			evo.add("-Dmax_initial_tests=1");
 		}
-		//evo.add("-Dsushi_modifiers_local_search=true"); does not work
 
 		setUserDefinedParameters(evo);
 
