@@ -121,6 +121,12 @@ public class Evosuite extends Tool<String[]> {
 
 			targetClassName = signature[0].replace('/', '.');
 			targetMethodSignature = signature[2] + signature[1];
+			
+			if (options.getTargetMethod() != null) {
+				//must add the only targetMethodSignature to targetMethodSignatures, 
+				//because the previous code skipped the loop that populates it
+				targetMethodSignatures.add(targetMethodSignature);
+			}
 		}
 		
 		final List<String> evo = new ArrayList<String>();
