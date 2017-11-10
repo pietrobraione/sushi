@@ -59,6 +59,12 @@ public class Main {
 			System.exit(0);
 		}
 		
+		if (!options.isConsistent()) {
+			System.err.println("Error: Option among \"-target_class\", \"-target_method\", or \"-params_modifier_class\" is required");
+			printUsage(parser);
+			System.exit(0);
+		}
+
 		Modifier.I().modify(options);
 
 		Logger.setLevel(options.getLogLevel());
