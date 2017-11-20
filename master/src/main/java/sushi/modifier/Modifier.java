@@ -18,7 +18,7 @@ import sushi.logging.Logger;
 
 public class Modifier {
 	private static final Logger logger = new Logger(JBSEMethods.class);
-	
+
 	private static Modifier instance = null;
 
 	public static Modifier I() {
@@ -27,7 +27,7 @@ public class Modifier {
 		}
 		return instance;
 	}
-	
+
 	private ParametersModifier modi;
 
 	private Modifier() {
@@ -37,30 +37,30 @@ public class Modifier {
 			this.modi = new ParametersModifier();
 			return; 
 		}
-    	final URL url;
-    	try {
-    		url = options.getParametersModifierPath().toUri().toURL();
+		final URL url;
+		try {
+			url = options.getParametersModifierPath().toUri().toURL();
 		} catch (MalformedURLException e) {
 			logger.error("Parameters modifier class home folder " + options.getParametersModifierPath() + " not found", e);
 			this.modi = new ParametersModifier();
 			return; 
 		}
-	    try {
-	    	@SuppressWarnings("resource")
+		try {
+			@SuppressWarnings("resource")
 			final URLClassLoader loader = new URLClassLoader(new URL[] { url });
-	    	final Class<? extends ParametersModifier> clazz =  
-	            loader.loadClass(options.getParametersModifierClassname()).
-	            asSubclass(ParametersModifier.class);
-            this.modi = clazz.newInstance();
-	    } catch (ClassNotFoundException e) {
+			final Class<? extends ParametersModifier> clazz =
+					loader.loadClass(options.getParametersModifierClassname()).
+					asSubclass(ParametersModifier.class);
+			this.modi = clazz.newInstance();
+		} catch (ClassNotFoundException e) {
 			logger.error("Parameters modifier class " + options.getParametersModifierClassname() + " not found", e);
 			this.modi = new ParametersModifier();
 			return; 
-	    } catch (ClassCastException e) {
+		} catch (ClassCastException e) {
 			logger.error("Parameters modifier class " + options.getParametersModifierClassname() + " not a subclass of " + ParametersModifier.class.getCanonicalName(), e);
 			this.modi = new ParametersModifier();
 			return; 
-	    } catch (InstantiationException e) {
+		} catch (InstantiationException e) {
 			logger.error("Parameters modifier class " + options.getParametersModifierClassname() + " cannot be instantiated or has no nullary constructor", e);
 			this.modi = new ParametersModifier();
 			return; 
@@ -74,20 +74,20 @@ public class Modifier {
 	public void modify(Options p) { 
 		this.modi.modify(p);
 	}
-	
+
 	public void modify(JBSEParameters p)
-	throws FileNotFoundException, ParseException, IOException { 
+			throws FileNotFoundException, ParseException, IOException {
 		this.modi.modify(p);
 	}
-	
+
 	public void modify(MergerParameters p) {
 		this.modi.modify(p);
 	}
-	
+
 	public void modify(MinimizerParameters p) { 
 		this.modi.modify(p);
 	}
-	
+
 	public void modify(List<String> p) { 
 		this.modi.modify(p);
 	}
