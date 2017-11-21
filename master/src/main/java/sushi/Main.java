@@ -31,8 +31,8 @@ import sushi.modifier.Modifier;
 import sushi.util.ClasspathUtils;
 
 public class Main {
-	private static final String VERSION = "0.1";
-	
+	private static final String VERSION = "0.2";
+
 	private boolean timeout;
 
 	public Main() { }
