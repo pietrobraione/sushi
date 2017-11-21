@@ -2,12 +2,23 @@ package sushi.execution.minimizer;
 
 import sushi.configure.MinimizerParameters;
 import sushi.configure.Options;
+import sushi.exceptions.MinimizerException;
 import sushi.execution.Tool;
 import sushi.execution.Worker;
 import sushi.modifier.Modifier;
 import sushi.util.DirectoryUtils;
+import sushi.util.NativeUtils;
 
 public class Minimizer extends Tool<MinimizerParameters> {
+
+	static {
+		try {
+			NativeUtils.loadLibraryFromJar("/glpk", "libglpk_java");
+		} catch (Throwable e) {
+			throw new MinimizerException(e);
+		}
+	}
+
 	public Minimizer() { }
 
 	@Override
