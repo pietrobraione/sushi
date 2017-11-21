@@ -33,12 +33,6 @@
             <configuration>
               <shadedArtifactAttached>false</shadedArtifactAttached>
               <createDependencyReducedPom>true</createDependencyReducedPom>
-              <relocations>
-                <relocation>
-                  <pattern>sushi</pattern>
-                  <shadedPattern>shaded.sushi</shadedPattern>
-                </relocation>
-              </relocations>
             </configuration>
           </execution>
         </executions>
@@ -62,7 +56,7 @@
               <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
             </manifest>
             <manifestEntries>
-              <Main-Class>shaded.sushi.Main</Main-Class>
+              <Main-Class>sushi.Main</Main-Class>
             </manifestEntries>
           </archive>
         </configuration>

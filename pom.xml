@@ -78,28 +78,6 @@
                 </excludes>
                 </filter>
               </filters>
-              <relocations>
-                <relocation>
-                  <pattern>org.kohsuke.args4j</pattern>
-                  <shadedPattern>sushi.org.kohsuke.args4j</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>org.ow2.asm</pattern>
-                  <shadedPattern>sushi.org.ow2.asm</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>org.jacoco</pattern>
-                  <shadedPattern>sushi.org.jacoco</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>javassist</pattern>
-                  <shadedPattern>sushi.javassist</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>org.gnu.glpk</pattern>
-                  <shadedPattern>sushi.org.gnu.glpk</shadedPattern>
-                </relocation>
-              </relocations>
             </configuration>
             </execution>
           </executions>
