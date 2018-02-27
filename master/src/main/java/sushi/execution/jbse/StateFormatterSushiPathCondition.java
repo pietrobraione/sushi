@@ -355,8 +355,7 @@ public final class StateFormatterSushiPathCondition implements FormatterSushi {
 				return null;
 			}
 			final String a = type.replace('/', '.');
-			final String b = (isReference(a) ? className(a) : a);
-			final String s = (forDeclaration ? b.replace('$', '.') : b);
+			final String s = (forDeclaration ? a.replace('$', '.') : a);
 
 			if (forDeclaration) {
 				final char[] tmp = s.toCharArray();
@@ -373,13 +372,14 @@ public final class StateFormatterSushiPathCondition implements FormatterSushi {
 						break;
 					}
 				}
-				final StringBuilder retVal = new StringBuilder(s.substring(start, (hasReference ? tmp.length - 1 : tmp.length)));
+				final String t = hasReference ? s.substring(start, tmp.length - 1) : javaPrimitiveType(s.charAt(start));
+				final StringBuilder retVal = new StringBuilder(t);
 				for (int k = 1; k <= arrayNestingLevel; ++k) {
 					retVal.append("[]");
 				}
 				return retVal.toString();
 			} else {
-				return s;
+				return (isReference(s) ? className(s) : s);
 			}
 		}
 
@@ -683,7 +683,7 @@ public final class StateFormatterSushiPathCondition implements FormatterSushi {
 
 				@Override
 				public void visitNarrowingConversion(NarrowingConversion x)
-						throws Exception {
+				throws Exception {
 					x.getArg().accept(this);
 					final String arg = translation.remove(0);
 					final StringBuilder b = new StringBuilder();
@@ -697,9 +697,10 @@ public final class StateFormatterSushiPathCondition implements FormatterSushi {
 
 				@Override
 				public void visitFunctionApplication(FunctionApplication x)
-						throws Exception {
+				throws Exception {
 					final StringBuilder b = new StringBuilder();
-					b.append(x.getOperator());
+					final String[] sig = x.getOperator().split(":");
+					b.append(sig[0].replace('/', '.') + "." + sig[2].replace('/', '.'));
 					b.append("(");
 					boolean firstDone = false;
 					for (Primitive p : x.getArgs()) {
