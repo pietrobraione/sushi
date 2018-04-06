@@ -38,7 +38,7 @@ public class Main {
 	public Main() { }
 
 	public static void main(String[] args) {
-		Main main = new Main();
+		final Main main = new Main();
 		main.startSushi(args);
 	}
 	
@@ -52,6 +52,12 @@ public class Main {
 			System.err.println("Error: " + e.getMessage());
 			printUsage(parser);
 			System.exit(-1);
+		}
+		
+		if (!options.isConsistent()) {
+			System.err.println("Error: one of -target_class, -target_method, or -params_modifier_class options must be specified.");
+			printUsage(parser);
+			System.exit(1);
 		}
 		
 		if (options.getHelp()) {
