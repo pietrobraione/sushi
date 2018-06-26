@@ -55,8 +55,8 @@ import jbse.mem.exc.ThreadStackEmptyException;
 import jbse.rewr.CalculatorRewriting;
 import jbse.rewr.Rewriter;
 import jbse.rewr.RewriterOperationOnSimplex;
-import jbse.tree.StateTree;
 import jbse.tree.StateTree.BranchPoint;
+import jbse.val.HistoryPoint;
 import jbse.val.PrimitiveSymbolic;
 import jbse.val.Reference;
 import jbse.val.Simplex;
@@ -286,16 +286,16 @@ public class RunJBSE_Sushi {
 			String uptraceId = currentState.getIdentifier();
 			{
 				TreeSet<Long> uptraceCoverage = this.coverage.get(uptraceId);
-				while (uptraceCoverage == null && uptraceId.lastIndexOf(StateTree.IDENTIFIER_SEPARATOR_COMPACT) != -1) {
-					uptraceId = uptraceId.substring(0, uptraceId.lastIndexOf(StateTree.IDENTIFIER_SEPARATOR_COMPACT));
+				while (uptraceCoverage == null && uptraceId.lastIndexOf(HistoryPoint.BRANCH_IDENTIFIER_SEPARATOR_COMPACT) != -1) {
+					uptraceId = uptraceId.substring(0, uptraceId.lastIndexOf(HistoryPoint.BRANCH_IDENTIFIER_SEPARATOR_COMPACT));
 					uptraceCoverage = this.coverage.get(uptraceId);
 				}
 				this.coverageCurrentTrace = (uptraceCoverage == null ? new TreeSet<>() : new TreeSet<>(uptraceCoverage));
 			}
 			{
 				TreeSet<String> uptraceStringLiterals = this.stringLiterals.get(uptraceId);
-				while (uptraceStringLiterals == null && uptraceId.lastIndexOf(StateTree.IDENTIFIER_SEPARATOR_COMPACT) != -1) {
-					uptraceId = uptraceId.substring(0, uptraceId.lastIndexOf(StateTree.IDENTIFIER_SEPARATOR_COMPACT));
+				while (uptraceStringLiterals == null && uptraceId.lastIndexOf(HistoryPoint.BRANCH_IDENTIFIER_SEPARATOR_COMPACT) != -1) {
+					uptraceId = uptraceId.substring(0, uptraceId.lastIndexOf(HistoryPoint.BRANCH_IDENTIFIER_SEPARATOR_COMPACT));
 					uptraceStringLiterals = this.stringLiterals.get(uptraceId);
 				}
 				this.stringLiteralsCurrentTrace = (uptraceStringLiterals == null ? new TreeSet<>() : new TreeSet<>(uptraceStringLiterals));
