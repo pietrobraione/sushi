@@ -28,15 +28,17 @@ import jbse.mem.Objekt;
 import jbse.mem.State;
 import jbse.val.Any;
 import jbse.val.Expression;
-import jbse.val.FunctionApplication;
 import jbse.val.NarrowingConversion;
 import jbse.val.Primitive;
 import jbse.val.PrimitiveSymbolic;
+import jbse.val.PrimitiveSymbolicApply;
+import jbse.val.PrimitiveSymbolicAtomic;
 import jbse.val.PrimitiveVisitor;
 import jbse.val.ReferenceSymbolic;
 import jbse.val.Simplex;
 import jbse.val.Symbolic;
 import jbse.val.Term;
+import jbse.val.Value;
 import jbse.val.WideningConversion;
 
 /**
@@ -440,7 +442,7 @@ public final class StateFormatterSushiPartialHeap implements FormatterSushi {
         }
         
         private void makeVariableFor(Symbolic symbol) {
-            final String origin = symbol.getOrigin().toString();
+            final String origin = symbol.asOriginString();
             if (!this.symbolsToVariables.containsKey(symbol)) {
                 this.symbolsToVariables.put(symbol, generateName(origin));
             }
@@ -566,7 +568,7 @@ public final class StateFormatterSushiPartialHeap implements FormatterSushi {
                 public void visitSimplex(Simplex x) throws Exception { }
                 
                 @Override
-                public void visitPrimitiveSymbolic(PrimitiveSymbolic s) {
+                public void visitPrimitiveSymbolicAtomic(PrimitiveSymbolicAtomic s) {
                     symbols.add(s);
                 }
                 
@@ -576,9 +578,14 @@ public final class StateFormatterSushiPartialHeap implements FormatterSushi {
                 }
                 
                 @Override
-                public void visitFunctionApplication(FunctionApplication x) throws Exception {
-                    for (Primitive p : x.getArgs()) {
-                        p.accept(this);
+                public void visitPrimitiveSymbolicApply(PrimitiveSymbolicApply x) throws Exception {
+                    for (Value v : x.getArgs()) {
+                    	if (v instanceof Primitive) { 
+                    		((Primitive) v).accept(this);
+                    	} else {
+                    		//TODO
+                    		throw new RuntimeException("Found a symbolic function application that returns a primitive but has as arg a reference: " + v.toString());
+                    	}
                     }
                 }
                 

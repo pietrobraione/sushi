@@ -25,16 +25,18 @@ import jbse.mem.Objekt;
 import jbse.mem.State;
 import jbse.val.Any;
 import jbse.val.Expression;
-import jbse.val.FunctionApplication;
 import jbse.val.NarrowingConversion;
 import jbse.val.Operator;
 import jbse.val.Primitive;
 import jbse.val.PrimitiveSymbolic;
+import jbse.val.PrimitiveSymbolicApply;
+import jbse.val.PrimitiveSymbolicAtomic;
 import jbse.val.PrimitiveVisitor;
 import jbse.val.ReferenceSymbolic;
 import jbse.val.Simplex;
 import jbse.val.Symbolic;
 import jbse.val.Term;
+import jbse.val.Value;
 import jbse.val.WideningConversion;
 
 /**
@@ -305,7 +307,7 @@ public final class StateFormatterSushiPathCondition implements FormatterSushi {
 			final String expansionClass = javaClass(getTypeOfObjectInHeap(finalState, heapPosition), false);
 			this.s.append(INDENT_2);
 			this.s.append("pathConditionHandler.add(new SimilarityWithRefToFreshObject(\"");
-			this.s.append(symbol.getOrigin());
+			this.s.append(symbol.asOriginString());
 			this.s.append("\", Class.forName(\"");
 			this.s.append(expansionClass); //TODO arrays
 			this.s.append("\")));\n");
@@ -314,7 +316,7 @@ public final class StateFormatterSushiPathCondition implements FormatterSushi {
 		private void setWithNull(ReferenceSymbolic symbol) {
 			this.s.append(INDENT_2);
 			this.s.append("pathConditionHandler.add(new SimilarityWithRefToNull(\"");
-			this.s.append(symbol.getOrigin());
+			this.s.append(symbol.asOriginString());
 			this.s.append("\"));\n");
 		}
 
@@ -322,7 +324,7 @@ public final class StateFormatterSushiPathCondition implements FormatterSushi {
 			final String target = getOriginOfObjectInHeap(finalState, heapPosition);
 			this.s.append(INDENT_2);
 			this.s.append("pathConditionHandler.add(new SimilarityWithRefToAlias(\"");
-			this.s.append(symbol.getOrigin());
+			this.s.append(symbol.asOriginString());
 			this.s.append("\", \"");
 			this.s.append(target);
 			this.s.append("\"));\n");
@@ -392,7 +394,7 @@ public final class StateFormatterSushiPathCondition implements FormatterSushi {
 		}
 
 		private void makeVariableFor(Symbolic symbol) {
-			final String origin = symbol.getOrigin().toString();
+			final String origin = symbol.asOriginString();
 			if (!this.symbolsToVariables.containsKey(symbol)) {
 				this.symbolsToVariables.put(symbol, generateVarNameFromOrigin(origin));
 			}
@@ -433,7 +435,7 @@ public final class StateFormatterSushiPathCondition implements FormatterSushi {
 			for (PrimitiveSymbolic symbol: symbols) {
 				this.s.append(INDENT_4);
 				this.s.append("retVal.add(\"");
-				this.s.append(symbol.getOrigin());
+				this.s.append(symbol.asOriginString());
 				this.s.append("\");\n");
 			}
 			this.s.append(INDENT_4);
@@ -483,7 +485,7 @@ public final class StateFormatterSushiPathCondition implements FormatterSushi {
 				public void visitSimplex(Simplex x) throws Exception { }
 
 				@Override
-				public void visitPrimitiveSymbolic(PrimitiveSymbolic s) {
+				public void visitPrimitiveSymbolicAtomic(PrimitiveSymbolicAtomic s) {
 					if (symbols.contains(s)) {
 						return;
 					}
@@ -496,9 +498,14 @@ public final class StateFormatterSushiPathCondition implements FormatterSushi {
 				}
 
 				@Override
-				public void visitFunctionApplication(FunctionApplication x) throws Exception {
-					for (Primitive p : x.getArgs()) {
-						p.accept(this);
+				public void visitPrimitiveSymbolicApply(PrimitiveSymbolicApply x) throws Exception {
+					for (Value v : x.getArgs()) {
+						if (v instanceof Primitive) {
+							((Primitive) v).accept(this);
+                    	} else {
+                    		//TODO
+                    		throw new RuntimeException("Found a symbolic function application that returns a primitive but has as arg a reference: " + v.toString());
+						}
 					}
 				}
 
@@ -608,17 +615,21 @@ public final class StateFormatterSushiPathCondition implements FormatterSushi {
 				}
 
 				@Override
-				public void visitFunctionApplication(FunctionApplication x) throws Exception {
-					final ArrayList<Primitive> newArgs = new ArrayList<>(); 
-					for (Primitive arg : x.getArgs()) {
-						arg.accept(this);
-						newArgs.add(assumptionWithNoNegation.remove(0));
+				public void visitPrimitiveSymbolicApply(PrimitiveSymbolicApply x) throws Exception {
+					final ArrayList<Value> newArgs = new ArrayList<>(); 
+					for (Value arg : x.getArgs()) {
+						if (arg instanceof Primitive) {
+							((Primitive) arg).accept(this);
+							newArgs.add(assumptionWithNoNegation.remove(0));
+						} else {
+							newArgs.add(arg);
+						}
 					}
-					assumptionWithNoNegation.add(new FunctionApplication(x.getType(), null, x.getOperator(), newArgs.toArray(new Primitive[0])));
+					assumptionWithNoNegation.add(new PrimitiveSymbolicApply(x.getType(), x.historyPoint(), null, x.getOperator(), newArgs.toArray(new Value[0])));
 				}
 
 				@Override
-				public void visitPrimitiveSymbolic(PrimitiveSymbolic s) throws Exception {
+				public void visitPrimitiveSymbolicAtomic(PrimitiveSymbolicAtomic s) throws Exception {
 					assumptionWithNoNegation.add(s);
 				}
 
@@ -677,7 +688,7 @@ public final class StateFormatterSushiPathCondition implements FormatterSushi {
 				}
 
 				@Override
-				public void visitPrimitiveSymbolic(PrimitiveSymbolic s) {
+				public void visitPrimitiveSymbolicAtomic(PrimitiveSymbolicAtomic s) {
 					translation.add(javaVariable(s));
 				}
 
@@ -696,22 +707,27 @@ public final class StateFormatterSushiPathCondition implements FormatterSushi {
 				}
 
 				@Override
-				public void visitFunctionApplication(FunctionApplication x)
+				public void visitPrimitiveSymbolicApply(PrimitiveSymbolicApply x)
 				throws Exception {
 					final StringBuilder b = new StringBuilder();
 					final String[] sig = x.getOperator().split(":");
 					b.append(sig[0].replace('/', '.') + "." + sig[2].replace('/', '.'));
 					b.append("(");
 					boolean firstDone = false;
-					for (Primitive p : x.getArgs()) {
+					for (Value v : x.getArgs()) {
 						if (firstDone) {
 							b.append(", ");
 						} else {
 							firstDone = true;
 						}
-						p.accept(this);
-						final String arg = translation.remove(0);
-						b.append(arg);
+						if (v instanceof Primitive) {
+							((Primitive) v).accept(this);
+							final String arg = translation.remove(0);
+							b.append(arg);
+						} else {
+							//TODO
+                    		throw new RuntimeException("Found a symbolic function application that returns a primitive but has as arg a reference: " + v.toString());
+						}
 					}
 					b.append(")");
 					translation.add(b.toString());
