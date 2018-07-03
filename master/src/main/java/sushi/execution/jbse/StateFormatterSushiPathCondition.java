@@ -405,7 +405,7 @@ public final class StateFormatterSushiPathCondition implements FormatterSushi {
 		private static String getTypeOfObjectInHeap(State finalState, long num) {
 			final Map<Long, Objekt> heap = finalState.getHeap();
 			final Objekt o = heap.get(num);
-			return o.getType();
+			return o.getType().getClassName();
 		}
 
 		private String getOriginOfObjectInHeap(State finalState, long heapPos){
