@@ -20,6 +20,7 @@ import jbse.apps.run.CannotBuildDecisionProcedureException;
 import jbse.apps.run.CannotBuildFormatterException;
 import jbse.apps.run.DecisionProcedureConservativeRepOk;
 import jbse.apps.run.DecisionProcedureGuidance;
+import jbse.apps.run.DecisionProcedureGuidanceJDI;
 import jbse.apps.run.GuidanceException;
 import jbse.bc.Opcodes;
 import jbse.bc.exc.InvalidClassFileFactoryClassException;
@@ -636,7 +637,7 @@ public class RunJBSE_Sushi {
 		if (this.parameters.isGuided()) {
 			final RunnerParameters guidanceDriverParameters = this.parameters.getGuidanceDriverParameters(calc);
 			try {
-				this.guidance = new DecisionProcedureGuidance(core, calc, guidanceDriverParameters, this.parameters.getMethodSignature());
+				this.guidance = new DecisionProcedureGuidanceJDI(core, calc, guidanceDriverParameters, this.parameters.getMethodSignature());
 			} catch (GuidanceException | UnexpectedInternalException e) {
 				throw new CannotBuildDecisionProcedureException(e);
 			}
