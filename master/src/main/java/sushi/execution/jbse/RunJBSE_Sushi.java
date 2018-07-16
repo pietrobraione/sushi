@@ -262,7 +262,7 @@ public class RunJBSE_Sushi {
 						if (operand instanceof Reference) {
 							final Reference r = (Reference) operand;
 							final Objekt o = currentState.getObject(r);
-							if (o != null && o.getType().equals(JAVA_STRING)) {
+							if (o != null && JAVA_STRING.equals(o.getType().getClassName())) {
 								final String s = valueString(currentState, r);
 								this.stringLiteralsCurrentTrace.add(s);
 								this.stringLiterals.put(currentState.getIdentifier(), new TreeSet<>(this.stringLiteralsCurrentTrace));
