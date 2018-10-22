@@ -26,6 +26,7 @@ import jbse.mem.ClauseAssumeNull;
 import jbse.mem.ClauseAssumeReferenceSymbolic;
 import jbse.mem.Objekt;
 import jbse.mem.State;
+import jbse.mem.exc.FrozenStateException;
 import jbse.val.Any;
 import jbse.val.Expression;
 import jbse.val.NarrowingConversion;
@@ -100,7 +101,11 @@ public final class StateFormatterSushiPartialHeap implements FormatterSushi {
 
     @Override
     public void formatState(State state) {
-        new MethodUnderTest(this.output, this.initialStateSupplier.get(), state, this.modelSupplier.get(), this.testCounter);
+        try {
+			new MethodUnderTest(this.output, this.initialStateSupplier.get(), state, this.modelSupplier.get(), this.testCounter);
+		} catch (FrozenStateException e) {
+			this.output.delete(0, this.output.length());
+		}
         ++this.testCounter;
     }
     
@@ -143,7 +148,8 @@ public final class StateFormatterSushiPartialHeap implements FormatterSushi {
         private boolean panic = false;
         private ClauseAssume clauseLength = null;
         
-        MethodUnderTest(StringBuilder s, State initialState, State finalState, Map<PrimitiveSymbolic, Simplex> model, int testCounter) {
+        MethodUnderTest(StringBuilder s, State initialState, State finalState, Map<PrimitiveSymbolic, Simplex> model, int testCounter) 
+        throws FrozenStateException {
             this.s = s;
             makeVariables(finalState);
             appendMethodDeclaration(initialState, finalState, testCounter);
@@ -166,7 +172,7 @@ public final class StateFormatterSushiPartialHeap implements FormatterSushi {
                          .filter((v) -> v.getValue() instanceof Symbolic)
                          .map((v) -> (Symbolic) v.getValue())
                          .collect(Collectors.toList());
-            } catch (IndexOutOfBoundsException e) {
+            } catch (IndexOutOfBoundsException | FrozenStateException e) {
                 throw new UnexpectedInternalException(e);
             }            
             boolean firstDone = false;
@@ -200,7 +206,8 @@ public final class StateFormatterSushiPartialHeap implements FormatterSushi {
             this.s.append("]\n");
         }
         
-        private void appendInputsInitialization(State finalState, Map<PrimitiveSymbolic, Simplex> model, int testCounter) {
+        private void appendInputsInitialization(State finalState, Map<PrimitiveSymbolic, Simplex> model, int testCounter) 
+        throws FrozenStateException {
             if (this.panic) {
                 return;
             }
@@ -307,7 +314,8 @@ public final class StateFormatterSushiPartialHeap implements FormatterSushi {
         }
         
         private void setWithNewObject(State finalState, Symbolic symbol, long heapPosition, 
-                                      Iterator<Clause> iterator, Map<PrimitiveSymbolic, Simplex> model) {        
+                                      Iterator<Clause> iterator, Map<PrimitiveSymbolic, Simplex> model) 
+        throws FrozenStateException {        
             final String var = getVariableFor(symbol);
             final String type = getTypeOfObjectInHeap(finalState, heapPosition);
             final String instantiationStmt;
@@ -452,7 +460,7 @@ public final class StateFormatterSushiPartialHeap implements FormatterSushi {
             return this.symbolsToVariables.get(symbol);
         }
         
-        private static String getTypeOfObjectInHeap(State finalState, long num) {
+        private static String getTypeOfObjectInHeap(State finalState, long num) throws FrozenStateException {
             final Map<Long, Objekt> heap = finalState.getHeap();
             final Objekt o = heap.get(num);
             return o.getType().getClassName();

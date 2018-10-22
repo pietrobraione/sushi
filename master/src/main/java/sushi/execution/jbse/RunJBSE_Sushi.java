@@ -50,6 +50,7 @@ import jbse.mem.Frame;
 import jbse.mem.Objekt;
 import jbse.mem.State;
 import jbse.mem.exc.ContradictionException;
+import jbse.mem.exc.FrozenStateException;
 import jbse.mem.exc.InvalidNumberOfOperandsException;
 import jbse.mem.exc.ThreadStackEmptyException;
 import jbse.rewr.CalculatorRewriting;
@@ -165,12 +166,12 @@ public class RunJBSE_Sushi {
 			this.coverage.put(currentStateIdentifier, new TreeSet<>(this.coverageCurrentTrace));
 		}
 		
-		private void updateCoverage(State currentState) throws ThreadStackEmptyException {
+		private void updateCoverage(State currentState) throws ThreadStackEmptyException, FrozenStateException {
 			final String branchTarget = currentState.getCurrentMethodSignature().toString() + ":" + currentState.getPC();
 			doUpdateCoverage(currentState.getIdentifier(), branchTarget);
 		}
 		
-		private void updateCoverage(State currentState, int branchPC) throws ThreadStackEmptyException {
+		private void updateCoverage(State currentState, int branchPC) throws ThreadStackEmptyException, FrozenStateException {
 			final String branchTarget = currentState.getCurrentMethodSignature().toString() + ":" + branchPC + ":" + currentState.getPC();
 			doUpdateCoverage(currentState.getIdentifier(), branchTarget);
 		}
@@ -221,7 +222,7 @@ public class RunJBSE_Sushi {
 				if (this.atLoadConstant) {
 					this.stringLiteralFrame = currentState.getCurrentFrame();
 				}
-			} catch (ThreadStackEmptyException e) {
+			} catch (ThreadStackEmptyException | FrozenStateException e) {
 				System.err.println("ERROR: exception raised:");
 				e.printStackTrace(System.err);
 				RunJBSE_Sushi.this.errorCodeAfterRun = 2;
@@ -246,7 +247,7 @@ public class RunJBSE_Sushi {
 			if (this.atJump) {
 				try {
 					updateCoverage(currentState, this.jumpPC);
-				} catch (ThreadStackEmptyException e) {
+				} catch (ThreadStackEmptyException | FrozenStateException e) {
 					System.err.println("ERROR: exception raised:");
 					e.printStackTrace(System.err);
 					RunJBSE_Sushi.this.errorCodeAfterRun = 2;
@@ -269,7 +270,7 @@ public class RunJBSE_Sushi {
 							}
 						}
 					}
-				} catch (ThreadStackEmptyException | InvalidNumberOfOperandsException e) {
+				} catch (ThreadStackEmptyException | InvalidNumberOfOperandsException | FrozenStateException e) {
 					System.err.println("ERROR: exception raised:");
 					e.printStackTrace(System.err);
 					RunJBSE_Sushi.this.errorCodeAfterRun = 2;
@@ -308,7 +309,7 @@ public class RunJBSE_Sushi {
 			if (this.atJump) {
 				try {
 					updateCoverage(currentState, this.jumpPC);
-				} catch (ThreadStackEmptyException e) {
+				} catch (ThreadStackEmptyException | FrozenStateException e) {
 					System.err.println("ERROR: exception raised:");
 					e.printStackTrace(System.err);
 					RunJBSE_Sushi.this.errorCodeAfterRun = 2;

@@ -23,6 +23,7 @@ import jbse.mem.ClauseAssumeNull;
 import jbse.mem.ClauseAssumeReferenceSymbolic;
 import jbse.mem.Objekt;
 import jbse.mem.State;
+import jbse.mem.exc.FrozenStateException;
 import jbse.val.Any;
 import jbse.val.Expression;
 import jbse.val.NarrowingConversion;
@@ -93,7 +94,11 @@ public final class StateFormatterSushiPathCondition implements FormatterSushi {
 
 	@Override
 	public void formatState(State state) {
-		new MethodUnderTest(this.output, this.initialStateSupplier.get(), state, this.testCounter);
+		try {
+			new MethodUnderTest(this.output, this.initialStateSupplier.get(), state, this.testCounter);
+		} catch (FrozenStateException e) {
+			this.output.delete(0, this.output.length());
+		}
 		++this.testCounter;
 	}
 
@@ -143,7 +148,8 @@ public final class StateFormatterSushiPathCondition implements FormatterSushi {
 		private final ArrayList<String> evoSuiteInputVariables = new ArrayList<>();
 		private boolean panic = false;
 
-		MethodUnderTest(StringBuilder s, State initialState, State finalState, int testCounter) {
+		MethodUnderTest(StringBuilder s, State initialState, State finalState, int testCounter) 
+		throws FrozenStateException {
 			this.s = s;
 			makeVariables(finalState);
 			appendMethodDeclaration(initialState, finalState, testCounter);
@@ -163,7 +169,7 @@ public final class StateFormatterSushiPathCondition implements FormatterSushi {
 						.filter((v) -> v.getValue() instanceof Symbolic)
 						.map((v) -> (Symbolic) v.getValue())
 						.collect(Collectors.toList());
-			} catch (IndexOutOfBoundsException e) {
+			} catch (IndexOutOfBoundsException | FrozenStateException e) {
 				throw new UnexpectedInternalException(e);
 			}
 
@@ -200,7 +206,8 @@ public final class StateFormatterSushiPathCondition implements FormatterSushi {
 			this.s.append("]\n");
 		}
 
-		private void appendPathCondition(State finalState, int testCounter) {
+		private void appendPathCondition(State finalState, int testCounter) 
+		throws FrozenStateException {
 			if (this.panic) {
 				return;
 			}
@@ -303,7 +310,8 @@ public final class StateFormatterSushiPathCondition implements FormatterSushi {
 			}
 		}
 
-		private void setWithNewObject(State finalState, Symbolic symbol, long heapPosition) {
+		private void setWithNewObject(State finalState, Symbolic symbol, long heapPosition) 
+		throws FrozenStateException {
 			final String expansionClass = javaClass(getTypeOfObjectInHeap(finalState, heapPosition), false);
 			this.s.append(INDENT_2);
 			this.s.append("pathConditionHandler.add(new SimilarityWithRefToFreshObject(\"");
@@ -404,7 +412,7 @@ public final class StateFormatterSushiPathCondition implements FormatterSushi {
 			return this.symbolsToVariables.get(symbol);
 		}
 
-		private static String getTypeOfObjectInHeap(State finalState, long num) {
+		private static String getTypeOfObjectInHeap(State finalState, long num) throws FrozenStateException {
 			final Map<Long, Objekt> heap = finalState.getHeap();
 			final Objekt o = heap.get(num);
 			return o.getType().getClassName();

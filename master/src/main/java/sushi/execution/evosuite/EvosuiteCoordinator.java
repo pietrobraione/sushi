@@ -94,7 +94,7 @@ public class EvosuiteCoordinator extends Coordinator {
 			}
 		}
 		
-		this.coveredBranches.removeAll(branchesToIgnore);
+		this.coveredBranches.removeAll(this.branchesToIgnore);
 		try (final BufferedWriter w = Files.newBufferedWriter(DirectoryUtils.I().getCoveredByTestFilePath())) {
 			for (Integer branch : this.coveredBranches) {
 				w.write(branch.toString());
