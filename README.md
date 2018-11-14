@@ -27,7 +27,7 @@ SUSHI is composed of several projects that are imported as git submodules and ar
 
 ## Dependencies
 
-SUSHI has a lot of dependencies. JBSE must be built using a JDK version 8 - neither less, nor more - and Maven version 3.5.0 or above. Maven will automatically resolve and use the following build-time dependencies:
+SUSHI has a lot of dependencies. It must be built using a JDK version 8 - neither less, nor more - and Maven version 3.5.0 or above. Maven will automatically resolve and use the following build-time dependencies:
 
 * [JavaCC](https://javacc.org) is used by Maven for compiling the parser for the JBSE settings files. It is not needed at runtime.
 * [JUnit](http://junit.org) is used by Maven for running the tests. It is not needed at runtime.
