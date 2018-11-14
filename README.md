@@ -13,40 +13,48 @@ allowing, for instance, to automatically test compiler passes taking parse trees
 
 ## Building SUSHI ##
 
-SUSHI is composed of several projects that are imported as git submodules. To get the code for all dependent project, you should clone the SUSHI git repository and then run `git submodules init && git submodule update`. 
+SUSHI is composed of several projects that are imported as git submodules. To get the code for all dependent project, you should clone the SUSHI git repository and then run `git submodule init && git submodule update`. To build SUSHI we provide a Maven POM file and compilation is invoked with `mvn compile`. 
 
-To build SUSHI we provide a Maven POM file and compilation is invoked with `mvn compile`. The supported Maven goals are:
+If you work (as us) under Eclipse 2018-09, you must install the egit Eclipse plugin (you will find it in the Eclipse Marketplace), the m2e plugin (also in the Eclipse Marketplace), the m2e connector for git, and the m2e connector for javacc-maven-plugin. The last two are  more complex to install than just downloading them from the Eclipse Marketplace.
+
+* For the m2e connector for git, after having installed m2e go to the Eclipse preferences menu (under Windows select the menu Windows > Preferences..., under Mac select Eclipse > Preferences...), then go to Maven > Discovery and press the "Open catalog" button: A special marketplace window will be opened, then go to "m2e Team providers" and select "m2e-git". 
+* The m2e connector for javacc-maven-plugin is not found under any marketplace, so you need to select the menu Help > Install new software..., click the "Add" button to add a new site, and insert the URL `http://objectledge.github.io/maven-extensions/connectors/updates/development/` in the field "Location" (in the field "Name" you can give any name you want, but we advise to call it "Objectledge Maven extensions update site"). Press "OK", and then select the newly added update site in the "Work with" box. Finally, select "objectledge.org m2e connectors" > "m2e connector for javacc-maven-plugin": The version must be at least 1.2.0.*, or it will not work with the current version of m2e. 
+
+Once done this setup, you are ready to import SUSHI under an Eclipse workspace (to avoid conflicts we advise to import everything under an empty workspace):
+
+* Clone the Github SUSHI repository by switching to the git perspective and selecting the clone button under the Git Repositories view. Remember to tick the box "Clone submodules". Alternatively, open a console and clone the repository from the command line, then init/update the submodules. Remember that Eclipse does *not* want you to clone the repository under your Eclipse workspace, and instead wants you to follow the standard git convention of putting the git repositories in a `git` subdirectory of your home directory. If you clone the repository from a console, please follow this standard (if you do it from the git perspective Eclipse will do this for you).
+* Click on the icon of the cloned repository, and right-click the Working Tree folder, then select Import Projects...: You should see a window with a progress bar, and after a while Eclipse will tell you that it has found five different projects, and that it will import them all as Maven projects. Press Finish to confirm, and then switch back to the Java perspective: Now your current workspace should have five Java project named `jbse`. `sushi`, `master`, `runtime` and `shaded`. 
+* You may see some compilation errors emerge while Eclipse builds the workspace (it usually takes a while after the JBSE project has been created), but in the end there should be none. It could however be the case that Eclipse generates some compilation errors caused by the fact that some of the generate Eclipse projects use the reserved `sun.misc.Unsafe` class. By default this should generate only warnings, but if it generates errors you shall modify the project settings by hand so it does not. Right-click one of the projects in the Package Explorer that generate the compile-time errors, select Properties, and then Java Compiler > Errors/Warnings. Click on "Enable project specific settings", then open the option group "Deprecated and restricted API", and for the option "Forbidden reference" select the value "Warning". Repeat for all the projects that generate the errors.
+
+The supported Maven goals are:
 
 * clean
 * compile
 * test
 * package
 
-We advise *not* to rely on the Eclipse default mechanism to import a Maven project from a repository, but rather to clone the git repository, run `mvn eclipse:eclipse` to create the Eclipse project files, and finally import everything under Eclipse by invoking File > Import..., selecting Maven > Existing Maven projects, pointing to your clone of the SUSHI repository, and checking all the boxes. This will create four projects in your Eclipse workspace:
+A brief description of the Eclipse projects follows:
 
 * sushi: the container project from which Maven must be run;
 * jbse: JBSE as a submodule; on the filesystem it is in the `jbse` subdirectory;
-* sushi-master: the bulk of the SUSHI tool; on the filesystem it is in the `master` subdirectory;
-* sushi-lib: the [sushi-lib](https://github.com/pietrobraione/sushi-lib) submodule for the run-time library component of SUSHI; on the filesystem it is in the `runtime` subdirectory;
-* sushi-shaded: this project produces an uber JAR for the complete SUSHI tool; on the filesystem it is in the `shaded` subdirectory.
-
-To avoid conflicts we advise to import everything under an empty workspace.
+* master: the bulk of the SUSHI tool; on the filesystem it is in the `master` subdirectory;
+* runtime: the [sushi-lib](https://github.com/pietrobraione/sushi-lib) submodule for the run-time library component of SUSHI; on the filesystem it is in the `runtime` subdirectory;
+* shaded: this project produces an uber JAR for the complete SUSHI tool; on the filesystem it is in the `shaded` subdirectory.
 
 ## Dependencies
 
-To provide its functionalities SUSHI depends on several software packages, most of which are automatically resolved by Maven or are included in the repository. These packages are:
+To provide its functionalities SUSHI depends on several software packages, most of which are automatically resolved by Maven or are included in the git repository. These packages are:
 
 * [EvoSuite](http://www.evosuite.org/); SUSHI depends on a modified version of EvoSuite 1.0.3 that can be found in the `evosuite` subdirectory; This dependency is needed at runtime;
 * [args4j](http://args4j.kohsuke.org/) version 2.32; This dependency is needed at runtime;
 * [JaCoCo](http://www.eclemma.org/jacoco/) version 0.7.5; This dependency is needed at runtime;
 * [ASM](http://asm.ow2.org/) version 5.0.1; This dependency is needed at runtime;
-* plus the dependencies of JBSE (currently [Javassist](http://jboss-javassist.github.io/javassist/) version 3.4.GA).
+* plus the dependencies of JBSE (currently [Javassist](http://jboss-javassist.github.io/javassist/) version 3.22.0.GA).
 
-Moreover there are two additional dependencies you will need to fix manually. The first dependency is on [Z3](https://github.com/Z3Prover/z3): Just download the last version of Z3 and install it. The second dependency is on the [GNU Linear Programming Kit (GLPK)](https://www.gnu.org/software/glpk/) and its Java wrapper [GLPK-Java](http://glpk-java.sourceforge.net/), both unfortunately having a native part. If your operating system is Debian or Ubuntu you can install the libglpk and libglpk-java packages. Under OSX there is a GLPK package under Macports, but no package for GLPK-Java. In the worst case you will need to install GLPK and/or GLPK-Java from sources, in which case consider that both have many other dependencies on their own. Once done that, you will (possibly) need to modify the Maven POM file, and configure the Eclipse SUSHI project so it links to the native part of the GLPK-Java library. 
+There are also two additional dependencies you will need to fix manually. The first dependency is on [Z3](https://github.com/Z3Prover/z3): Just download the last version of Z3 and install it somewhere (it is a standalone binary). The second dependency is on the [GNU Linear Programming Kit (GLPK)](https://www.gnu.org/software/glpk/) and its Java wrapper [GLPK-Java](http://glpk-java.sourceforge.net/), both unfortunately having a native part. If your operating system is Debian or Ubuntu you can install the libglpk and libglpk-java packages. Under OSX there is a GLPK package under Macports, but no package for GLPK-Java. In the worst case you will need to install GLPK and/or GLPK-Java from sources, in which case consider that both have many other dependencies on their own. Once done that, you will (possibly) need to modify the Maven POM file, and configure the Eclipse SUSHI project so it links to the native part of the GLPK-Java library as follows. 
 
-* First, if you installed a version of GLPK-Java that is different from that indicated in the POM file of the sushi-master subproject (currently 1.10), you must modify the POM file so that it matches the version you installed on your system. Edit the `master/pom.xml` file and modify the `<version>` tag of the `org.gnu.glpk:glpk-java` artifact.
-* Second, you may need to regenerate the Eclipse project files: This is not necessary if you did not need to edit the `master/pom.xml` file, or if you edited it before importing the Eclipse projects in the workspace. Otherwise, run `mvn eclipse:clean eclipse:eclipse` from a console, and then do a refresh of the projects in the Eclipse package explorer. For maximum safety rebuild everything by running `mvn clean compile package`.
-* Finally, you need to tell Eclipse where the native libraries for GLPK-Java are. At the purpose right-click the sushi-master Eclipse project in the Eclipse package explorer, and select Build Path > Configure Build Path... from the contextual menu. Then select the Libraries tab, and find the `M2_REPO/org/gnu/glpk/glpk-java/...` entry, click the triangle on the left of it, select Native Library Location, click the Edit button and enter the location of the JNI libraries produced by GLPK-Java (the GLPK-Java documentation will tell you where this location is).
+* First, if you installed a version of GLPK-Java that is different from that indicated in the POM file of the master Eclipse project (currently 1.10), you must modify the POM file so that it matches the version you installed on your system. Edit the `master/pom.xml` file and modify the `<version>` tag of the `org.gnu.glpk:glpk-java` artifact. Then right-click on the master project in the Package Explorer, select Maven > Update Project..., select again (if it is the case) the master project in the list that it will appear and press OK.
+* Second, you need to tell Eclipse where the native libraries for GLPK-Java are. At the purpose right-click the master Eclipse project in the Package Explorer, and select Build Path > Configure Build Path... from the contextual menu. Then select the Libraries tab, open the Maven Dependencies group, select the `glpk-java-x.y.z.jar` dependency, click the triangle on the left of it, select Native Library Location, click the Edit button and enter the location of the JNI libraries produced by GLPK-Java (the GLPK-Java documentation will tell you where this location is).
 
 ## Usage
 
@@ -69,7 +77,7 @@ will put them in a subdirectory of `-tmp_base` having as name the date and time 
 * `-out`: a path to a directory where the generated tests will be put.
 
 An alternative way to configure SUSHI is to define a subclass of the class `sushi.configure.ParametersModifier` contained 
-in the sushi-lib subproject. The subclass should override one or more of the `modify` methods that receive as input a  parameter object, and modify the object
+in the runtime subproject. The subclass should override one or more of the `modify` methods that receive as input a  parameter object, and modify the object
 by setting the parameters of interest. In this case SUSHI must be invoked by specifying the following options:
 
 * `-params_modifier_path`: the path where your custom subclass of  `sushi.configure.ParametersModifier` is.
