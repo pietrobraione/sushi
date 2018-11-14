@@ -35,8 +35,28 @@
               <createDependencyReducedPom>true</createDependencyReducedPom>
               <relocations>
                 <relocation>
-                  <pattern>sushi</pattern>
-                  <shadedPattern>shaded.sushi</shadedPattern>
+                  <pattern>javassist</pattern>
+                  <shadedPattern>shaded.javassist</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>jbse</pattern>
+                  <shadedPattern>shaded.jbse</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.gnu.glpk</pattern>
+                  <shadedPattern>shaded.org.gnu.glpk</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.jacoco</pattern>
+                  <shadedPattern>shaded.org.jacoco</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.kohsuke</pattern>
+                  <shadedPattern>shaded.org.kohsuke</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.objectweb</pattern>
+                  <shadedPattern>shaded.org.objectweb</shadedPattern>
                 </relocation>
               </relocations>
             </configuration>
@@ -62,7 +82,7 @@
               <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
             </manifest>
             <manifestEntries>
-              <Main-Class>shaded.sushi.Main</Main-Class>
+              <Main-Class>sushi.Main</Main-Class>
             </manifestEntries>
           </archive>
         </configuration>
