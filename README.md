@@ -47,9 +47,9 @@ Another runtime dependency that is included in the git project is:
 There are two additional dependencies that are not handled by Maven so you will need to fix them manually. 
 
 * JBSE needs to interact at runtime with an external numeric solver for pruning infeasible program paths. At the purpose SUSHI requires to use [Z3](https://github.com/Z3Prover/z3), that is a standalone binary and can be installed almost everywhere. There is a known bug that prevents JBSE to interact with the solver if it is installed in a path containing spaces. Please don't do that until the bug is fixed.
-* SUSHI uses the [GNU Linear Programming Kit (GLPK)](https://www.gnu.org/software/glpk/) and its Java wrapper [GLPK-Java](http://glpk-java.sourceforge.net/) to find a minimal set of traces that cover a number of coverage objectives. Both unfortunately have a native part. If your operating system is Debian or Ubuntu you can install the libglpk and libglpk-java packages. Under OSX there is a GLPK package under Macports, but no package for GLPK-Java. In the worst case you will need to install GLPK and/or GLPK-Java from sources, in which case consider that both have many other dependencies on their own. Refer to the GLPK and GLPJ-Java pages for instructions on how to install these packages from sources..
+* SUSHI uses the [GNU Linear Programming Kit (GLPK)](https://www.gnu.org/software/glpk/) and its Java wrapper [GLPK-Java](http://glpk-java.sourceforge.net/) to find a minimal set of traces that cover a number of coverage objectives. Both unfortunately have a native part. If your operating system is Debian or Ubuntu you can install the libglpk and libglpk-java packages. Under OSX there is a GLPK package under Macports, but no package for GLPK-Java. In the worst case you will need to install GLPK and/or GLPK-Java from sources, that have both many other dependencies on their own. Refer to the GLPK and GLPK-Java pages for instructions on how to install these packages from sources.
 
-Once installed GLPK-Java, you will (possibly) need to modify the Maven POM file of the master project. This refers to version 1.10 of GLPK-Java, so if you installed a different version of GLPK-Java you must edit the `master/pom.xml` file and modify the `<version>` tag of the `org.gnu.glpk:glpk-java` artifact so that it matches your version, then right-click on the master project in the Package Explorer, select Maven > Update Project..., select again (if it is the case) the master project in the list that it will appear and press OK. You will also need to to set the path to the native part of the GLPK-Java library, but at the moment this can be done only under Eclipse, so more on that in the next section. Expect that in the future we will improve the POM file so it is possible to work from the command line.
+Once installed GLPK-Java, you will (possibly) need to modify the Maven POM file of the master project. This by default will install version 1.10 of the GLPK-Java jar file, but the jar file's version must match the version of the GLPK-Java native part, so if you installed a different version of GLPK-Java you must edit the `master/pom.xml` file: Modify the `<version>` tag of the `org.gnu.glpk:glpk-java` artifact and put the right version number, then save, right-click on the master project in the Package Explorer, select Maven > Update Project..., select again (if it is the case) the master project in the list that will appear and press OK. You will also need to to set the path to the native part of the GLPK-Java library, but at the moment this can be done only under Eclipse, so more on that in the next section. Expect that in the future we will improve the POM file so it is possible to work from the command line.
 
 ## Working under Eclipse
 
@@ -105,34 +105,14 @@ by setting the parameters of interest. In this case SUSHI must be invoked by spe
 You will find examples of this way of configuring SUSHI in the sushi-experiment, sushi-experiment-closure01 and sushi-experiment-closure72 projects.
 
 ## Generated tests
-The tests are generated in EvoSuite format: Each suite produces two classes,
-one scaffolding class and the suite containing all the test cases. SUSHI
-will produce many suites each containing exactly one test, so if SUSHI
-generates, e.g., 10 test cases then in the directory indicated with the 
-`-out` command line parameter you will find 10 scaffolding classes and
-10 test suites with 1 test case each. Note that you do *not* need the 
-scaffolding to compile and run the test suites, but the test suites 
-depend on junit and on the EvoSuite jar. You can safely remove the 
-latter dependency by manually editing the generated files, otherwise
-you need to put the EvoSuite jar included with this distribution in 
-the classpath when compiling the generated test suites.
+The tests are generated in EvoSuite format: Each suite produces two classes, one scaffolding class and the suite containing all the test cases. SUSHI will produce many suites each containing exactly one test, so if SUSHI generates, e.g., 10 test cases then in the directory indicated with the `-out` command line parameter you will find 10 scaffolding classes and 10 test suites with 1 test case each. Note that you do *not* need the scaffolding to compile and run the test suites, but the test suites depend on junit and on the EvoSuite jar. You can safely remove the latter dependency by manually editing the generated files, otherwise you need to put the EvoSuite jar included with this distribution in the classpath when compiling the generated test suites.
 
 The generated files have names structured as follows:
     
     <class name>_<method name>_PC_<number>_<number>_Test_scaffolding.java //the scaffolding
     <class name>_<method name>_PC_<number>_<number>_Test.java             //the suite
 
-where `<class name>` is the name of the class under test, `<method name>` is the name
-of the method under test, and the `PC_<number>_<number>` identifies the trace along 
-which the test executes (you don’t need this information so we will not elaborate
-on it further). Note that the scaffolding and test suite classes are declared in the 
-same package as the class under test, so they can access the package-level
-members of the class under test. This means, for example, that a generated .java files 
-for an `avl_tree.AvlTree` class under test, if you have specified the option 
-`-out /your/out/dir`, could be something like `/your/out/dir/avl_tree/AvlTree_findMax_PC_2_1_Test.java`. 
-If you want to compile and execute the test suites add the right
-root to the classpath and qualify the class name of the test suite with the 
-package name, e.g.:
+where `<class name>` is the name of the class under test, `<method name>` is the name of the method under test, and the `PC_<number>_<number>` identifies the trace along which the test executes (you don’t need this information so we will not elaborate on it further). Note that the scaffolding and test suite classes are declared in the same package as the class under test, so they can access the package-level members of the class under test. This means, for example, that a generated .java files for an `avl_tree.AvlTree` class under test, if you have specified the option `-out /your/out/dir`, could be something like `/your/out/dir/avl_tree/AvlTree_findMax_PC_2_1_Test.java`. If you want to compile and execute the test suites add the right root to the classpath and qualify the class name of the test suite with the package name, e.g.:
 
 
     $ javac -cp junit.jar:evosuite-shaded-1.0.3.jar:avltree.jar
