@@ -65,6 +65,9 @@ import sushi.configure.JBSEParameters.DecisionProcedureCreationStrategy;
 import sushi.configure.JBSEParameters.DecisionProcedureType;
 import sushi.configure.JBSEParameters.StateFormatMode;
 import sushi.configure.JBSEParameters.TraceTypes;
+import sushi.formatters.FormatterSushi;
+import sushi.formatters.StateFormatterSushiPartialHeap;
+import sushi.formatters.StateFormatterSushiPathCondition;
 
 public class RunJBSE_Sushi {
 	/** The {@link JBSEParameters} of the symbolic execution. */
