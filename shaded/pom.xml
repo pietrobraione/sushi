@@ -34,11 +34,32 @@
               <shadedArtifactAttached>false</shadedArtifactAttached>
               <createDependencyReducedPom>true</createDependencyReducedPom>
               <relocations>
+              <relocations>
                 <relocation>
-                  <pattern>sushi</pattern>
-                  <shadedPattern>shaded.sushi</shadedPattern>
+                  <pattern>javassist</pattern>
+                  <shadedPattern>shaded.javassist</shadedPattern>
                 </relocation>
-              </relocations>
+                <relocation>
+                  <pattern>jbse</pattern>
+                  <shadedPattern>shaded.jbse</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.gnu.glpk</pattern>
+                  <shadedPattern>shaded.org.gnu.glpk</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.jacoco</pattern>
+                  <shadedPattern>shaded.org.jacoco</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.kohsuke</pattern>
+                  <shadedPattern>shaded.org.kohsuke</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.objectweb</pattern>
+                  <shadedPattern>shaded.org.objectweb</shadedPattern>
+                </relocation>
+               </relocations>
             </configuration>
           </execution>
         </executions>
