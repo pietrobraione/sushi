@@ -46,63 +46,23 @@
     <pluginManagement>
       <plugins>
         <plugin>
-          <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.6.1</version>
-          <configuration>
-          <useIncrementalCompilation>false</useIncrementalCompilation>
-          <source>1.8</source>
-          <target>1.8</target>
-          <encoding>${project.build.sourceEncoding}</encoding>
-          </configuration>
+          <groupId>org.apache.maven.plugins</groupId>
+	      <artifactId>maven-surefire-plugin</artifactId>
+	      <version>3.0.0-M1</version>
+	       <configuration>
+	         <argLine>-Djava.library.path=/usr/local/lib/jni</argLine>
+	       </configuration>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-shade-plugin</artifactId>
-          <version>3.0.0</version>
-          <executions>
-            <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>shade</goal>
-            </goals>
-            <configuration>
-              <shadedArtifactAttached>false</shadedArtifactAttached>
-              <createDependencyReducedPom>true</createDependencyReducedPom>
-              <filters>
-                <filter>
-                <artifact>*:*</artifact>
-                <excludes>
-                  <exclude>META-INF/*.SF</exclude>
-                  <exclude>META-INF/*.DSA</exclude>
-                  <exclude>META-INF/*.RSA</exclude>
-                </excludes>
-                </filter>
-              </filters>
-              <relocations>
-                <relocation>
-                  <pattern>org.kohsuke.args4j</pattern>
-                  <shadedPattern>sushi.org.kohsuke.args4j</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>org.ow2.asm</pattern>
-                  <shadedPattern>sushi.org.ow2.asm</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>org.jacoco</pattern>
-                  <shadedPattern>sushi.org.jacoco</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>javassist</pattern>
-                  <shadedPattern>sushi.javassist</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>org.gnu.glpk</pattern>
-                  <shadedPattern>sushi.org.gnu.glpk</shadedPattern>
-                </relocation>
-              </relocations>
-            </configuration>
-            </execution>
-          </executions>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.6.1</version>
+          <configuration>
+            <useIncrementalCompilation>false</useIncrementalCompilation>
+            <source>1.8</source>
+            <target>1.8</target>
+            <encoding>${project.build.sourceEncoding}</encoding>
+          </configuration>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>

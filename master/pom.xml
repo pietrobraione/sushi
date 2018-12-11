@@ -15,7 +15,7 @@
     <dependency>
       <groupId>org.gnu.glpk</groupId>
       <artifactId>glpk-java</artifactId>
-      <version>1.7.0</version>
+      <version>1.10.0</version>
     </dependency>
     <dependency>
       <groupId>sushi</groupId>
@@ -29,6 +29,28 @@
     </dependency>
   </dependencies>
 
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>3.0.2</version>
+        <inherited>true</inherited>
+        <configuration>
+          <archive>
+            <manifest>
+              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+              <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+            </manifest>
+            <manifestEntries>
+              <Main-Class>sushi.Main</Main-Class>
+            </manifestEntries>
+          </archive>
+        </configuration>
+      </plugin>
+    </plugins>  
+  </build>
+  
   <!-- Private repository for GLPK -->
   <repositories>
     <repository>
