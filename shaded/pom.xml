@@ -34,7 +34,6 @@
               <shadedArtifactAttached>false</shadedArtifactAttached>
               <createDependencyReducedPom>true</createDependencyReducedPom>
               <relocations>
-              <relocations>
                 <relocation>
                   <pattern>javassist</pattern>
                   <shadedPattern>shaded.javassist</shadedPattern>
