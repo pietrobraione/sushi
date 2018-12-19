@@ -31,7 +31,7 @@ import sushi.modifier.Modifier;
 import sushi.util.ClasspathUtils;
 
 public class Main {
-	private static final String VERSION = "0.1";
+	private static final String VERSION = "0.2.0-SNAPSHOT";
 	
 	private boolean timeout;
 
@@ -69,7 +69,7 @@ public class Main {
 
 		Logger.setLevel(options.getLogLevel());
 		final Logger logger = new Logger(Main.class);
-		logger.info("This is Sushi, version " + VERSION + ", © 2015-2017 University of Milano-Bicocca and University of Lugano");
+		logger.info("This is Sushi, version " + VERSION + ", © 2015-2019 University of Milano-Bicocca and University of Lugano");
 		
 		ClasspathUtils.checkClasspath();
 		

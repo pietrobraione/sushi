@@ -458,8 +458,8 @@ public class RunJBSE_Sushi {
 			System.err.println("ERROR: exception raised:");
 			e.printStackTrace(System.err);
 			retVal = 1;
-		} catch (ThreadStackEmptyException | ContradictionException |
-		         FailureException | UnexpectedInternalException e) {
+		} catch (NonexistingObservedVariablesException | ThreadStackEmptyException | 
+				 ContradictionException | FailureException | UnexpectedInternalException e) {
 			System.err.println("ERROR: exception raised:");
 			e.printStackTrace(System.err);
 			retVal = 2;
