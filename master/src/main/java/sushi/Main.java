@@ -69,7 +69,7 @@ public class Main {
 
 		Logger.setLevel(options.getLogLevel());
 		final Logger logger = new Logger(Main.class);
-		logger.info("This is Sushi, version " + VERSION + ", © 2015-2019 University of Milano-Bicocca and University of Lugano");
+		logger.info("This is SUSHI, version " + VERSION + ", © 2015-2019 University of Milano-Bicocca and University of Lugano");
 		
 		ClasspathUtils.checkClasspath();
 		
