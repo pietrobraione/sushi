@@ -4,10 +4,8 @@
 
 rootProject.name = 'sushi'
 include(':sushi-master')
-include(':sushi-shaded')
 include(':sushi-lib')
 include(':jbse')
 project(':sushi-master').projectDir = file('master')
-project(':sushi-shaded').projectDir = file('shaded')
 project(':sushi-lib').projectDir = file('runtime')
 project(':jbse').projectDir = file('jbse')
