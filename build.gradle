@@ -24,8 +24,8 @@ subprojects {
     }
 
     dependencies {
-        compile 'args4j:args4j:2.32'
-        testCompile 'junit:junit:4.11'
+        implementation 'args4j:args4j:2.32'
+        testImplementation 'junit:junit:4.11'
     }
 
     sourceCompatibility = '1.8'
@@ -34,3 +34,5 @@ subprojects {
         options.encoding = 'UTF-8'
     }
 }
+
+

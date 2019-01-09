@@ -3,7 +3,7 @@
  */
 
 dependencies {
-    compile 'org.gnu.glpk:glpk-java:1.10.0'
-    compile project(':sushi-lib')
-    compile project(':jbse')
+    implementation 'org.gnu.glpk:glpk-java:1.10.0'
+    implementation project(':sushi-lib')
+    implementation project(':jbse')
 }
