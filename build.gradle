@@ -13,10 +13,6 @@ subprojects {
         maven {
             url = 'http://repo.maven.apache.org/maven2'
         }
-
-        maven {
-            url = 'https://www.xypron.de/repository'
-        }
     }
 
     dependencies {

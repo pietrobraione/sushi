@@ -2,6 +2,11 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '4.0.3'
 }
 
+repositories {
+    maven {
+        url = 'https://www.xypron.de/repository' //for glpk-java
+    }
+}
 dependencies {
     implementation 'org.gnu.glpk:glpk-java:1.10.0'
     implementation project(':sushi-lib')
