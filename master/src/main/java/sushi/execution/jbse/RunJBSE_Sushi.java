@@ -49,6 +49,7 @@ import jbse.jvm.exc.NonexistingObservedVariablesException;
 import jbse.mem.Frame;
 import jbse.mem.Objekt;
 import jbse.mem.State;
+import jbse.mem.State.Phase;
 import jbse.mem.exc.ContradictionException;
 import jbse.mem.exc.FrozenStateException;
 import jbse.mem.exc.InvalidNumberOfOperandsException;
@@ -184,6 +185,10 @@ public class RunJBSE_Sushi {
 			//detects if the current bytecode is a jumping bytecode
 			try {
 				final State currentState = RunJBSE_Sushi.this.engine.getCurrentState();
+				if (currentState.phase() == Phase.PRE_INITIAL) {
+					return super.atStepPre();
+				}
+				
 				final int currentPC = currentState.getPC();
 				
 				//detect whether we are at the entry point of a method
@@ -245,7 +250,10 @@ public class RunJBSE_Sushi {
 		@Override
 		public boolean atStepPost() {
 			final State currentState = RunJBSE_Sushi.this.engine.getCurrentState();
-			
+			if (currentState.phase() == Phase.PRE_INITIAL) {
+				return super.atStepPre();
+			}
+						
 			//if we stepped a branching bytecode, records coverage
 			if (this.atJump) {
 				try {
