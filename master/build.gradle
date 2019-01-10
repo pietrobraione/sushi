@@ -1,7 +1,9 @@
 plugins {
-    id 'com.github.johnrengelman.shadow' version '4.0.3'
     id 'eclipse'
+    id 'com.github.johnrengelman.shadow' version '4.0.3'
 }
+
+def glpkJniLocation = '/usr/local/lib/jni'
 
 repositories {
     maven {
@@ -35,7 +37,7 @@ eclipse {
 	        whenMerged { cp ->
 	        	def entries = cp.getEntries()
 	            def container = entries.find { it.path == 'org.eclipse.buildship.core.gradleclasspathcontainer' }
-	            container.nativeLibraryLocation = '/usr/local/lib/jni'
+	            container.nativeLibraryLocation = glpkJniLocation
 	        }
         }
     }
