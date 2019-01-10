@@ -36,6 +36,7 @@ eclipse {
                 def node = xml.asNode()
                 def container = node.find { it.@path == 'org.eclipse.buildship.core.gradleclasspathcontainer' }
                 container.appendNode('attributes').appendNode('attribute', [name: 'org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY', value:'/usr/local/lib/jni'])
+                println container
             }
         }
     }
