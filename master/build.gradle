@@ -27,3 +27,16 @@ shadowJar {
 }
 
 build.dependsOn 'shadowJar'
+
+eclipse {
+    classpath { 
+        containers 'org.eclipse.buildship.core.gradleclasspathcontainer'
+        file {
+            withXml { xml ->
+                def node = xml.asNode()
+                def container = node.find { it.@path == 'org.eclipse.buildship.core.gradleclasspathcontainer' }
+                container.appendNode('attributes').appendNode('attribute', [name: 'org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY', value:'/usr/local/lib/jni'])
+            }
+        }
+    }
+}
