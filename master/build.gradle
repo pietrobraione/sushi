@@ -32,12 +32,11 @@ eclipse {
     classpath { 
         containers 'org.eclipse.buildship.core.gradleclasspathcontainer'
         file {
-            whenMerged { cp ->
-            	def entries = cp.getEntries()
-                def container = entries.find { it.path == 'org.eclipse.buildship.core.gradleclasspathcontainer' }
-                println container
-                container.nativeLibraryLocation = '/usr/local/lib/jni'
-            }
+	        whenMerged { cp ->
+	        	def entries = cp.getEntries()
+	            def container = entries.find { it.path == 'org.eclipse.buildship.core.gradleclasspathcontainer' }
+	            container.nativeLibraryLocation = '/usr/local/lib/jni'
+	        }
         }
     }
 }
