@@ -3,7 +3,8 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '4.0.3'
 }
 
-def glpkJniLocation = '/usr/local/lib/jni'
+def glpkJavaVersion = '1.7.0'
+def glpkJavaJniLocation = '/usr/local/lib/jni'
 
 repositories {
     maven {
@@ -12,7 +13,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.gnu.glpk:glpk-java:1.7.0'
+    implementation 'org.gnu.glpk:glpk-java:' + glpkJavaVersion
     implementation project(':sushi-lib')
     implementation project(':jbse')
 }
@@ -37,7 +38,7 @@ eclipse {
 	        whenMerged { cp ->
 	        	def entries = cp.getEntries()
 	            def container = entries.find { it.path == 'org.eclipse.buildship.core.gradleclasspathcontainer' }
-	            container.nativeLibraryLocation = glpkJniLocation
+	            container.nativeLibraryLocation = glpkJavaJniLocation
 	        }
         }
     }
