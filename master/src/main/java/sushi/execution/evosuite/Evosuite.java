@@ -146,8 +146,7 @@ public class Evosuite extends Tool<String[]> {
 		evo.add("-Dassertions=false");
 		evo.add("-Dglobal_timeout=" + getTimeBudget() * 2);  //double timeout so it does not terminate (must be killed by the coordinator upon timeout)
 		evo.add("-Dreport_dir=" + DirectoryUtils.I().getTmpDirPath().toString());
-		evo.add("-Djunit_suffix=_" + (options.getUseMOSA() ? "" : (targetMethodSignature.substring(0, targetMethodSignature.indexOf('(')) + "_" +
-				"PC_" + targetMethodNumber + "_" + traceNumberLocal) + "_") + "Test");
+		evo.add("-Djunit_suffix=_" + (options.getUseMOSA() ? "" : targetMethodNumber + "_" + traceNumberLocal + "_") + "Test");
 		evo.add("-Dsearch_budget=" + getTimeBudget() * 2);  //double timeout so it does not terminate (must be killed by the coordinator upon timeout)
 		evo.add("-Dtest_dir=" + Options.I().getOutDirectory());
 		evo.add("-Dvirtual_fs=false");
