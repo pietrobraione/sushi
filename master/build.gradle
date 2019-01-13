@@ -1,4 +1,5 @@
 plugins {
+    id 'application'
     id 'eclipse'
     id 'com.github.johnrengelman.shadow' version '4.0.3'
 }
@@ -41,5 +42,15 @@ eclipse {
 	            container.nativeLibraryLocation = glpkJavaJniLocation
 	        }
         }
+    }
+}
+
+application {
+    mainClassName = 'tardis.Main'
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'sushi.Main'
     }
 }
