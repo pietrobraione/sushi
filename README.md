@@ -60,9 +60,9 @@ If you want to work (as us) under Eclipse 2018-12 for Java Developers, you are l
 In the end, your Eclipse workspace should contain these projects:
 
 * sushi: the container project from which Gradle must be run;
-* jbse: JBSE as a submodule; on the filesystem it is in the `jbse` subdirectory;
 * sushi-master: the bulk of the SUSHI tool; on the filesystem it is in the `master` subdirectory;
-* sushi-lib: the [sushi-lib](https://github.com/pietrobraione/sushi-lib) submodule for the run-time library component of SUSHI; on the filesystem it is in the `runtime` subdirectory.
+* sushi-lib: the [sushi-lib](https://github.com/pietrobraione/sushi-lib) submodule for the run-time library component of SUSHI; on the filesystem it is in the `runtime` subdirectory;
+* jbse: JBSE as a submodule; on the filesystem it is in the `jbse` subdirectory.
 
 ## Deploying SUSHI
 
@@ -88,12 +88,12 @@ or:
 where `<classpath>` and `<nativeLibraryPath>` must be set according to the indications of the previous section. If you launch SUSHI without options it will print a help screen that lists all the available options. The indispensable ones, that you *must* set in order for SUSHI to work, are:
 
 * `-classes`: a colon- or semicolon-separated (depending on the OS) list of paths; It is the classpath of the software under test.
-* `-target_class`: the name in [internal classfile format](http://docs.oracle.com/javase/specs/jvms/se6/html/ClassFile.doc.html#14757) of the class to test: SUSHI will generate tests for all the methods in the class. Or alternatively:
-* `-target_method`: the signature of a method to test. The signature is a colon-separated list of: the name of the container class in internal classfile format; the [descriptor](http://docs.oracle.com/javase/specs/jvms/se6/html/ClassFile.doc.html#1169) of the method; the name of the method. You can use the `javap` command, included with every JDK setup, to obtain the internal format signatures of methods: `javap -s my.Class` prints the list of all the methods in `my.Class` with their signatures in internal format.
+* `-target_class`: the name in [internal classfile format](https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.2.1) of the class to test: SUSHI will generate tests for all the methods in the class. Or alternatively:
+* `-target_method`: the signature of a method to test. The signature is a colon-separated list of: the name of the container class in internal classfile format; the [descriptor](https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.3.3) of the method; the name of the method. You can use the `javap` command, included with every JDK setup, to obtain the internal format signatures of methods: `javap -s my.Class` prints the list of all the methods in `my.Class` with their signatures in internal format.
 * `-evosuite`: the path to one of the two EvoSuite jar files contained in the `evosuite/` folder. Use `evosuite-shaded-1.0.6-SNAPSHOT.jar` if the option `-use_mosa` is active, otherwise use `evosuite-shaded-1.0.3.jar`.
 * `-use_mosa`: configures EvoSuite to use a multi-objective search algorithm (MOSA). You usually want this option to be active, since it makes SUSHI faster in most cases.
-* `-jbse_lib`: this must be set to the path of the JBSE jar file. You will find one in the `target` directory of the `sushi` submodule.
-* `-sushi_lib`: this must be set to the path of the SUSHI-Lib jar file. You will find one in the `target` directory of the `runtime` submodule.
+* `-jbse_lib`: this must be set to the path of the JBSE jar file. You will find one in the `jbse/build/libs` directory.
+* `-sushi_lib`: this must be set to the path of the SUSHI-Lib jar file. You will find one in the `runtime/build/libs` directory.
 * `-z3`:  the path to the Z3 binary (you can omit it if Z3 is on the system PATH).
 * `-tmp_base`: a path to a temporary directory; SUSHI needs to create many intermediate files, and will put them in a subdirectory of `-tmp_base` having as name the date and time when it was launched.
 * `-out`: a path to a directory where SUSHI will put the generated tests.
