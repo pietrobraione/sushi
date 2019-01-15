@@ -185,13 +185,13 @@ public class RunJBSE_Sushi {
 			//detects if the current bytecode is a jumping bytecode
 			try {
 				final State currentState = RunJBSE_Sushi.this.engine.getCurrentState();
-				final int currentPC = currentState.getPC();
 				if (currentState.phase() == Phase.PRE_INITIAL) {
 					return super.atStepPre();
 				}
 				
 				//detect whether we are at the entry point of a method
 				//and in case adds a pseudobranch for the entry point
+				final int currentPC = currentState.getPC();
 				if (currentPC == 0) {
 					updateCoverage(currentState);
 				}
