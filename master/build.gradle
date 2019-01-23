@@ -4,7 +4,7 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '4.0.3'
 }
 
-def glpkJavaVersion = '1.10.0'
+def glpkJavaVersion = '1.7.0'
 def glpkJavaJniLocation = '/usr/local/lib/jni'
 
 repositories {
@@ -28,7 +28,6 @@ shadowJar {
     relocate 'org.jacoco', 'sushi.org.jacoco'
     relocate 'org.objectweb', 'sushi.org.objectweb'
     relocate 'org.kohsuke', 'sushi.org.kohsuke'
-    relocate 'org.gnu', 'sushi.org.gnu'
 }
 
 build.dependsOn 'shadowJar'
