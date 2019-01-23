@@ -47,7 +47,7 @@ eclipse {
 }
 
 application {
-    mainClassName = 'tardis.Main'
+    mainClassName = 'sushi.Main'
 }
 
 jar {
