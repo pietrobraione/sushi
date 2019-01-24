@@ -4,7 +4,7 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '4.0.3'
 }
 
-def glpkJavaVersion = '1.7.0'
+def glpkJavaVersion = '1.11.0'
 def glpkJavaJniLocation = '/usr/local/lib/jni'
 
 repositories {
@@ -23,6 +23,7 @@ dependencies {
 shadowJar {
     classifier = 'shaded'
     exclude 'tools.jar'
+    exclude 'glpk-java*'
     relocate 'javassist', 'sushi.javassist'
     relocate 'jbse', 'sushi.jbse'
     relocate 'org.jacoco', 'sushi.org.jacoco'
@@ -47,10 +48,4 @@ eclipse {
 
 application {
     mainClassName = 'sushi.Main'
-}
-
-jar {
-    manifest {
-        attributes 'Main-Class': 'sushi.Main'
-    }
 }

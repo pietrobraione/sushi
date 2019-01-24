@@ -43,7 +43,7 @@ There are two additional runtime dependencies that are not handled by Gradle so 
 
 Once installed GLPK-Java, you will (possibly) need to modify the `build.gradle` file in the `master` subdirectory. 
 
-* The provided `master/build.gradle` file instructs Gradle to use version 1.10 of the GLPK-Java jar file, but the jar file's version must match the version of the GLPK-Java native library that you installed. This is a good reason to install GLPK-Java 1.10, but if it happens that you want to install a different version you must edit the `master/build.gradle` file as follows: Find the `def glpkVersion = ...` statement in the file and replace the version number on the right-hand side of the assignment with the version number of the GLPK-Java you installed on your platform. 
+* The provided `master/build.gradle` file instructs Gradle to use version 1.11.0 of the GLPK-Java jar file, but the jar file's version must match the version of the GLPK-Java native library that you installed. This is a good reason to install GLPK-Java 1.11.0, but if it happens that you want to install a different version you must edit the `master/build.gradle` file as follows: Find the `def glpkVersion = ...` statement in the file and replace the version number on the right-hand side of the assignment with the version number of the GLPK-Java you installed on your platform. 
 * The `master/build.gradle` file must also be set with a path to the directory where the native part of GLPK-Java is found. This is not indispensable for building SUSHI, but it is for running it, especially under Eclipse. The provided path is `/usr/local/lib/jni`, thus in the case (notably under Windows) your actual setup path differs from this default you must edit the `def glpkJniLocation = ...` statement in the file and put the correct path on the right-hand side of the assignment. The GLPK-Java documentation will tell you where the native files are installed. 
 
 ## Working under Eclipse
@@ -66,7 +66,7 @@ In the end, your Eclipse workspace should contain these projects:
 
 ## Deploying SUSHI
 
-Deploying SUSHI to be used outside Eclipse is tricky but feasible with some effort. The `gradlew build` command will produce a SUSHI-Lib jar `runtime/build/libs/sushi-lib-<VERSION>.jar`, the JBSE jars in `jbse/build/libs` (refer to the JBSE project's README file for more information on them), and a jar for the main SUSHI application `master/build/libs/sushi-master-<VERSION>.jar`. You may deploy them and all the missing dependencies, if you feel adventurous. However, `gradlew build` will also produce an uber-jar `master/build/libs/sushi-<VERSION>-shaded.jar`, containing all the runtime dependencies excluded Z3, EvoSuite, `tools.jar` and the native parts of GLPK and GLPK-Java. Deploying based on the uber-jar currently is the easiest way for deploying SUSHI. Moreover, although JBSE and SUSHI-Lib are already included in the SUSHI uber-jar, you will need to deploy the JBSE and SUSHI-Lib jars. The instruction for deploying based on the uber-jar plus these six dependencies are the following ones:
+Deploying SUSHI to be used outside Eclipse is tricky. The `gradlew build` command will produce a SUSHI-Lib jar `runtime/build/libs/sushi-lib-<VERSION>.jar`, the JBSE jars in `jbse/build/libs` (refer to the JBSE project's README file for more information on them), and a jar for the main SUSHI application `master/build/libs/sushi-master-<VERSION>.jar`. You may deploy them and all the missing dependencies, if you feel adventurous. However, `gradlew build` will also produce an uber-jar `master/build/libs/sushi-<VERSION>-shaded.jar`, containing all the runtime dependencies excluded Z3, EvoSuite, `tools.jar` and the native parts of GLPK and GLPK-Java. Deploying based on the uber-jar currently is the easiest way for deploying SUSHI. Moreover, although JBSE and SUSHI-Lib are already included in the SUSHI uber-jar, you will need to deploy the JBSE and SUSHI-Lib jars. The instruction for deploying based on the uber-jar plus these six dependencies are the following ones:
 
 * You can put the SUSHI uber-jar anywhere: Just set the Java classpath to point at it.
 * Deploying Z3 is very easy: Just put the Z3 binary directory somewhere, and add the Z3 binary to the system PATH, or use the `-z3` option when invoking SUSHI to point at it. 
@@ -81,10 +81,6 @@ You can launch SUSHI as follows:
 
     $ java -cp <classpath> -Djava.library.path=<nativeLibraryPath> sushi.Main <options>
 
-or:
-
-    $ java -cp <classpath> -Djava.library.path=<nativeLibraryPath> -jar <sushiUberJarPath> <options>
- 
 where `<classpath>` and `<nativeLibraryPath>` must be set according to the indications of the previous section. If you launch SUSHI without options it will print a help screen that lists all the available options. The indispensable ones, that you *must* set in order for SUSHI to work, are:
 
 * `-classes`: a colon- or semicolon-separated (depending on the OS) list of paths; It is the classpath of the software under test.
