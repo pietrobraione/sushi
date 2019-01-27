@@ -16,7 +16,7 @@ SUSHI is composed by several projects, some of which are imported as git submodu
 
 ## Dependencies
 
-SUSHI has a lot of dependencies. It must be built using a JDK version 8 - neither less, nor more. The Gradle wrapper `gradlew` included in the repository will take care to select the right version of Gradle. Gradle will automatically resolve and use the following compile-time-only dependencies:
+SUSHI has many dependencies. It must be built using a JDK version 8 - neither less, nor more. The Gradle wrapper `gradlew` included in the repository will take care to select the right version of Gradle. Gradle will automatically resolve and use the following compile-time-only dependencies:
 
 * [JavaCC](https://javacc.org) is used in the JBSE submodule for compiling the parser for the JBSE settings files.
 * [JUnit](http://junit.org) is used in the JBSE submodule for running the test suite that comes with JBSE (in future SUSHI might come with a test suite of its own).
@@ -25,8 +25,6 @@ The runtime dependencies that are automatically resolved by Gradle and included 
 
 * The `tools.jar` library, that is part of every JDK 8 setup (note, *not* of the JRE).
 * [Javassist](http://jboss-javassist.github.io/javassist/), that is used by JBSE for all the bytecode manipulation tasks.
-* [JaCoCo](http://www.eclemma.org/jacoco/), that is used by the coverage calculator included in SUSHI-Lib.
-* [ASM](http://asm.ow2.org/), that is a transitive dependency used by JaCoCo.
 * [args4j](http://args4j.kohsuke.org/), that is used by SUSHI to process command line arguments.
 * The jar part of GLPK (more on this later).
 
@@ -38,6 +36,13 @@ There are two additional runtime dependencies that are not handled by Gradle so 
 
 * JBSE needs to interact with an external numeric solver for pruning infeasible program paths. At the purpose SUSHI requires to use [Z3](https://github.com/Z3Prover/z3), that is a standalone binary and can be installed almost everywhere.
 * SUSHI uses the [GNU Linear Programming Kit (GLPK)](https://www.gnu.org/software/glpk/) and its Java wrapper [GLPK-Java](http://glpk-java.sourceforge.net/) to find, among the (many) traces produced by a JBSE run, a minimal subset that still covers all the coverage objectives. Both unfortunately have a native part. If your operating system is Debian or Ubuntu you can install the libglpk and libglpk-java packages. Under OSX there is a GLPK package under Macports, but no package for GLPK-Java. In the worst case you will need to install GLPK and/or GLPK-Java from sources: In such case consider that both have many other dependencies on their own. Refer to the GLPK and GLPK-Java pages for instructions on how to install these packages from sources.
+
+Finally, two runtime dependencies that are not currently used by SUSHI at runtime, but might be in future, are:
+
+* [JaCoCo](http://www.eclemma.org/jacoco/), that is used by the coverage calculator included in SUSHI-Lib.
+* [ASM](http://asm.ow2.org/), that is a transitive dependency used by JaCoCo.
+
+Gradle will download them to compile SUSHI-Lib, but you can avoid to deploy them.
 
 ## Patching the build scripts
 
@@ -66,32 +71,40 @@ In the end, your Eclipse workspace should contain these projects:
 
 ## Deploying SUSHI
 
-Deploying SUSHI to be used outside Eclipse is tricky. The `gradlew build` command will produce a SUSHI-Lib jar `runtime/build/libs/sushi-lib-<VERSION>.jar`, the JBSE jars in `jbse/build/libs` (refer to the JBSE project's README file for more information on them), and a jar for the main SUSHI application `master/build/libs/sushi-master-<VERSION>.jar`. You may deploy them and all the missing dependencies, if you feel adventurous. However, `gradlew build` will also produce an uber-jar `master/build/libs/sushi-<VERSION>-shaded.jar`, containing all the runtime dependencies excluded EvoSuite, `tools.jar`, the GLPK-Java jar file, and of course the native files (Z3 and the native parts of GLPK and GLPK-Java). Deploying based on the uber-jar currently is the easiest way for deploying SUSHI. Moreover, although JBSE and SUSHI-Lib are already included in the SUSHI uber-jar, you will need to deploy the JBSE and SUSHI-Lib jars. The instruction for deploying based on the uber-jar plus these six dependencies are the following ones:
+Deploying SUSHI to be used outside Eclipse is tricky. The `gradlew build` command will produce a SUSHI-Lib jar `runtime/build/libs/sushi-lib-<VERSION>.jar`, the JBSE jars in `jbse/build/libs` (refer to the JBSE project's README file for more information on them), and a jar for the main SUSHI application `master/build/libs/sushi-master-<VERSION>.jar`. You need to deploy them and all their dependencies. Moreover, `gradlew build` will produce an uber-jar `master/build/libs/sushi-master-<VERSION>-shaded.jar`, containing all the runtime dependencies excluded EvoSuite, `tools.jar`, the GLPK-Java jar file, and the native files (Z3 and the native parts of GLPK and GLPK-Java). Deploying based on the uber-jar is easier, but to our experience the uber-jar setup is more crash-prone.
 
-* You can put the SUSHI uber-jar anywhere: Just set the Java classpath to point at it.
-* Deploying Z3 is very easy: Just put the Z3 binary directory somewhere, and add the Z3 binary to the system PATH, or use the `-z3` option when invoking SUSHI to point at it. 
-* Deploying EvoSuite is similarly easy: Put the right EvoSuite jar somewhere, and then use the `-evosuite` option when invoking SUSHI to point at it. Since SUSHI executes EvoSuite in a separate process, you do not need to put the EvoSuite jar in the classpath. 
-* SUSHI will not run if you deploy it on a machine that has a JRE, instead of a JDK, installed. This because SUSHI needs to invoke the platform's `javac` to compile some intermediate files. Therefore, you need to install a full JDK 8 on the target machine, providing both `tools.jar` and `javac` to SUSHI. Add `tools.jar` to the classpath, if it is not already in it by default.
+Here follows detailed instructions for deploying SUSHI based on the plain jars:
+
+way for deploying SUSHI. Moreover, although JBSE and SUSHI-Lib are already included in the SUSHI uber-jar, you will need to deploy the JBSE and SUSHI-Lib jars. The instruction for deploying based on the uber-jar plus these six dependencies are the following ones:
+
+* Deploy Z3, possibly adding the Z3 binary to the system PATH. 
+* Deploy the `sushi-master-<VERSION>.jar` and set the Java classpath to point at it.
+* Deploy either the `jbse-<version>.jar` or the `jbse-<version>-shaded.jar` and set the Java classpath to point at it.
+* Deploy the `sushi-lib-<VERSION>.jar` and set the Java classpath to point at it.
+* Deploy the two EvoSuite jars contained in the `evosuite` directory. SUSHI executes EvoSuite in a separate process, therefore you do not need to put the EvoSuite jars in the classpath. 
+* SUSHI will not run if you deploy it on a machine that has a JRE, instead of a JDK, installed. This because SUSHI needs to invoke the platform's `javac` to compile some intermediate files. Therefore, you need to install a full JDK 8 on the target machine, providing both `tools.jar` and `javac` to SUSHI. Add `tools.jar` to the classpath.
+* Deploy the args4j, JavaParser and (if you do not use the `jbse-<version>-shaded.jar` uber-jar) Javassist jars that you find in the Gradle's cache. All these jars must be on the classpath.
 * Deploy GPLK and GLPK-Java, ensuring that the version of GLPK-Java you are deploying is the same used during compilation. Then, set the Java native library path to point to the directory where the native libraries of GLPK-Java are installed, either by providing the `-Djava.library.path=...` option when launching SUSHI, or (under any UNIX-like system) by setting the environment variable `LD_LIBRARY_PATH`. Also, set the classpath to point at the GLPK-Java jar file.
-* Finally, the JBSE and SUSHI-Lib jars need not to be on the classpath (they are included in the SUSHI uber-jar, that is already in the classpath), but the path to them must be passed to SUSHI through the `-jbse_lib` and `-sushi_lib` options. 
+
+If you deploy the `sushi-master-<VERSION>-shaded.jar` uber-jar you do not need to deploy the JBSE, SUSHI-Lib, args4j and Javassist jars.
 
 ## Usage
 
-You can launch SUSHI as follows:
+Compile the target program with the debug symbols, then launch SUSHI from the command line as follows:
 
-    $ java -cp <classpath> -Djava.library.path=<nativeLibraryPath> sushi.Main <options>
+    $ java -Xms16G -Xmx16G -cp <classpath> -Djava.library.path=<nativeLibraryPath> sushi.Main <options>
 
 where `<classpath>` and `<nativeLibraryPath>` must be set according to the indications of the previous section. If you launch SUSHI without options it will print a help screen that lists all the available options. The indispensable ones, that you *must* set in order for SUSHI to work, are:
 
+* `-evosuite`: the path to one of the two EvoSuite jar files contained in the `evosuite/` folder. Use `evosuite-shaded-1.0.6-SNAPSHOT.jar` if you activate the option `-use_mosa`, otherwise use `evosuite-shaded-1.0.3.jar`.
+* `-use_mosa`: configures EvoSuite to use a multi-objective search algorithm (MOSA). You usually want this option to be active, since it makes SUSHI faster in most cases.
+* `-jbse_lib`: this must be set to the path of the JBSE jar file from the `jbse/build/libs` directory. It must be the same you put in the classpath. If you chose to deploy the `sushi-master-<VERSION>-shaded.jar` uber-jar, set this option to point to it.
+* `-sushi_lib`: this must be set to the path of the SUSHI-Lib jar file from the `runtime/build/libs` directory. If you chose to deploy the `sushi-master-<VERSION>-shaded.jar` uber-jar, set this option to point to it.
+* `-z3`:  the path to the Z3 binary.
 * `-classes`: a colon- or semicolon-separated (depending on the OS) list of paths; It is the classpath of the software under test.
 * `-target_class`: the name in [internal classfile format](https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.2.1) of the class to test: SUSHI will generate tests for all the methods in the class. Or alternatively:
 * `-target_method`: the signature of a method to test. The signature is a colon-separated list of: the name of the container class in internal classfile format; the [descriptor](https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.3.3) of the method; the name of the method. You can use the `javap` command, included with every JDK setup, to obtain the internal format signatures of methods: `javap -s my.Class` prints the list of all the methods in `my.Class` with their signatures in internal format.
-* `-evosuite`: the path to one of the two EvoSuite jar files contained in the `evosuite/` folder. Use `evosuite-shaded-1.0.6-SNAPSHOT.jar` if the option `-use_mosa` is active, otherwise use `evosuite-shaded-1.0.3.jar`.
-* `-use_mosa`: configures EvoSuite to use a multi-objective search algorithm (MOSA). You usually want this option to be active, since it makes SUSHI faster in most cases.
-* `-jbse_lib`: this must be set to the path of the JBSE jar file. You will find one in the `jbse/build/libs` directory.
-* `-sushi_lib`: this must be set to the path of the SUSHI-Lib jar file. You will find one in the `runtime/build/libs` directory.
-* `-z3`:  the path to the Z3 binary (you can omit it if Z3 is on the system PATH).
-* `-tmp_base`: a path to a temporary directory; SUSHI needs to create many intermediate files, and will put them in a subdirectory of `-tmp_base` having as name the date and time when it was launched.
+* `-tmp_base`: a path to a temporary directory; SUSHI needs to create many intermediate files, and will put them in a subdirectory of the one that you specify with this option. The subdirectory will have as name the date and time when SUSHI was launched.
 * `-out`: a path to a directory where SUSHI will put the generated tests.
 
 An alternative way to configure SUSHI is to define a subclass of the class `sushi.configure.ParametersModifier` contained in the runtime subproject. The subclass should override one or more of the `modify` methods that receive as input a  parameter object, and modify the object by setting the parameters of interest. In this case SUSHI must be invoked by specifying the following options:
@@ -99,7 +112,13 @@ An alternative way to configure SUSHI is to define a subclass of the class `sush
 * `-params_modifier_path`: the path where your custom subclass of  `sushi.configure.ParametersModifier` is.
 * `-params_modifier_class`: the name of your custom subclass of  `sushi.configure.ParametersModifier`.
 
-You will find examples of this way of configuring SUSHI in the [sushi-experiments](https://github.com/pietrobraione/sushi-experiments), [sushi-experiments-closure01](https://github.com/pietrobraione/sushi-experiments-closure01) and [sushi-experiments-closure72](https://github.com/pietrobraione/sushi-experiments-closure72) projects.
+You will find examples of this way of configuring SUSHI in the [sushi-experiments](https://github.com/pietrobraione/sushi-experiments), [sushi-experiments-closure01](https://github.com/pietrobraione/sushi-experiments-closure01) and [sushi-experiments-closure72](https://github.com/pietrobraione/sushi-experiments-closure72) projects. A possible example of command line is the following:
+
+    java -Xms16G -Xmx16G -cp sushi-master-0.2.0-SNAPSHOT.jar:sushi-lib-0.2.0-SNAPSHOT.jar:jbse-0.9.0-SNAPSHOT-shaded.jar:args4j-2.32.jar:/usr/lib/jvm/java-8-openjdk-amd64/lib/tools.jar:/usr/share/java/glpk-java.jar  -Djava.library.path=/usr/lib/jni sushi.Main -jbse_lib jbse-0.9.0-SNAPSHOT-shaded.jar -sushi_lib sushi-lib-0.2.0-SNAPSHOT.jar -evosuite evosuite-shaded-1.0.6-SNAPSHOT.jar -use_mosa -z3 /opt/local/bin/z3 -classes ./my-application/bin -target_class my/Class -tmp_base ./tmp -out ./tests
+    
+In the case you prefer (at your own risk) to use the SUSHI uber-jar the command line becomes a bit shorter:
+
+    java -Xms16G -Xmx16G -cp sushi-master-0.2.0-SNAPSHOT-shaded.jar:/usr/lib/jvm/java-8-openjdk-amd64/lib/tools.jar:/usr/share/java/glpk-java.jar  -Djava.library.path=/usr/lib/jni sushi.Main -jbse_lib sushi-master-0.2.0-SNAPSHOT-shaded.jar -sushi_lib sushi-master-0.2.0-SNAPSHOT-shaded.jar -evosuite evosuite-shaded-1.0.6-SNAPSHOT.jar -use_mosa -z3 /opt/local/bin/z3 -classes ./my-application/bin -target_class my/Class -tmp_base ./tmp -out ./tests
 
 ## Generated tests
 
