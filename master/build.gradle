@@ -1,0 +1,51 @@
+plugins {
+    id 'application'
+    id 'eclipse'
+    id 'com.github.johnrengelman.shadow' version '4.0.3'
+}
+
+def glpkJavaVersion = '1.11.0'
+def glpkJavaJniLocation = '/usr/local/lib/jni'
+
+repositories {
+    maven {
+        url = 'https://www.xypron.de/repository' //for glpk-java
+    }
+}
+
+dependencies {
+    implementation 'org.gnu.glpk:glpk-java:' + glpkJavaVersion
+    implementation files("${System.getProperty('java.home')}/../lib/tools.jar")
+    implementation project(':sushi-lib')
+    implementation project(':jbse')
+}
+
+shadowJar {
+    classifier = 'shaded'
+    exclude 'tools.jar'
+    exclude 'glpk-java*'
+    relocate 'javassist', 'sushi.javassist'
+    relocate 'jbse', 'sushi.jbse'
+    relocate 'org.jacoco', 'sushi.org.jacoco'
+    relocate 'org.objectweb', 'sushi.org.objectweb'
+    relocate 'org.kohsuke', 'sushi.org.kohsuke'
+}
+
+build.dependsOn 'shadowJar'
+
+eclipse {
+    classpath { 
+        containers 'org.eclipse.buildship.core.gradleclasspathcontainer'
+        file {
+	        whenMerged { cp ->
+	        	def entries = cp.getEntries()
+	            def container = entries.find { it.path == 'org.eclipse.buildship.core.gradleclasspathcontainer' }
+	            container.nativeLibraryLocation = glpkJavaJniLocation
+	        }
+        }
+    }
+}
+
+application {
+    mainClassName = 'sushi.Main'
+}

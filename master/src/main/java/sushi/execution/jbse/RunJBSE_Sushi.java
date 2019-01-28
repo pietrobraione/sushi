@@ -252,7 +252,7 @@ public class RunJBSE_Sushi {
 			if (currentState.phase() == Phase.PRE_INITIAL) {
 				return super.atStepPre();
 			}
-			
+
 			//if we stepped a branching bytecode, records coverage
 			if (this.atJump) {
 				try {

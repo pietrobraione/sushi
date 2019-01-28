@@ -1,0 +1,28 @@
+allprojects {
+    apply plugin: 'maven'
+
+    group = 'sushi'
+    version = '0.2.0-SNAPSHOT'
+}
+
+subprojects {
+    apply plugin: 'java'
+
+    repositories {
+        mavenLocal()
+        maven {
+            url = 'http://repo.maven.apache.org/maven2'
+        }
+    }
+
+    dependencies {
+        implementation 'args4j:args4j:2.32'
+        testImplementation 'junit:junit:4.11'
+    }
+
+    sourceCompatibility = '1.8'
+
+    tasks.withType(JavaCompile) {
+        options.encoding = 'UTF-8'
+    }
+}

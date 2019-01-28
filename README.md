@@ -12,96 +12,99 @@ Right now SUSHI can be installed only by building it from source. Formal release
 
 ## Building SUSHI
 
-SUSHI is composed by several projects, some of which are imported as git submodules, and is built with Maven. First, you should ensure that all the dependencies are present, including Z3, GLPK and GLPK-Java (see section "Dependencies"). Then, you should clone the SUSHI git repository and init/update its submodules; If you work from the command line, this means running first `git clone`, and then `git submodule init && git submodule update`. Next, you may need to patch the POMs to match the installed GLPK-Java, as explained in the section "Patching the POMs". Once done all this, you can run some Maven goals. The supported Maven goals are:
-
-* clean
-* compile
-* test
-* package
+SUSHI is composed by several projects, some of which are imported as git submodules, and is built with Gradle. First, you should ensure that all the dependencies are present, including Z3, GLPK and GLPK-Java (see section "Dependencies"). Then, you should clone the SUSHI git repository and init/update its submodules. If you work from the command line, this means running first `git clone`, and then `git submodule init && git submodule update`. Next, you may need to patch the build.gradle files to match the installed GLPK-Java, as explained in the section "Patching the build scripts". Once done all this, run the build Gradle task by invoking `gradlew build`. 
 
 ## Dependencies
 
-SUSHI has a lot of dependencies. It must be built using a JDK version 8 - neither less, nor more - and Maven version 3.5.0 or above. Maven will automatically resolve and use the following build-time dependencies:
+SUSHI has many dependencies. It must be built using a JDK version 8 - neither less, nor more. The Gradle wrapper `gradlew` included in the repository will take care to select the right version of Gradle. Gradle will automatically resolve and use the following compile-time-only dependencies:
 
-* [JavaCC](https://javacc.org) is used by Maven for compiling the parser for the JBSE settings files. It is not needed at runtime.
-* [JUnit](http://junit.org) is used by Maven for running the test suite that comes with SUSHI. It is not needed at runtime.
+* [JavaCC](https://javacc.org) is used in the JBSE submodule for compiling the parser for the JBSE settings files.
+* [JUnit](http://junit.org) is used in the JBSE submodule for running the test suite that comes with JBSE (in future SUSHI might come with a test suite of its own).
 
-The runtime dependencies that are automatically resolved by Maven and included in the build path are:
+The runtime dependencies that are automatically resolved by Gradle and included in the build path are:
 
-* [args4j](http://args4j.kohsuke.org/), that is used by SUSHI to process command line arguments.
-* [JaCoCo](http://www.eclemma.org/jacoco/), that is used by the coverage calculator included in SUSHI-Lib.
-* [ASM](http://asm.ow2.org/), that is used by JaCoCo.
-* [Javassist](http://jboss-javassist.github.io/javassist/), that is used by JBSE for all the bytecode manipulation tasks.
 * The `tools.jar` library, that is part of every JDK 8 setup (note, *not* of the JRE).
+* [Javassist](http://jboss-javassist.github.io/javassist/), that is used by JBSE for all the bytecode manipulation tasks.
+* [args4j](http://args4j.kohsuke.org/), that is used by SUSHI to process command line arguments.
+* The jar part of GLPK (more on this later).
 
 Another runtime dependency that is included in the git project is:
 
 * [EvoSuite](http://www.evosuite.org/); SUSHI depends on customized versions of EvoSuite that can be found in the `evosuite` subdirectory. It will not work with the EvoSuite jars that you can download from the EvoSuite web page.
 
-There are two additional dependencies that are not handled by Maven so you will need to fix them manually. 
+There are two additional runtime dependencies that are not handled by Gradle so you will need to fix them manually. 
 
-* JBSE needs to interact at runtime with an external numeric solver for pruning infeasible program paths. At the purpose SUSHI requires to use [Z3](https://github.com/Z3Prover/z3), that is a standalone binary and can be installed almost everywhere. There is a known bug that prevents JBSE to interact with the solver if it is installed in a path containing spaces. Please don't do that until the bug is fixed.
+* JBSE needs to interact with an external numeric solver for pruning infeasible program paths. At the purpose SUSHI requires to use [Z3](https://github.com/Z3Prover/z3), that is a standalone binary and can be installed almost everywhere.
 * SUSHI uses the [GNU Linear Programming Kit (GLPK)](https://www.gnu.org/software/glpk/) and its Java wrapper [GLPK-Java](http://glpk-java.sourceforge.net/) to find, among the (many) traces produced by a JBSE run, a minimal subset that still covers all the coverage objectives. Both unfortunately have a native part. If your operating system is Debian or Ubuntu you can install the libglpk and libglpk-java packages. Under OSX there is a GLPK package under Macports, but no package for GLPK-Java. In the worst case you will need to install GLPK and/or GLPK-Java from sources: In such case consider that both have many other dependencies on their own. Refer to the GLPK and GLPK-Java pages for instructions on how to install these packages from sources.
 
-## Patching the POMs
+Finally, two runtime dependencies that are not currently used by SUSHI at runtime, but might be in future, are:
 
-Once installed GLPK-Java, you will (possibly) need to modify the Maven POM file in the root directory of the SUSHI repository clone, and/or the POM file in its `master` subdirectory, for the following reasons. 
+* [JaCoCo](http://www.eclemma.org/jacoco/), that is used by the coverage calculator included in SUSHI-Lib.
+* [ASM](http://asm.ow2.org/), that is a transitive dependency used by JaCoCo.
 
-* The POM file in the `master` subdirectory will install by default version 1.10 of the GLPK-Java jar file, but the jar file's version must match the version of the GLPK-Java native library, so if you installed a different version of GLPK-Java you must edit the `master/pom.xml` file as follows: Modify the `<version>` tag of the `org.gnu.glpk:glpk-java` artifact and put the version number of GLPK-Java you installed on your platform. 
-* The POM file in the root directory of the SUSHI repository clone must be set with a path to the directory where the native library part of GLPK-Java is found. By default this path is set to `/usr/local/lib/jni`, thus in the case (notably under Windows) the path where the GLPK-Java native libraries are installed differs from this default you must edit the `sushi/pom.xml` file and put the right path in the `<argLine>` tag of the `maven-surefire-plugin` artifact. The GLPK-Java documentation will tell you where this path is. 
+Gradle will download them to compile SUSHI-Lib, but you can avoid to deploy them.
+
+## Patching the build scripts
+
+Once installed GLPK-Java, you will (possibly) need to modify the `build.gradle` file in the `master` subdirectory. 
+
+* The provided `master/build.gradle` file instructs Gradle to use version 1.11.0 of the GLPK-Java jar file, but the jar file's version must match the version of the GLPK-Java native library that you installed. This is a good reason to install GLPK-Java 1.11.0, but if it happens that you want to install a different version you must edit the `master/build.gradle` file as follows: Find the `def glpkVersion = ...` statement in the file and replace the version number on the right-hand side of the assignment with the version number of the GLPK-Java you installed on your platform. 
+* The `master/build.gradle` file must also be set with a path to the directory where the native part of GLPK-Java is found. This is not indispensable for building SUSHI, but it is for running it, especially under Eclipse. The provided path is `/usr/local/lib/jni`, thus in the case (notably under Windows) your actual setup path differs from this default you must edit the `def glpkJniLocation = ...` statement in the file and put the correct path on the right-hand side of the assignment. The GLPK-Java documentation will tell you where the native files are installed. 
 
 ## Working under Eclipse
 
-If you work (as us) under Eclipse 2018-09, you must install the egit Eclipse plugin (you will find it in the Eclipse Marketplace), the m2e plugin (also in the Eclipse Marketplace), and the m2e connector for javacc-maven-plugin. The last one must be installed manually: Select the menu Help > Install new software..., click the Add button to add a new site, and insert the URL `http://objectledge.github.io/maven-extensions/connectors/updates/development/` in the Location field (in the Name field you can put any name you want, but we advise to call it "Objectledge Maven extensions update site"). Press OK, and then select the newly added update site in the "Work with" box. Finally, select "objectledge.org m2e connectors" > "m2e connector for javacc-maven-plugin": The version must be at least 1.2.0.*, or it will not work with the current version of m2e. 
+If you want to work (as us) under Eclipse 2018-12 for Java Developers, you are lucky: All the plugins that are necessary to import SUSHI under Eclipse and make it work are already present in the distribution. If you use another version of Eclipse you must install the egit and the Buildship plugins, both available in the Eclipse Marketplace. After that, you are ready to import SUSHI under Eclipse:
 
-Once done this setup, you are ready to import SUSHI under an Eclipse workspace (to avoid conflicts we advise to import everything under an empty workspace):
+* To avoid conflicts we advise to import SUSHI under an empty workspace.
+* Be sure that the default Eclipse JRE is the JRE subdirectory of a full JDK 8 setup, *not* a standalone (i.e., not part of a JDK) JRE.
+* SUSHI and JBSE use the reserved `sun.misc.Unsafe` class, a thing that Eclipse forbids by default. To avoid Eclipse complaining about that you must modify the workspace preferences as follows: From the main menu choose Eclipse > Preferences... under macOS, or Window > Preferences... under Windows and Linux. On the left panel select Java > Compiler > Errors/Warnings, then on the right panel open the option group "Deprecated and restricted API", and for the option "Forbidden reference (access rules)" select the value "Warning" or "Info" or "Ignore".
+* Switch to the Git perspective. If you cloned the Github SUSHI repository and the submodules from the command line, you can import the clone under Eclipse by clicking under the Git Repositories view the button for adding an existing repository. Otherwise you can clone the  repository by clicking the clone button, again available under the Git Repositories view (remember to tick the box "Clone submodules"). Eclipse does *not* want you to clone the repository under your Eclipse workspace, and instead wants you to follow the standard git convention of putting the git repositories in a `git` subdirectory of your home directory. If you clone the repository from a console, please follow this standard (if you clone the repository from the Git perspective Eclipse will do this for you).
+* Switch back to the Java perspective and from the main menu select File > Import... In the Select the Import Wizard window that pops up choose the Gradle > Existing Gradle Project wizard and press the Next button twice. In the Import Gradle Project window that is displayed, enter in the Project root directory field the path to the SUSHI cloned git repository, and then press the Finish button to confirm. Now your workspace should have four Java project named `jbse`, `sushi`, `sushi-lib`, and `sushi-master`.
+* Unfortunately the Buildship Gradle plugin is not able to fully configure the imported projects: As a consequence, after the import you will see some compilation errors due to the fact that the JBSE project did not generate some source files yet. Fix the situation by following this procedure: In the Gradle Tasks view double-click on the sushi > build > build task to build all the projects. Then, right-click the jbse project in the Package Explorer, and in the contextual menu that pops up select Gradle > Refresh Gradle Project. After that, you should see no more errors.
 
-* Clone the Github SUSHI repository by switching to the git perspective and selecting the clone button under the Git Repositories view. Remember to tick the box "Clone submodules". Alternatively, open a console and clone the repository from the command line, then init/update the submodules. Remember that Eclipse does *not* want you to clone the repository under your Eclipse workspace, and instead wants you to follow the standard git convention of putting the git repositories in a `git` subdirectory of your home directory. If you clone the repository from a console, please follow this standard (if you do it from the git perspective Eclipse will do this for you).
-* Click on the icon of the cloned repository, and right-click the Working Tree folder, then select Import Projects...: You should see a window with a progress bar, and after a while Eclipse will tell you that it has found five different projects, and that it will import them all as Maven projects. Press Finish to confirm, and then switch back to the Java perspective: Now your current workspace should have five Java project named `jbse`, `sushi`, `master`, `runtime` and `shaded`. If you chose to clone the repositories from the console, select from the main menu File > Import... and then select Maven > Existing Maven Projects, press Next and then provide as root directory the directory where you cloned the SUSHI repository: Eclipse will, again, detect all the five projects automatically.
-* You may see some compilation errors emerge while Eclipse builds the workspace (it usually takes a while after the JBSE project has been created), but in the end there should be none. It could however be the case that Eclipse generates some compilation errors caused by the fact that some of the generate Eclipse projects use the reserved `sun.misc.Unsafe` class. By default this should generate only warnings, but if it generates errors you shall modify the project settings by hand so it does not. Right-click one of the projects in the Package Explorer that generate the compile-time errors, select Properties, and then Java Compiler > Errors/Warnings. Click on "Enable project specific settings", then open the option group "Deprecated and restricted API", and for the option "Forbidden reference" select the value "Warning". Repeat for all the projects that generate the errors.
+In the end, your Eclipse workspace should contain these projects:
 
-A brief description of the Eclipse projects follows:
-
-* sushi: the container project from which Maven must be run;
-* jbse: JBSE as a submodule; on the filesystem it is in the `jbse` subdirectory;
-* master: the bulk of the SUSHI tool; on the filesystem it is in the `master` subdirectory;
-* runtime: the [sushi-lib](https://github.com/pietrobraione/sushi-lib) submodule for the run-time library component of SUSHI; on the filesystem it is in the `runtime` subdirectory;
-* shaded: this project produces an uber JAR for the complete SUSHI tool; on the filesystem it is in the `shaded` subdirectory.
-
-The last step to do is to bind in the master Eclipse project the GLPK-Java jar file to the native part of the GLPK-Java library, so you can launch SUSHI from an Eclipse launch configuration. Unfortunately m2e does not do this step for you, so you must do it manually. This last step must be done after you have modified the POMs as explained in the section "Patching the POMs". You must proceed as follows: After patching the POMs right-click on the master project in the Package Explorer, select Maven > Update Project..., select again (if it is the case) the master project in the list that will appear and press OK. This will trigger a refresh of the Maven dependencies. Then, right-click the master Eclipse project in the Package Explorer, and select Build Path > Configure Build Path... from the contextual menu, select the Libraries tab, open the Maven Dependencies group, select the `glpk-java-x.y.z.jar` dependency, click the triangle on the left of it, select Native Library Location, click the Edit button and enter the path where the native GLPK-Java libraries are.
+* sushi: the container project from which Gradle must be run;
+* sushi-master: the bulk of the SUSHI tool; on the filesystem it is in the `master` subdirectory;
+* sushi-lib: the [sushi-lib](https://github.com/pietrobraione/sushi-lib) submodule for the run-time library component of SUSHI; on the filesystem it is in the `runtime` subdirectory;
+* jbse: JBSE as a submodule; on the filesystem it is in the `jbse` subdirectory.
 
 ## Deploying SUSHI
 
-Deploying SUSHI to be used outside Eclipse is tricky but feasible with some effort. The `mvn package` command will produce a SUSHI-Lib jar `runtime/target/sushi-lib-<VERSION>.jar`, the JBSE jars in `jbse/target` (refer to the JBSE project's README file for more information on them), and a jar for the main SUSHI application `master/target/sushi-master-<VERSION>.jar`. You may deploy them and all the missing dependencies, if you feel adventurous. However, `mvn package` will also produce an uber-jar `shaded/target/sushi-shaded-<VERSION>.jar`, containing all the runtime dependencies excluded Z3, EvoSuite, `tools.jar` and the native part of GLPK and GLPK-Java. Deploying based on the uber-jar currently is the easiest way for deploying SUSHI. Moreover, although JBSE and SUSHI-Lib are already included in the SUSHI uber-jar, you will need to deploy the JBSE and SUSHI-Lib jars. The instruction for deploying based on the uber-jar plus these six dependencies are the following ones:
+Deploying SUSHI to be used outside Eclipse is tricky. The `gradlew build` command will produce a SUSHI-Lib jar `runtime/build/libs/sushi-lib-<VERSION>.jar`, the JBSE jars in `jbse/build/libs` (refer to the JBSE project's README file for more information on them), and a jar for the main SUSHI application `master/build/libs/sushi-master-<VERSION>.jar`. You need to deploy them and all their dependencies. Moreover, `gradlew build` will produce an uber-jar `master/build/libs/sushi-master-<VERSION>-shaded.jar`, containing all the runtime dependencies excluded EvoSuite, `tools.jar`, the GLPK-Java jar file, and the native files (Z3 and the native parts of GLPK and GLPK-Java). Deploying based on the uber-jar is easier, but to our experience the uber-jar setup is more crash-prone.
 
-* You can deploy the SUSHI uber-jar anywhere: Just set the Java classpath to point to it;
-* Deploying Z3 is very easy: Just put the Z3 binary directory somewhere, and add the Z3 binary to the system PATH, or use the `-z3` option when invoking SUSHI to point at it. 
-* Deploying EvoSuite is similarly easy: Put the right EvoSuite jar somewhere, and then use the `-evosuite` option when invoking SUSHI to point at it. Since SUSHI executes EvoSuite in a separate process, you do not even need to put the EvoSuite jar on the classpath. 
-* For what concerns `tools.jar`, we remark that SUSHI will not run if you deploy it on a machine that has a JRE, instead of a JDK, installed. This because SUSHI needs to invoke the platform's `javac` to compile some intermediate files. Therefore, you need to install a full JDK 8 on the target machine, providing both `tools.jar` and `javac` to SUSHI. Add `tools.jar` to the classpath, if it is not already in it by default.
-* When you deploy the native parts of GLPK and GLPK-Java, be sure that the versions you are deploying are the same used during compilation. Then, set the Java native library path to point to the directory where the native libraries of GLPK-Java are installed, either by providing the `-Djava.library.path=...` option when launching SUSHI, or (under any UNIX-like system) by setting the environment variable `LD_LIBRARY_PATH`.
-* Finally, the JBSE and SUSHI-Lib jars need not to be on the classpath (they are included in the SUSHI uber-jar, that is already in the classpath), but the path to them must be passed to SUSHI when it is invoked through the `-jbse_lib` and `-sushi_lib` options. 
+Here follows detailed instructions for deploying SUSHI based on the plain jars:
+
+way for deploying SUSHI. Moreover, although JBSE and SUSHI-Lib are already included in the SUSHI uber-jar, you will need to deploy the JBSE and SUSHI-Lib jars. The instruction for deploying based on the uber-jar plus these six dependencies are the following ones:
+
+* Deploy Z3, possibly adding the Z3 binary to the system PATH. 
+* Deploy the `sushi-master-<VERSION>.jar` and set the Java classpath to point at it.
+* Deploy either the `jbse-<version>.jar` or the `jbse-<version>-shaded.jar` and set the Java classpath to point at it.
+* Deploy the `sushi-lib-<VERSION>.jar` and set the Java classpath to point at it.
+* Deploy the two EvoSuite jars contained in the `evosuite` directory. SUSHI executes EvoSuite in a separate process, therefore you do not need to put the EvoSuite jars in the classpath. 
+* SUSHI will not run if you deploy it on a machine that has a JRE, instead of a JDK, installed. This because SUSHI needs to invoke the platform's `javac` to compile some intermediate files. Therefore, you need to install a full JDK 8 on the target machine, providing both `tools.jar` and `javac` to SUSHI. Add `tools.jar` to the classpath.
+* Deploy the args4j, JavaParser and (if you do not use the `jbse-<version>-shaded.jar` uber-jar) Javassist jars that you find in the Gradle's cache. All these jars must be on the classpath.
+* Deploy GPLK and GLPK-Java, ensuring that the version of GLPK-Java you are deploying is the same used during compilation. Then, set the Java native library path to point to the directory where the native libraries of GLPK-Java are installed, either by providing the `-Djava.library.path=...` option when launching SUSHI, or (under any UNIX-like system) by setting the environment variable `LD_LIBRARY_PATH`. Also, set the classpath to point at the GLPK-Java jar file.
+
+If you deploy the `sushi-master-<VERSION>-shaded.jar` uber-jar you do not need to deploy the JBSE, SUSHI-Lib, args4j and Javassist jars.
 
 ## Usage
 
-You can launch SUSHI as follows:
+Compile the target program with the debug symbols, then launch SUSHI from the command line as follows:
 
-    $ java -cp <classpath> -Djava.library.path=<nativeLibraryPath> sushi.Main <options>
+    $ java -Xms16G -Xmx16G -cp <classpath> -Djava.library.path=<nativeLibraryPath> sushi.Main <options>
 
-or:
-
-    $ java -cp <classpath> -Djava.library.path=<nativeLibraryPath> -jar <sushiUberJarPath> <options>
- 
 where `<classpath>` and `<nativeLibraryPath>` must be set according to the indications of the previous section. If you launch SUSHI without options it will print a help screen that lists all the available options. The indispensable ones, that you *must* set in order for SUSHI to work, are:
 
-* `-classes`: a colon- or semicolon-separated (depending on the OS) list of paths; It is the classpath of the software to test.
+* `-evosuite`: the path to one of the two EvoSuite jar files contained in the `evosuite/` folder. Use `evosuite-shaded-1.0.6-SNAPSHOT.jar` if you activate the option `-use_mosa`, otherwise use `evosuite-shaded-1.0.3.jar`.
+* `-use_mosa`: configures EvoSuite to use a multi-objective search algorithm (MOSA). You usually want this option to be active, since it makes SUSHI faster in most cases.
+* `-jbse_lib`: this must be set to the path of the JBSE jar file from the `jbse/build/libs` directory. It must be the same you put in the classpath. If you chose to deploy the `sushi-master-<VERSION>-shaded.jar` uber-jar, set this option to point to it.
+* `-sushi_lib`: this must be set to the path of the SUSHI-Lib jar file from the `runtime/build/libs` directory. If you chose to deploy the `sushi-master-<VERSION>-shaded.jar` uber-jar, set this option to point to it.
+* `-z3`:  the path to the Z3 binary.
+* `-classes`: a colon- or semicolon-separated (depending on the OS) list of paths; It is the classpath of the software under test.
 * `-target_class`: the name in [internal classfile format](https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.2.1) of the class to test: SUSHI will generate tests for all the methods in the class. Or alternatively:
 * `-target_method`: the signature of a method to test. The signature is a colon-separated list of: the name of the container class in internal classfile format; the [descriptor](https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.3.3) of the method; the name of the method. You can use the `javap` command, included with every JDK setup, to obtain the internal format signatures of methods: `javap -s my.Class` prints the list of all the methods in `my.Class` with their signatures in internal format.
-* `-evosuite`: the path to one of the two EvoSuite jar files contained in the `evosuite/` folder. Use `evosuite-shaded-1.0.6-SNAPSHOT.jar` if the option `-use_mosa` is active, otherwise use `evosuite-shaded-1.0.3.jar`.
-* `-use_mosa`: configures EvoSuite to use a multi-objective search algorithm (MOSA). You usually want this option to be active, since it  makes SUSHI faster in most cases.
-* `-jbse_lib`: this must be set to the path of the JBSE jar file. You will find one in the `target` directory of the `sushi` submodule.
-* `-sushi_lib`: this must be set to the path of the SUSHI-Lib jar file. You will find one in the `target` directory of the `runtime` submodule.
-* `-z3`:  the path to the Z3 binary (you can omit it if Z3 is on the system PATH).
-* `-tmp_base`: a path to a temporary directory; SUSHI needs to create many intermediate files, and will put them in a subdirectory of `-tmp_base` having as name the date and time when it was launched.
+* `-tmp_base`: a path to a temporary directory; SUSHI needs to create many intermediate files, and will put them in a subdirectory of the one that you specify with this option. The subdirectory will have as name the date and time when SUSHI was launched.
 * `-out`: a path to a directory where SUSHI will put the generated tests.
 
 An alternative way to configure SUSHI is to define a subclass of the class `sushi.configure.ParametersModifier` contained in the runtime subproject. The subclass should override one or more of the `modify` methods that receive as input a  parameter object, and modify the object by setting the parameters of interest. In this case SUSHI must be invoked by specifying the following options:
@@ -109,7 +112,13 @@ An alternative way to configure SUSHI is to define a subclass of the class `sush
 * `-params_modifier_path`: the path where your custom subclass of  `sushi.configure.ParametersModifier` is.
 * `-params_modifier_class`: the name of your custom subclass of  `sushi.configure.ParametersModifier`.
 
-You will find examples of this way of configuring SUSHI in the sushi-experiment, sushi-experiment-closure01 and sushi-experiment-closure72 projects.
+You will find examples of this way of configuring SUSHI in the [sushi-experiments](https://github.com/pietrobraione/sushi-experiments), [sushi-experiments-closure01](https://github.com/pietrobraione/sushi-experiments-closure01) and [sushi-experiments-closure72](https://github.com/pietrobraione/sushi-experiments-closure72) projects. A possible example of command line is the following:
+
+    java -Xms16G -Xmx16G -cp sushi-master-0.2.0-SNAPSHOT.jar:sushi-lib-0.2.0-SNAPSHOT.jar:jbse-0.9.0-SNAPSHOT-shaded.jar:args4j-2.32.jar:/usr/lib/jvm/java-8-openjdk-amd64/lib/tools.jar:/usr/share/java/glpk-java.jar  -Djava.library.path=/usr/lib/jni sushi.Main -jbse_lib jbse-0.9.0-SNAPSHOT-shaded.jar -sushi_lib sushi-lib-0.2.0-SNAPSHOT.jar -evosuite evosuite-shaded-1.0.6-SNAPSHOT.jar -use_mosa -z3 /opt/local/bin/z3 -classes ./my-application/bin -target_class my/Class -tmp_base ./tmp -out ./tests
+    
+In the case you prefer (at your own risk) to use the SUSHI uber-jar the command line becomes a bit shorter:
+
+    java -Xms16G -Xmx16G -cp sushi-master-0.2.0-SNAPSHOT-shaded.jar:/usr/lib/jvm/java-8-openjdk-amd64/lib/tools.jar:/usr/share/java/glpk-java.jar  -Djava.library.path=/usr/lib/jni sushi.Main -jbse_lib sushi-master-0.2.0-SNAPSHOT-shaded.jar -sushi_lib sushi-master-0.2.0-SNAPSHOT-shaded.jar -evosuite evosuite-shaded-1.0.6-SNAPSHOT.jar -use_mosa -z3 /opt/local/bin/z3 -classes ./my-application/bin -target_class my/Class -tmp_base ./tmp -out ./tests
 
 ## Generated tests
 
@@ -117,16 +126,18 @@ The tests are generated in EvoSuite format, where a test suite is composed by tw
 
 The generated files have names structured as follows:
     
-    <class name>_<method name>_PC_<number>_<number>_Test_scaffolding.java //the scaffolding class
-    <class name>_<method name>_PC_<number>_<number>_Test.java             //the actual suite class
+    <class name>_<method number>_<trace number>_Test_scaffolding.java //the scaffolding class
+    <class name>_<method number>_<trace number>_Test.java             //the actual suite class
 
-where `<class name>` is the name of the class under test, `<method name>` is the name of the method under test, and the `PC_<number>_<number>` string identifies the trace along which the test executes (you don’t need this information so we will not elaborate on it further). The scaffolding and test suite classes are declared in the same package as the class under test, so they can access its package-level members. This means, for example, that a generated .java file for an `avl_tree.AvlTree` class under test, if you have specified the option `-out /your/out/dir`, could be something like `/your/out/dir/avl_tree/AvlTree_findMax_PC_2_1_Test.java`. If you want to compile and execute the test suites add the right root to the classpath and qualify the class name of the test suite with the package name, e.g.:
+where `<class name>` is the name of the class under test, `<method number>` is a number identifying the method under test, and `<trace number>` identifies the trace along which the test executes. To associate a method number with the corresponding method under test open the generated actual suite source file, e.g., `AvlTree_2_1_Test.java`: On top of the file you will find a comment line starting with the words "Covered goal", e.g., `//Covered goal: avl_tree.AvlTree.findMax()I:`. The method signature you find in the comment is the signature of the method under test (`findMax` in the example). Alternatively, go to the temporary directory of the SUSHI run that generated the tests, and look for the file `branches_<method number>.txt` (`branches_2.txt` in our example). The first line of the file contains the signature of the method under test. 
+
+The generated scaffolding/actual suite classes are declared in the same package as the class under test, so they can access its package-level members. This means, for example, that the generated .java file for an `avl_tree.AvlTree` class under test, if you have specified the option `-out /your/out/dir`, will be put in `/your/out/dir/avl_tree/AvlTree_2_1_Test.java`. If you want to compile and execute the test suites add the output directory to the classpath and qualify the class name of the test suite with the package name, e.g.:
 
     $ javac -cp junit.jar:evosuite-shaded-1.0.3.jar:avltree.jar
-        /your/out/dir/avl_tree/AvlTree_findMax_PC_2_1_Test.java
+        /your/out/dir/avl_tree/AvlTree_2_1_Test.java
     $ java -cp junit.jar:evosuite-shaded-1.0.3.jar:avltree.jar:/your/out/dir
-        org.junit.runner.JUnitCore avl_tree.AvlTree_findMax_PC_2_1_Test
+        org.junit.runner.JUnitCore avl_tree.AvlTree_2_1_Test
 
 ## Disclaimer
 
-SUSHI is a research prototype. As such, it is more focused on functionality than on usability. We are committed to progressively improve the situation.
+SUSHI is a research prototype. As such, it is more focused on functionality than on usability. We are committed to progressively improving the situation.

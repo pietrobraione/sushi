@@ -146,8 +146,7 @@ public class Evosuite extends Tool<String[]> {
 		evo.add("-Dassertions=false");
 		evo.add("-Dglobal_timeout=" + getTimeBudget() * 2);  //double timeout so it does not terminate (must be killed by the coordinator upon timeout)
 		evo.add("-Dreport_dir=" + DirectoryUtils.I().getTmpDirPath().toString());
-		evo.add("-Djunit_suffix=_" + (options.getUseMOSA() ? "" : (targetMethodSignature.substring(0, targetMethodSignature.indexOf('(')) + "_" +
-				"PC_" + targetMethodNumber + "_" + traceNumberLocal) + "_") + "Test");
+		evo.add("-Djunit_suffix=_" + (options.getUseMOSA() ? "" : targetMethodNumber + "_" + traceNumberLocal + "_") + "Test");
 		evo.add("-Dsearch_budget=" + getTimeBudget() * 2);  //double timeout so it does not terminate (must be killed by the coordinator upon timeout)
 		evo.add("-Dtest_dir=" + Options.I().getOutDirectory());
 		evo.add("-Dvirtual_fs=false");
@@ -161,6 +160,7 @@ public class Evosuite extends Tool<String[]> {
 		evo.add("-Davoid_replicas_of_individuals=true"); 
 		evo.add("-Dno_change_iterations_before_reset=30");
 		if (options.getUseMOSA()) {
+			evo.add("-Dpath_condition_evaluators_dir=" + DirectoryUtils.I().getTmpDirPath().toString());
 			evo.add("-Demit_tests_incrementally=true");
 			evo.add("-Dcrossover_function=SUSHI_HYBRID");
 			evo.add("-Dalgorithm=DYNAMOSA");
@@ -199,11 +199,16 @@ public class Evosuite extends Tool<String[]> {
 	}
 	
 	private String getClassPath() {
-		return IOUtils.concatClassPath(
-					IOUtils.concatClassPath(Options.I().getClassesPath()),
-					IOUtils.concatClassPath(
-							DirectoryUtils.I().getTmpDirPath(), 
-							Options.I().getSushiLibPath()));
+		final Options options = Options.I();
+		if (options.getUseMOSA()) {
+			return IOUtils.concatClassPath(
+					IOUtils.concatClassPath(options.getClassesPath()),
+					options.getSushiLibPath().toString());
+		} else {
+			return IOUtils.concatClassPath(
+					IOUtils.concatClassPath(options.getClassesPath()),
+					IOUtils.concatClassPath(options.getSushiLibPath(), DirectoryUtils.I().getTmpDirPath()));
+		}
 	}
 	
 	private void setUserDefinedParameters(List<String> evo) {
