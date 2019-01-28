@@ -189,10 +189,9 @@ public class RunJBSE_Sushi {
 					return super.atStepPre();
 				}
 				
-				final int currentPC = currentState.getPC();
-				
 				//detect whether we are at the entry point of a method
 				//and in case adds a pseudobranch for the entry point
+				final int currentPC = currentState.getPC();
 				if (currentPC == 0) {
 					updateCoverage(currentState);
 				}
@@ -253,7 +252,7 @@ public class RunJBSE_Sushi {
 			if (currentState.phase() == Phase.PRE_INITIAL) {
 				return super.atStepPre();
 			}
-						
+
 			//if we stepped a branching bytecode, records coverage
 			if (this.atJump) {
 				try {
