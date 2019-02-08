@@ -381,7 +381,6 @@ public class RunJBSE_Sushi {
 					try (final BufferedWriter w = Files.newBufferedWriter(f)) {
 						RunJBSE_Sushi.this.formatter.setConstants(this.stringLiteralsCurrentTrace);
 						RunJBSE_Sushi.this.formatter.formatPrologue();
-						RunJBSE_Sushi.this.formatter.formatStringLiterals();
 						RunJBSE_Sushi.this.formatter.formatState(currentState);
 						RunJBSE_Sushi.this.formatter.formatEpilogue();
 				        w.write(RunJBSE_Sushi.this.formatter.emit());
