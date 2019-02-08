@@ -61,6 +61,8 @@ import jbse.tree.StateTree.BranchPoint;
 import jbse.val.HistoryPoint;
 import jbse.val.PrimitiveSymbolic;
 import jbse.val.Reference;
+import jbse.val.ReferenceConcrete;
+import jbse.val.ReferenceSymbolic;
 import jbse.val.Simplex;
 import jbse.val.Value;
 import sushi.configure.JBSEParameters;
@@ -122,11 +124,11 @@ public class RunJBSE_Sushi {
 		private final HashMap<String, Long> branchNumberOf = new HashMap<>();
 		private final ArrayList<String> branchTargets = new ArrayList<>();
 		private final HashMap<String, TreeSet<Long>> coverage = new HashMap<>();
-		private final HashMap<String, TreeSet<String>> stringLiterals = new HashMap<>();
+		private final HashMap<String, HashMap<Long, String>> stringLiterals = new HashMap<>();
 		private final HashMap<BranchPoint, Boolean> atJumpBacktrack = new HashMap<>();
 		private final HashMap<BranchPoint, Integer> jumpPCBacktrack = new HashMap<>();
 		private TreeSet<Long> coverageCurrentTrace = new TreeSet<>();
-		private TreeSet<String> stringLiteralsCurrentTrace = new TreeSet<>();
+		private HashMap<Long, String> stringLiteralsCurrentTrace = new HashMap<>();
 		private Frame stringLiteralFrame = null;
 		private boolean atJump = false;
 		private int jumpPC = 0;
@@ -275,8 +277,9 @@ public class RunJBSE_Sushi {
 							final Objekt o = currentState.getObject(r);
 							if (o != null && JAVA_STRING.equals(o.getType().getClassName())) {
 								final String s = valueString(currentState, r);
-								this.stringLiteralsCurrentTrace.add(s);
-								this.stringLiterals.put(currentState.getIdentifier(), new TreeSet<>(this.stringLiteralsCurrentTrace));
+								final long heapPosition = (r instanceof ReferenceConcrete ? ((ReferenceConcrete) r).getHeapPosition() : currentState.getResolution((ReferenceSymbolic) r));
+								this.stringLiteralsCurrentTrace.put(heapPosition, s);
+								this.stringLiterals.put(currentState.getIdentifier(), new HashMap<>(this.stringLiteralsCurrentTrace));
 							}
 						}
 					}
@@ -304,12 +307,12 @@ public class RunJBSE_Sushi {
 				this.coverageCurrentTrace = (uptraceCoverage == null ? new TreeSet<>() : new TreeSet<>(uptraceCoverage));
 			}
 			{
-				TreeSet<String> uptraceStringLiterals = this.stringLiterals.get(uptraceId);
+				HashMap<Long, String> uptraceStringLiterals = this.stringLiterals.get(uptraceId);
 				while (uptraceStringLiterals == null && uptraceId.lastIndexOf(HistoryPoint.BRANCH_IDENTIFIER_SEPARATOR_COMPACT) != -1) {
 					uptraceId = uptraceId.substring(0, uptraceId.lastIndexOf(HistoryPoint.BRANCH_IDENTIFIER_SEPARATOR_COMPACT));
 					uptraceStringLiterals = this.stringLiterals.get(uptraceId);
 				}
-				this.stringLiteralsCurrentTrace = (uptraceStringLiterals == null ? new TreeSet<>() : new TreeSet<>(uptraceStringLiterals));
+				this.stringLiteralsCurrentTrace = (uptraceStringLiterals == null ? new HashMap<>() : new HashMap<>(uptraceStringLiterals));
 			}
 			final Boolean atJump_ = this.atJumpBacktrack.get(bp);
 			this.atJump = (atJump_ == null ? false : atJump_);
@@ -376,8 +379,9 @@ public class RunJBSE_Sushi {
 					//emits the wrapper
 					final Path f =  RunJBSE_Sushi.this.parameters.getWrapperFilePath(RunJBSE_Sushi.this.traceCounter);
 					try (final BufferedWriter w = Files.newBufferedWriter(f)) {
+						RunJBSE_Sushi.this.formatter.setConstants(this.stringLiteralsCurrentTrace);
 						RunJBSE_Sushi.this.formatter.formatPrologue();
-						RunJBSE_Sushi.this.formatter.formatStringLiterals(this.stringLiteralsCurrentTrace);
+						RunJBSE_Sushi.this.formatter.formatStringLiterals();
 						RunJBSE_Sushi.this.formatter.formatState(currentState);
 						RunJBSE_Sushi.this.formatter.formatEpilogue();
 				        w.write(RunJBSE_Sushi.this.formatter.emit());
