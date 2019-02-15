@@ -13,32 +13,32 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-public class TardisTool implements ITestingTool {
-	private static final String HOME           = "/home/tardis";
-	private static final String TARDIS         = HOME + "/lib/tardis-master-0.1.0-SNAPSHOT.jar";
+public class SushiTool implements ITestingTool {
+	private static final String HOME           = "/home/sushi";
+	private static final String SUSHI          = HOME + "/lib/sushi-master-0.2.0-SNAPSHOT.jar";
 	private static final String SUSHI_LIB      = HOME + "/lib/sushi-lib-0.2.0-SNAPSHOT.jar";
 	private static final String JBSE_LIB       = HOME + "/lib/jbse-0.9.0-SNAPSHOT-shaded.jar";
-	private static final String EVOSUITE_LIB   = HOME + "/lib/evosuite-shaded-1.0.6-SNAPSHOT.jar";
 	private static final String ARGS4J_LIB     = HOME + "/lib/args4j-2.32.jar";
-	private static final String JAVAPARSER_LIB = HOME + "/lib/javaparser-core-3.4.0.jar";
+	private static final String EVOSUITE_LIB   = HOME + "/lib/evosuite-shaded-1.0.6-SNAPSHOT.jar";
+	private static final String GLPK_LIB       = "/usr/share/java/glpk-java.jar";
 	private static final String TOOLS_LIB      = "/usr/lib/jvm/java-8-openjdk-amd64/lib/tools.jar";
 	private static final String Z3_BIN         = "/usr/bin/z3";
+	private static final String GLPK_NATIVE    = "/usr/lib/x86_64-linux-gnu/jni";
 	private static final String TMP_DIR        = HOME + "/temp/data";
 	private static final String OUT_DIR        = HOME + "/temp/testcases";
 	
-	private final String classPathTardis;
+	private final String classPathSushi;
 	private String classPathSUT;
 
-	public TardisTool() {
+	public SushiTool() {
 		final StringBuilder sb = new StringBuilder();
-		sb.append(TARDIS); sb.append(":");
+		sb.append(SUSHI); sb.append(":");
 		sb.append(SUSHI_LIB); sb.append(":");
 		sb.append(JBSE_LIB); sb.append(":");
-		sb.append(EVOSUITE_LIB); sb.append(":");
 		sb.append(ARGS4J_LIB); sb.append(":");
-		sb.append(JAVAPARSER_LIB); sb.append(":");
+		sb.append(GLPK_LIB); sb.append(":");
 		sb.append(TOOLS_LIB);
-		this.classPathTardis = sb.toString();
+		this.classPathSushi = sb.toString();
 	}
 
 	@Override
@@ -61,14 +61,15 @@ public class TardisTool implements ITestingTool {
 	public void run(String cName, long timeBudget) {
 		try {
 			final ProcessBuilder pbuilder = new ProcessBuilder(
-					"java", "-Xms16G", "-Xmx16G", 
-					"-classpath", this.classPathTardis,
-					"tardis.Main", 
+					"java", "-Xms6144m", "-Xmx6144m", 
+					"-classpath", this.classPathSushi,
+					"-Djava.library.path=" + GLPK_NATIVE,
+					"sushi.Main", 
 					"-sushi_lib", SUSHI_LIB, "-jbse_lib", JBSE_LIB, "-evosuite", EVOSUITE_LIB, "-z3", Z3_BIN,
-					"-use_mosa", "-num_mosa_targets", "5", 
-					"-num_threads", "5", "-max_depth", "50",
+					"-use_mosa", "-num_mosa_targets", "5",
+					"-log_level", "DEBUG",
 					"-tmp_base", TMP_DIR, "-out", OUT_DIR, 
-					"-global_time_budget_duration", Long.toString(timeBudget), "-global_time_budget_unit", "SECONDS",
+					"-global_time_budget", Long.toString(timeBudget),
 					"-classes", this.classPathSUT, "-target_class", cName.replace('.', '/')
 			);
 
