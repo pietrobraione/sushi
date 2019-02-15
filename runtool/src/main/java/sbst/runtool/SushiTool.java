@@ -70,6 +70,8 @@ public class SushiTool implements ITestingTool {
 					"-log_level", "DEBUG",
 					"-tmp_base", TMP_DIR, "-out", OUT_DIR, 
 					"-global_time_budget", Long.toString(timeBudget),
+					"-generation_time_budget", Long.toString(timeBudget/2),
+					"-synthesis_time_budget", Long.toString(timeBudget/2),
 					"-classes", this.classPathSUT, "-target_class", cName.replace('.', '/')
 			);
 
