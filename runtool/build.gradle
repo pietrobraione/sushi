@@ -1,0 +1,24 @@
+plugins {
+    id 'java'
+    id 'eclipse'
+}
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    testImplementation 'junit:junit:4.12'
+    implementation project(':jbse')
+    implementation project(':sushi-lib')
+    implementation project(':sushi-master')
+}
+
+jar {
+    manifest {
+        attributes 'Implementation-Title': name,
+                   'Implementation-Vendor': 'University of Milano-Bicocca',
+                   'Implementation-Version': version,
+                   'Main-Class': 'wsbst.runtool.Main'
+    }
+}

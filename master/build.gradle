@@ -4,7 +4,7 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '4.0.3'
 }
 
-def glpkJavaVersion = '1.11.0'
+def glpkJavaVersion = '1.7.0'
 def glpkJavaJniLocation = '/usr/local/lib/jni'
 
 repositories {

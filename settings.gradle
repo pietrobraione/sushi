@@ -3,7 +3,9 @@ rootProject.name = 'sushi'
 include ':jbse'
 include ':sushi-lib'
 include ':sushi-master'
+include ':runtool'
 
 project(':jbse').projectDir = file('jbse')
 project(':sushi-lib').projectDir = file('runtime')
 project(':sushi-master').projectDir = file('master')
+project(':runtool').projectDir = file('runtool')
