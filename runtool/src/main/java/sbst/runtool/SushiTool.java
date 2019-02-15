@@ -66,7 +66,7 @@ public class SushiTool implements ITestingTool {
 					"-Djava.library.path=" + GLPK_NATIVE,
 					"sushi.Main", 
 					"-sushi_lib", SUSHI_LIB, "-jbse_lib", JBSE_LIB, "-evosuite", EVOSUITE_LIB, "-z3", Z3_BIN,
-					"-use_mosa", "-num_mosa_targets", "5",
+					"-use_mosa",
 					"-log_level", "DEBUG",
 					"-tmp_base", TMP_DIR, "-out", OUT_DIR, 
 					"-global_time_budget", Long.toString(timeBudget),
