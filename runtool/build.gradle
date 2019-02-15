@@ -19,6 +19,6 @@ jar {
         attributes 'Implementation-Title': name,
                    'Implementation-Vendor': 'University of Milano-Bicocca',
                    'Implementation-Version': version,
-                   'Main-Class': 'wsbst.runtool.Main'
+                   'Main-Class': 'sbst.runtool.Main'
     }
 }
