@@ -102,6 +102,17 @@ public class RunMinimizer {
 			return 1;
 		}
 		
+		//also, we shall ignore all the branches that are not covered
+		//by any trace (it might happen at first iteration, since a JBSE
+		//instance may record a branch in the branches file, and then 
+		//crash before producing any coverage info)
+		try {
+			this.branchNumbersToIgnore.addAll(branchesThatMayNotBeCovered());
+		} catch (IOException e) {
+			e.printStackTrace();
+			return 1;
+		}
+		
 		//the branches to ignore are those that the user do not want to cover
 		try {
 			this.traceNumbersToIgnore = traceNumbersToIgnore();
@@ -141,6 +152,7 @@ public class RunMinimizer {
 			iocp.setPresolve(GLPK.GLP_ON);
 			final int res = GLPK.glp_intopt(p, iocp);
 			if (res != 0 && res != GLPK.GLP_ETMLIM) {
+				//no solution
 				return (firstIteration ? 1 : 0);
 			}
 			final int status = GLPK.glp_mip_status(p);
@@ -182,6 +194,21 @@ public class RunMinimizer {
 			String line;
 			while ((line = r.readLine()) != null) {
 				retVal.add(Integer.parseInt(line.trim()));
+			}
+		}
+		return retVal;
+	}
+	
+	private TreeSet<Integer> branchesThatMayNotBeCovered() throws IOException {
+		final TreeSet<Integer> retVal = new TreeSet<>(this.branchNumbers);
+		try (final BufferedReader r = Files.newBufferedReader(this.parameters.getCoverageFilePath())) {
+			String line;
+			while ((line = r.readLine()) != null) {
+				final String[] fields = line.split(",");
+				for (int i = 3; i < fields.length; ++i) {
+					final int branchNumber = Integer.parseInt(fields[i].trim());
+					retVal.remove(branchNumber);
+				}
 			}
 		}
 		return retVal;
