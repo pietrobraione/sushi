@@ -20,10 +20,10 @@ public class SushiTool implements ITestingTool {
 	private static final String JBSE_LIB       = HOME + "/lib/jbse-0.9.0-SNAPSHOT-shaded.jar";
 	private static final String ARGS4J_LIB     = HOME + "/lib/args4j-2.32.jar";
 	private static final String EVOSUITE_LIB   = HOME + "/lib/evosuite-shaded-1.0.6-SNAPSHOT.jar";
-	private static final String GLPK_LIB       = "/usr/share/java/glpk-java.jar";
+	private static final String GLPK_LIB       = HOME + "/opt/share/java/glpk-java.jar";
 	private static final String TOOLS_LIB      = "/usr/lib/jvm/java-8-openjdk-amd64/lib/tools.jar";
-	private static final String Z3_BIN         = "/usr/bin/z3";
-	private static final String GLPK_NATIVE    = "/usr/lib/x86_64-linux-gnu/jni";
+	private static final String Z3_BIN         = HOME + "/opt/bin/z3";
+	private static final String GLPK_NATIVE    = HOME + "/opt/lib/jni";
 	private static final String TMP_DIR        = HOME + "/temp/data";
 	private static final String OUT_DIR        = HOME + "/temp/testcases";
 	
