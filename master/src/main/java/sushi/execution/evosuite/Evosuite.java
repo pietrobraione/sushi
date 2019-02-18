@@ -159,6 +159,7 @@ public class Evosuite extends Tool<String[]> {
 		evo.add("-Duse_minimizer_during_crossover=true");
 		evo.add("-Davoid_replicas_of_individuals=true"); 
 		evo.add("-Dno_change_iterations_before_reset=30");
+		evo.add("-Dno_runtime_dependency");
 		if (options.getUseMOSA()) {
 			evo.add("-Dpath_condition_evaluators_dir=" + DirectoryUtils.I().getTmpDirPath().toString());
 			evo.add("-Demit_tests_incrementally=true");
