@@ -68,6 +68,7 @@ public class SushiTool implements ITestingTool {
 					"-sushi_lib", SUSHI_LIB, "-jbse_lib", JBSE_LIB, "-evosuite", EVOSUITE_LIB, "-z3", Z3_BIN,
 					"-use_mosa",
 					"-log_level", "DEBUG",
+					"-cov", "BRANCHES", 
 					"-tmp_base", TMP_DIR, "-out", OUT_DIR, 
 					"-global_time_budget", Long.toString(timeBudget),
 					"-generation_parallelism", "6",

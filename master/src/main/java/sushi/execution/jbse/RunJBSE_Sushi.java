@@ -251,6 +251,7 @@ public class RunJBSE_Sushi {
 		@Override
 		public boolean atStepPost() {
 			final State currentState = RunJBSE_Sushi.this.engine.getCurrentState();
+
 			if (currentState.phase() == Phase.PRE_INITIAL) {
 				return super.atStepPre();
 			}
@@ -503,7 +504,10 @@ public class RunJBSE_Sushi {
 			runnerParameters.setActions(new ActionsRun());
             final CalculatorRewriting calc = createCalculator();
 			final EngineParameters engineParameters = runnerParameters.getEngineParameters();
+			
+			//some custom settings for the tool competition
 			engineParameters.setMakePreInitClassesSymbolic(false);
+			
 			engineParameters.setCalculator(calc);
 			createDecisionProcedure(calc);
 			engineParameters.setDecisionProcedure(this.decisionProcedure);
