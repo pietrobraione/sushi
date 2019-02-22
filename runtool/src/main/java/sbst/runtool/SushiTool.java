@@ -14,18 +14,18 @@ import java.util.Date;
 import java.util.List;
 
 public class SushiTool implements ITestingTool {
-	private static final String HOME           = "/home/sushi";
+	private static final String HOME           = System.getProperty("user.dir");
+	private static final String Z3_BIN         = HOME + "/opt/bin/z3";
+	private static final String GLPK_NATIVE    = HOME + "/opt/lib/jni";
+	private static final String TMP_DIR        = HOME + "/temp/data";
+	private static final String OUT_DIR        = HOME + "/temp/testcases";
 	private static final String SUSHI          = HOME + "/lib/sushi-master-0.2.0-SNAPSHOT.jar";
 	private static final String SUSHI_LIB      = HOME + "/lib/sushi-lib-0.2.0-SNAPSHOT.jar";
 	private static final String JBSE_LIB       = HOME + "/lib/jbse-0.9.0-SNAPSHOT-shaded.jar";
 	private static final String ARGS4J_LIB     = HOME + "/lib/args4j-2.32.jar";
 	private static final String EVOSUITE_LIB   = HOME + "/lib/evosuite-shaded-1.0.6-SNAPSHOT.jar";
 	private static final String GLPK_LIB       = HOME + "/opt/share/java/glpk-java.jar";
-	private static final String TOOLS_LIB      = "/usr/lib/jvm/java-8-openjdk-amd64/lib/tools.jar";
-	private static final String Z3_BIN         = HOME + "/opt/bin/z3";
-	private static final String GLPK_NATIVE    = HOME + "/opt/lib/jni";
-	private static final String TMP_DIR        = HOME + "/temp/data";
-	private static final String OUT_DIR        = HOME + "/temp/testcases";
+	private static final String TOOLS_LIB      = System.getProperty("java.home") + "/../lib/tools.jar";
 	
 	private final String classPathSushi;
 	private String classPathSUT;
@@ -70,7 +70,10 @@ public class SushiTool implements ITestingTool {
 					"-log_level", "DEBUG",
 					"-tmp_base", TMP_DIR, "-out", OUT_DIR, 
 					"-global_time_budget", Long.toString(timeBudget),
+					"-generation_parallelism", "6",
 					"-generation_time_budget", Long.toString(timeBudget/2),
+					"-synthesis_parallelism", "6",
+					"-synthesis_redundance", "1",
 					"-synthesis_time_budget", Long.toString(timeBudget/2),
 					"-classes", this.classPathSUT, "-target_class", cName.replace('.', '/')
 			);
