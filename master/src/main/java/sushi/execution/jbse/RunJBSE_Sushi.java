@@ -503,6 +503,7 @@ public class RunJBSE_Sushi {
 			runnerParameters.setActions(new ActionsRun());
             final CalculatorRewriting calc = createCalculator();
 			final EngineParameters engineParameters = runnerParameters.getEngineParameters();
+			engineParameters.setMakePreInitClassesSymbolic(false);
 			engineParameters.setCalculator(calc);
 			createDecisionProcedure(calc);
 			engineParameters.setDecisionProcedure(this.decisionProcedure);
