@@ -21,10 +21,10 @@ import jbse.apps.run.CannotBuildFormatterException;
 import jbse.apps.run.DecisionProcedureConservativeRepOk;
 import jbse.apps.run.DecisionProcedureGuidance;
 import jbse.apps.run.DecisionProcedureGuidanceJDI;
-import jbse.apps.run.GuidanceException;
 import jbse.bc.Opcodes;
 import jbse.bc.exc.InvalidClassFileFactoryClassException;
 import jbse.common.exc.ClasspathException;
+import jbse.common.exc.InvalidInputException;
 import jbse.common.exc.UnexpectedInternalException;
 import jbse.dec.DecisionProcedure;
 import jbse.dec.DecisionProcedureAlgorithms;
@@ -55,7 +55,7 @@ import jbse.mem.exc.FrozenStateException;
 import jbse.mem.exc.InvalidNumberOfOperandsException;
 import jbse.mem.exc.ThreadStackEmptyException;
 import jbse.rewr.CalculatorRewriting;
-import jbse.rewr.Rewriter;
+import jbse.rewr.RewriterCalculatorRewriting;
 import jbse.rewr.RewriterOperationOnSimplex;
 import jbse.tree.StateTree.BranchPoint;
 import jbse.val.HistoryPoint;
@@ -63,6 +63,7 @@ import jbse.val.PrimitiveSymbolic;
 import jbse.val.Reference;
 import jbse.val.ReferenceConcrete;
 import jbse.val.ReferenceSymbolic;
+import jbse.val.Rewriter;
 import jbse.val.Simplex;
 import jbse.val.Value;
 import sushi.configure.JBSEParameters;
@@ -575,7 +576,7 @@ public class RunJBSE_Sushi {
 				    //no rewriter
 				    continue; 
 				}
-				final Rewriter rewriter = (Rewriter) rewriterClass.newInstance();
+				final RewriterCalculatorRewriting rewriter = (RewriterCalculatorRewriting) rewriterClass.newInstance();
 				calc.addRewriter(rewriter);
 			}
 		} catch (InstantiationException | IllegalAccessException | UnexpectedInternalException e) {
@@ -590,90 +591,88 @@ public class RunJBSE_Sushi {
 
 		//initializes cores
         final boolean needHeapCheck = this.parameters.getUseConservativeRepOks();
-		DecisionProcedure core = new DecisionProcedureAlwSat();
-		DecisionProcedure coreNumeric = (needHeapCheck ? new DecisionProcedureAlwSat() : null);
+		DecisionProcedure core = new DecisionProcedureAlwSat(calc);
+		DecisionProcedure coreNumeric = (needHeapCheck ? new DecisionProcedureAlwSat(calc) : null);
 		
-		//wraps cores with external numeric decision procedure
-		final DecisionProcedureType type = this.parameters.getDecisionProcedureType();
 		try {
-		    if (type == DecisionProcedureType.Z3) {
-            	final String switchChar = System.getProperty("os.name").toLowerCase().contains("windows") ? "/" : "-";
-                final ArrayList<String> z3CommandLine = new ArrayList<>();
-                z3CommandLine.add(path == null ? "z3" : path.toString());
-                z3CommandLine.add(switchChar + "smt2");
-                z3CommandLine.add(switchChar + "in");
-                z3CommandLine.add(switchChar + "t:10");
-		        core = new DecisionProcedureSMTLIB2_AUFNIRA(core, calc, z3CommandLine);
-		        coreNumeric = (needHeapCheck ? new DecisionProcedureSMTLIB2_AUFNIRA(coreNumeric, calc, z3CommandLine) : null);
-		    } else if (type == DecisionProcedureType.CVC4) {
-                final ArrayList<String> cvc4CommandLine = new ArrayList<>();
-                cvc4CommandLine.add(path == null ? "cvc4" : path.toString());
-                cvc4CommandLine.add("--lang=smt2");
-                cvc4CommandLine.add("--output-lang=smt2");
-                cvc4CommandLine.add("--no-interactive");
-                cvc4CommandLine.add("--incremental");
-                cvc4CommandLine.add("--tlimit-per=10000");
-		        core = new DecisionProcedureSMTLIB2_AUFNIRA(core, calc, cvc4CommandLine);
-		        coreNumeric = (needHeapCheck ? new DecisionProcedureSMTLIB2_AUFNIRA(coreNumeric, calc, cvc4CommandLine) : null);
-		    } else {
-		        core.close();
-		        if (coreNumeric != null) {
-		            coreNumeric.close();
-		        }
-		        throw new CannotBuildDecisionProcedureException("Wrong decision procedure type " + type);
-		    }
+			//wraps cores with external numeric decision procedure
+			final DecisionProcedureType type = this.parameters.getDecisionProcedureType();
+			if (type == DecisionProcedureType.Z3) {
+				final String switchChar = System.getProperty("os.name").toLowerCase().contains("windows") ? "/" : "-";
+				final ArrayList<String> z3CommandLine = new ArrayList<>();
+				z3CommandLine.add(path == null ? "z3" : path.toString());
+				z3CommandLine.add(switchChar + "smt2");
+				z3CommandLine.add(switchChar + "in");
+				z3CommandLine.add(switchChar + "t:10");
+				core = new DecisionProcedureSMTLIB2_AUFNIRA(core, z3CommandLine);
+				coreNumeric = (needHeapCheck ? new DecisionProcedureSMTLIB2_AUFNIRA(coreNumeric, z3CommandLine) : null);
+			} else if (type == DecisionProcedureType.CVC4) {
+				final ArrayList<String> cvc4CommandLine = new ArrayList<>();
+				cvc4CommandLine.add(path == null ? "cvc4" : path.toString());
+				cvc4CommandLine.add("--lang=smt2");
+				cvc4CommandLine.add("--output-lang=smt2");
+				cvc4CommandLine.add("--no-interactive");
+				cvc4CommandLine.add("--incremental");
+				cvc4CommandLine.add("--tlimit-per=10000");
+				core = new DecisionProcedureSMTLIB2_AUFNIRA(core, cvc4CommandLine);
+				coreNumeric = (needHeapCheck ? new DecisionProcedureSMTLIB2_AUFNIRA(coreNumeric, cvc4CommandLine) : null);
+			} else {
+				core.close();
+				if (coreNumeric != null) {
+					coreNumeric.close();
+				}
+				throw new CannotBuildDecisionProcedureException("Wrong decision procedure type " + type);
+			}
+
+			//further wraps cores with sign analysis, if required
+			if (this.parameters.getDoSignAnalysis()) {
+				core = new DecisionProcedureSignAnalysis(core);
+				coreNumeric = (needHeapCheck ? new DecisionProcedureSignAnalysis(coreNumeric) : null);
+			}
+
+			//further wraps cores with equality analysis, if required
+			if (this.parameters.getDoEqualityAnalysis()) {
+				core = new DecisionProcedureEquality(core);
+				coreNumeric = (needHeapCheck ? new DecisionProcedureEquality(coreNumeric) : null);
+			}
+
+			//further wraps core with LICS decision procedure
+			if (this.parameters.getUseLICS()) {
+				core = new DecisionProcedureLICS(core, this.parameters.getLICSRulesRepo());
+			}
+
+			//further wraps core with class init decision procedure
+			core = new DecisionProcedureClassInit(core, this.parameters.getClassInitRulesRepo());
+
+			//further wraps core with conservative repOk decision procedure
+			if (this.parameters.getUseConservativeRepOks()) {
+				final RunnerParameters checkerParameters = this.parameters.getConcretizationDriverParameters();
+				checkerParameters.setDecisionProcedure(new DecisionProcedureAlgorithms(coreNumeric));
+				this.consRepOk = 
+						new DecisionProcedureConservativeRepOk(core, checkerParameters, this.parameters.getConservativeRepOks());
+				core = this.consRepOk;
+			}
+
+			//wraps core with custom wrappers
+			for (DecisionProcedureCreationStrategy c : this.parameters.getDecisionProcedureCreationStrategies()) {
+				core = c.createAndWrap(core, calc);
+			}
+
+			//finally guidance
+			if (this.parameters.isGuided()) {
+				final RunnerParameters guidanceDriverParameters = this.parameters.getGuidanceDriverParameters(calc);
+				this.guidance = new DecisionProcedureGuidanceJDI(core, calc, guidanceDriverParameters, this.parameters.getMethodSignature());
+				core = this.guidance;
+			}
+
+			//sets the result
+			this.decisionProcedure = ((core instanceof DecisionProcedureAlgorithms) ? 
+					(DecisionProcedureAlgorithms) core :  new DecisionProcedureAlgorithms(core));
 		} catch (DecisionException e) {
 			throw new CannotBuildDecisionProcedureException(e);
+		} catch (InvalidInputException e) {
+			//this should never happen
+			throw new UnexpectedInternalException(e);
 		}
-		
-		//further wraps cores with sign analysis, if required
-		if (this.parameters.getDoSignAnalysis()) {
-			core = new DecisionProcedureSignAnalysis(core, calc);
-			coreNumeric = (needHeapCheck ? new DecisionProcedureSignAnalysis(coreNumeric, calc) : null);
-		}
-		
-		//further wraps cores with equality analysis, if required
-		if (this.parameters.getDoEqualityAnalysis()) {
-			core = new DecisionProcedureEquality(core, calc);
-			coreNumeric = (needHeapCheck ? new DecisionProcedureEquality(coreNumeric, calc) : null);
-		}
-		
-		//further wraps core with LICS decision procedure
-		if (this.parameters.getUseLICS()) {
-			core = new DecisionProcedureLICS(core, calc, this.parameters.getLICSRulesRepo());
-		}
-		
-		//further wraps core with class init decision procedure
-		core = new DecisionProcedureClassInit(core, calc, this.parameters.getClassInitRulesRepo());
-		
-		//further wraps core with conservative repOk decision procedure
-		if (this.parameters.getUseConservativeRepOks()) {
-		    final RunnerParameters checkerParameters = this.parameters.getConcretizationDriverParameters();
-		    checkerParameters.setDecisionProcedure(new DecisionProcedureAlgorithms(coreNumeric, calc));
-			this.consRepOk = 
-			    new DecisionProcedureConservativeRepOk(core, calc, checkerParameters, this.parameters.getConservativeRepOks());
-			core = this.consRepOk;
-		}
-
-		//wraps core with custom wrappers
-		for (DecisionProcedureCreationStrategy c : this.parameters.getDecisionProcedureCreationStrategies()) {
-			core = c.createAndWrap(core, calc);
-		}
-
-		//finally guidance
-		if (this.parameters.isGuided()) {
-			final RunnerParameters guidanceDriverParameters = this.parameters.getGuidanceDriverParameters(calc);
-			try {
-				this.guidance = new DecisionProcedureGuidanceJDI(core, calc, guidanceDriverParameters, this.parameters.getMethodSignature());
-			} catch (GuidanceException | UnexpectedInternalException e) {
-				throw new CannotBuildDecisionProcedureException(e);
-			}
-			core = this.guidance;
-		}
-		
-		//sets the result
-		this.decisionProcedure = ((core instanceof DecisionProcedureAlgorithms) ? 
-		    (DecisionProcedureAlgorithms) core :
-		    new DecisionProcedureAlgorithms(core, calc));
 	}    
 }
