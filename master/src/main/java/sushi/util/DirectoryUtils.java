@@ -41,13 +41,11 @@ public class DirectoryUtils {
 	private void possiblyCreateTmpDir() {
 		logger.debug("Creating experiment directories");
 		
-		final Path path = getTmpDirPath();
-		if (!Files.exists(path)) {
-			try {
-				Files.createDirectory(path);
-			} catch (IOException e) {
-				logger.error("Unable to create experiment directories due: ", e);
-			}
+		final Path path = getJBSEOutDirPath();
+		try {
+			Files.createDirectories(path); //this creates the temporary directory and all the subdirectories for the wrappers
+		} catch (IOException e) {
+			logger.error("Unable to create experiment directories: ", e);
 		}
 
 		logger.debug("Creating experiment directories - done");
@@ -57,12 +55,26 @@ public class DirectoryUtils {
 		return jbseGeneratedOutClass + "_" + targetMethodNumber + "_" + traceNumberLocal;
 	}
 
+	public String getJBSEOutClassQualified(long targetMethodNumber, long traceNumberLocal) {
+		final String targetClass = Options.I().getTargetClass();
+		final int endOfPackageNameIndex = targetClass.lastIndexOf('/');
+		final String targetClassPackageName = (endOfPackageNameIndex == -1 ? "" : (targetClass.substring(0, endOfPackageNameIndex) + ".")).replace('/', '.');
+		return targetClassPackageName + getJBSEOutClass(targetMethodNumber, traceNumberLocal);
+	}
+
 	public Path getJBSEOutFilePath(long targetMethodNumber, long traceNumberLocal) {
-		return getTmpDirPath().resolve(getJBSEOutClass(targetMethodNumber, traceNumberLocal) + javaSourceExtension);
+		return getJBSEOutDirPath().resolve(getJBSEOutClass(targetMethodNumber, traceNumberLocal) + javaSourceExtension);
 	}	
 	
 	public Path getTmpDirPath() {
 		return Options.I().getTmpDirectoryBase().resolve(Options.I().getTmpDirectoryName());
+	}
+	
+	public Path getJBSEOutDirPath() {
+		final String targetClass = Options.I().getTargetClass();
+		final int endOfPackageNameIndex = targetClass.lastIndexOf('/');
+		final String targetClassPackageName = (endOfPackageNameIndex == -1 ? "" : targetClass.substring(0, endOfPackageNameIndex));
+		return getTmpDirPath().resolve(targetClassPackageName);
 	}
 	
 	public Path getMethodsFilePath() {

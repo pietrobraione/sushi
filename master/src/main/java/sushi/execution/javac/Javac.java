@@ -55,16 +55,17 @@ public final class Javac extends Tool<String[]> {
 
 	@Override
 	public String[] getInvocationParameters(int i) {
-		final ArrayList<String> javac = new ArrayList<>();
-		javac.add("-cp");
 		final String classPath = IOUtils.concatClassPath( 
 				IOUtils.concatClassPath(Options.I().getClassesPath()),
 				IOUtils.concatClassPath(Options.I().getSushiLibPath()));
+		final Path destinationDirectory = DirectoryUtils.I().getTmpDirPath();
+		final Path fileToCompile = DirectoryUtils.I().getJBSEOutFilePath(this.targetMethodNumbers.get(i), this.traceNumbersLocal.get(i));
+		final ArrayList<String> javac = new ArrayList<>();
+		javac.add("-cp");
 		javac.add(classPath);
-		final Path emitFile = DirectoryUtils.I().getJBSEOutFilePath(this.targetMethodNumbers.get(i), this.traceNumbersLocal.get(i));
 		javac.add("-d");
-		javac.add(emitFile.getParent().toString());
-		javac.add(emitFile.toString());
+		javac.add(destinationDirectory.toString());
+		javac.add(fileToCompile.toString());
 		this.commandLine = "javac " + javac.toString().replaceAll("\\[", "").replaceAll("\\]", "").replaceAll(",", "");
 		return javac.toArray(ArrayUtils.EMPTY_STRING_ARRAY);
 	}

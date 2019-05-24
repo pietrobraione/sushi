@@ -186,13 +186,13 @@ public class Evosuite extends Tool<String[]> {
 				final int targetMethodNumber_i = targetMethodNumbers.get(i).intValue();
 				final int traceNumberLocal_i = traceNumbersLocal.get(i).intValue();
 				final String targetMethodSignature_i = targetMethodSignatures.get(targetMethodNumber_i);
-				optionPC.append(targetClassName + "," + targetMethodSignature_i + "," + DirectoryUtils.I().getJBSEOutClass(targetMethodNumber_i, traceNumberLocal_i));
+				optionPC.append(targetClassName + "," + targetMethodSignature_i + "," + DirectoryUtils.I().getJBSEOutClassQualified(targetMethodNumber_i, traceNumberLocal_i));
 			}
 			evo.add(optionPC.toString());
 			this.commandLine += optionPC.toString();
 		} else {
-			evo.add("-Dpath_condition=" + targetClassName + "," + targetMethodSignature + "," + DirectoryUtils.I().getJBSEOutClass(targetMethodNumber, traceNumberLocal));
-			this.commandLine += " -Dpath_condition=" + targetClassName + "," + targetMethodSignature + "," + DirectoryUtils.I().getJBSEOutClass(targetMethodNumber, traceNumberLocal);
+			evo.add("-Dpath_condition=" + targetClassName + "," + targetMethodSignature + "," + DirectoryUtils.I().getJBSEOutClassQualified(targetMethodNumber, traceNumberLocal));
+			this.commandLine += " -Dpath_condition=" + targetClassName + "," + targetMethodSignature + "," + DirectoryUtils.I().getJBSEOutClassQualified(targetMethodNumber, traceNumberLocal);
 		}
 
 		return evo.toArray(ArrayUtils.EMPTY_STRING_ARRAY);
