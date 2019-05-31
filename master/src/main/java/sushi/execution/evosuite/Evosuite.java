@@ -203,11 +203,11 @@ public class Evosuite extends Tool<String[]> {
 		if (options.getUseMOSA()) {
 			return IOUtils.concatClassPath(
 					IOUtils.concatClassPath(options.getClassesPath()),
-					options.getSushiLibPath().toString());
+					IOUtils.concatClassPath(options.getSushiLibPath(), options.getJBSELibraryPath()));
 		} else {
 			return IOUtils.concatClassPath(
 					IOUtils.concatClassPath(options.getClassesPath()),
-					IOUtils.concatClassPath(options.getSushiLibPath(), DirectoryUtils.I().getTmpDirPath()));
+					IOUtils.concatClassPath(options.getSushiLibPath(), options.getJBSELibraryPath(), DirectoryUtils.I().getTmpDirPath()));
 		}
 	}
 	

@@ -184,7 +184,7 @@ public class MergerWorker extends Worker {
 		}
 		
 		//some logging
-		logger.info("Explored " + nTraces + " program paths, found " + nBranchesToCover + " branches to cover");
+		logger.info("Found " + nBranchesToCover + " branches to cover along " + nTraces + " paths.");
 		final ExecutionResult result = new ExecutionResult();
 		result.setExitStatus(0);
 

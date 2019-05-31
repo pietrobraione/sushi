@@ -56,7 +56,7 @@ public class DirectoryUtils {
 	}
 
 	public String getJBSEOutClassQualified(long targetMethodNumber, long traceNumberLocal) {
-		final String targetClass = Options.I().getTargetClass();
+		final String targetClass = (Options.I().getTargetClass() == null ? Options.I().getTargetMethod().get(0) : Options.I().getTargetClass()); 
 		final int endOfPackageNameIndex = targetClass.lastIndexOf('/');
 		final String targetClassPackageName = (endOfPackageNameIndex == -1 ? "" : (targetClass.substring(0, endOfPackageNameIndex) + ".")).replace('/', '.');
 		return targetClassPackageName + getJBSEOutClass(targetMethodNumber, traceNumberLocal);
@@ -71,7 +71,7 @@ public class DirectoryUtils {
 	}
 	
 	public Path getJBSEOutDirPath() {
-		final String targetClass = Options.I().getTargetClass();
+		final String targetClass = (Options.I().getTargetClass() == null ? Options.I().getTargetMethod().get(0) : Options.I().getTargetClass()); 
 		final int endOfPackageNameIndex = targetClass.lastIndexOf('/');
 		final String targetClassPackageName = (endOfPackageNameIndex == -1 ? "" : targetClass.substring(0, endOfPackageNameIndex));
 		return getTmpDirPath().resolve(targetClassPackageName);
