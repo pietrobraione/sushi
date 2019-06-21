@@ -115,7 +115,7 @@ public class Main {
 		while (true) {
 			final Tool<?> tool = tools[nextToolIndex];
 			if (doEverything || options.getPhases().contains(currentPhase)) {
-				logger.info("Phase " + currentPhase +": executing tool " + tool.getName());
+				logger.info("Phase " + currentPhase + ": executing tool " + tool.getName());
 				final ExecutionResult[] result;
 				try {
 					result = ExecutionManager.execute(tool);
