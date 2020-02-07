@@ -136,7 +136,7 @@ public class RunJBSE_Sushi {
 		private boolean atLoadConstant = false;
 		
 		@Override
-		public boolean atRoot() {
+		public boolean atStart() {
 			if (RunJBSE_Sushi.this.parameters.getMustLogCoverageData()) {
 				try {
 					Files.deleteIfExists(RunJBSE_Sushi.this.parameters.getCoverageFilePath());
@@ -174,13 +174,13 @@ public class RunJBSE_Sushi {
 		}
 		
 		private void updateCoverage(State currentState) throws ThreadStackEmptyException, FrozenStateException {
-			final String branchTarget = currentState.getCurrentMethodSignature().toString() + ":" + currentState.getPC();
-			doUpdateCoverage(currentState.getIdentifier(), branchTarget);
+			final String branchTarget = currentState.getCurrentMethodSignature().toString() + ":" + currentState.getCurrentProgramCounter();
+			doUpdateCoverage(currentState.getBranchIdentifier(), branchTarget);
 		}
 		
 		private void updateCoverage(State currentState, int branchPC) throws ThreadStackEmptyException, FrozenStateException {
-			final String branchTarget = currentState.getCurrentMethodSignature().toString() + ":" + branchPC + ":" + currentState.getPC();
-			doUpdateCoverage(currentState.getIdentifier(), branchTarget);
+			final String branchTarget = currentState.getCurrentMethodSignature().toString() + ":" + branchPC + ":" + currentState.getCurrentProgramCounter();
+			doUpdateCoverage(currentState.getBranchIdentifier(), branchTarget);
 		}
 		
 		@Override
@@ -194,7 +194,7 @@ public class RunJBSE_Sushi {
 				
 				//detect whether we are at the entry point of a method
 				//and in case adds a pseudobranch for the entry point
-				final int currentPC = currentState.getPC();
+				final int currentPC = currentState.getCurrentProgramCounter();
 				if (currentPC == 0) {
 					updateCoverage(currentState);
 				}
@@ -280,7 +280,7 @@ public class RunJBSE_Sushi {
 								final String s = valueString(currentState, r);
 								final long heapPosition = (r instanceof ReferenceConcrete ? ((ReferenceConcrete) r).getHeapPosition() : currentState.getResolution((ReferenceSymbolic) r));
 								this.stringLiteralsCurrentTrace.put(heapPosition, s);
-								this.stringLiterals.put(currentState.getIdentifier(), new HashMap<>(this.stringLiteralsCurrentTrace));
+								this.stringLiterals.put(currentState.getBranchIdentifier(), new HashMap<>(this.stringLiteralsCurrentTrace));
 							}
 						}
 					}
@@ -298,7 +298,7 @@ public class RunJBSE_Sushi {
 		@Override
 		public boolean atBacktrackPost(BranchPoint bp) {
 			final State currentState = RunJBSE_Sushi.this.engine.getCurrentState();
-			String uptraceId = currentState.getIdentifier();
+			String uptraceId = currentState.getBranchIdentifier();
 			{
 				TreeSet<Long> uptraceCoverage = this.coverage.get(uptraceId);
 				while (uptraceCoverage == null && uptraceId.lastIndexOf(HistoryPoint.BRANCH_IDENTIFIER_SEPARATOR_COMPACT) != -1) {
@@ -406,7 +406,7 @@ public class RunJBSE_Sushi {
 							wCoverage.write(", " + branchNumber);
 						}
 						wCoverage.newLine();
-						wTraces.write(RunJBSE_Sushi.this.traceCounter + ", " + RunJBSE_Sushi.this.engine.getCurrentState().getIdentifier());
+						wTraces.write(RunJBSE_Sushi.this.traceCounter + ", " + RunJBSE_Sushi.this.engine.getCurrentState().getBranchIdentifier());
 						wTraces.newLine();
 					} catch (IOException e) {
 						System.err.println("ERROR: exception raised:");
@@ -555,7 +555,7 @@ public class RunJBSE_Sushi {
         if (type == StateFormatMode.SUSHI_PARTIAL_HEAP) {
             this.formatter = new StateFormatterSushiPartialHeap(RunJBSE_Sushi.this.parameters.getMethodNumber(), this::getTraceCounter, this::getInitialState, this::getModel);
         } else if (type == StateFormatMode.SUSHI_PATH_CONDITION) {
-            this.formatter = new StateFormatterSushiPathCondition(RunJBSE_Sushi.this.parameters.getMethodNumber(), this::getTraceCounter, this::getInitialState);
+            this.formatter = new StateFormatterSushiPathCondition(RunJBSE_Sushi.this.parameters.getMethodNumber(), this::getTraceCounter, this::getInitialState, true);
         } else if (type != null) {
             throw new CannotBuildFormatterException("Wrong formatter type " + this.parameters.getStateFormatMode());
         }
