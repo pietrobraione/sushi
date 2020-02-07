@@ -11,11 +11,14 @@ repositories {
     maven {
         url = 'https://www.xypron.de/repository' //for glpk-java
     }
+    flatDir {
+    	dirs "${System.getProperty('java.home')}/../lib", 'libs'
+    }
 }
 
 dependencies {
     implementation 'org.gnu.glpk:glpk-java:' + glpkJavaVersion
-    implementation files("${System.getProperty('java.home')}/../lib/tools.jar")
+    implementation name: 'tools'
     implementation project(':sushi-lib')
     implementation project(':jbse')
 }
