@@ -154,7 +154,7 @@ public class RunJBSE_Sushi {
 		}
 		
 		@Override
-		public boolean atTraceStart() {
+		public boolean atPathStart() {
 			//trace initially assumed to be safe
 			this.traceKind = TraceTypes.SAFE;
 			return false;
@@ -371,7 +371,7 @@ public class RunJBSE_Sushi {
 		}
 
 		@Override
-		public boolean atTraceEnd() {
+		public boolean atPathEnd() {
 			if (RunJBSE_Sushi.this.parameters.getTracesToShow().contains(this.traceKind)) {
 				final State currentState = RunJBSE_Sushi.this.engine.getCurrentState();
 				
