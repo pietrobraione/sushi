@@ -4,7 +4,7 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '4.0.3'
 }
 
-def glpkJavaVersion = '1.11.0'
+def glpkJavaVersion = '1.12.0'
 def glpkJavaJniLocation = '/usr/local/lib/jni'
 
 repositories {
@@ -12,7 +12,7 @@ repositories {
         url = 'https://www.xypron.de/repository' //for glpk-java
     }
     flatDir {
-    	dirs "${System.getProperty('java.home')}/../lib", 'libs'
+    	dirs "${System.getProperty('java.home')}/../lib", "${project(':jbse').projectDir}/libs"
     }
 }
 
