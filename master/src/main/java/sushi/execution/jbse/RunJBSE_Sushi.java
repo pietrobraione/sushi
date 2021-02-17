@@ -380,7 +380,7 @@ public class RunJBSE_Sushi {
 					//emits the wrapper
 					final Path f =  RunJBSE_Sushi.this.parameters.getWrapperFilePath(RunJBSE_Sushi.this.traceCounter);
 					try (final BufferedWriter w = Files.newBufferedWriter(f)) {
-						RunJBSE_Sushi.this.formatter.setConstants(this.stringLiteralsCurrentTrace);
+						RunJBSE_Sushi.this.formatter.setStringsConstant(this.stringLiteralsCurrentTrace);
 						RunJBSE_Sushi.this.formatter.formatPrologue();
 						RunJBSE_Sushi.this.formatter.formatState(currentState);
 						RunJBSE_Sushi.this.formatter.formatEpilogue();
