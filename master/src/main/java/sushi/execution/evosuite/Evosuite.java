@@ -142,9 +142,14 @@ public class Evosuite extends Tool<String[]> {
 		evo.add(targetClassName);
 		evo.add("-mem");
 		evo.add("2048");
+		if (options.getUseMOSA()) {
+			evo.add("-Dmock_if_no_generator=false");
+			evo.add("-Dreplace_system_in=false");
+			evo.add("-Dreplace_gui=false");
+			evo.add("-Dp_functional_mocking=0.0");
+		}
 		evo.add("-DCP=" + getClassPath());
 		evo.add("-Dassertions=false");
-		evo.add("-Dglobal_timeout=" + getTimeBudget() * 2);  //double timeout so it does not terminate (must be killed by the coordinator upon timeout)
 		evo.add("-Dreport_dir=" + DirectoryUtils.I().getTmpDirPath().toString());
 		evo.add("-Djunit_suffix=_" + (options.getUseMOSA() ? "" : targetMethodNumber + "_" + traceNumberLocal + "_") + "Test");
 		evo.add("-Dsearch_budget=" + getTimeBudget() * 2);  //double timeout so it does not terminate (must be killed by the coordinator upon timeout)
