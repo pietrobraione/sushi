@@ -59,7 +59,7 @@ application {
 jar {
     manifest {
         attributes 'Implementation-Title': 'SUSHI',
-                   'Implementation-Vendor': 'University of Milano-Bicocca',
+                   'Implementation-Vendor': 'University of Milano-Bicocca and University of Lugano',
                    'Implementation-Version': archiveVersion
     }
 }

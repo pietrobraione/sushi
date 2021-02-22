@@ -31,8 +31,6 @@ import sushi.modifier.Modifier;
 import sushi.util.ClasspathUtils;
 
 public class Main {
-	private static final String VERSION = "0.2.0-SNAPSHOT";
-	
 	private boolean timeout;
 
 	public Main() { }
@@ -69,7 +67,7 @@ public class Main {
 
 		Logger.setLevel(options.getLogLevel());
 		final Logger logger = new Logger(Main.class);
-		logger.info("This is SUSHI, version " + VERSION + ", " + '\u00a9' + " 2015-2019 University of Milano-Bicocca and University of Lugano");
+		logger.info("This is " + getName() + ", version " + getVersion() + ", " + '\u00a9' + " 2015-2021 " + getVendor());
 		
 		ClasspathUtils.checkClasspath();
 		
@@ -143,9 +141,43 @@ public class Main {
 			}
 		}
 
-		logger.info("Sushi terminates");
+		logger.info(getName() + " terminates");
 		System.exit(0);
 	}
+
+    /**
+     * Returns the name of this application, as resulting
+     * from the containing jar file.
+     * 
+     * @return a {@link String} or {@code null} if this 
+     *         class is not packaged in a jar file.
+     */
+    private static String getName() {
+        return Main.class.getPackage().getImplementationTitle();
+    }
+
+    /**
+     * Returns the vendor of this application, as resulting
+     * from the containing jar file.
+     * 
+     * @return a {@link String} or {@code null} if this 
+     *         class is not packaged in a jar file.
+     */
+    private static String getVendor() {
+        return Main.class.getPackage().getImplementationVendor();
+    }
+
+    /**
+     * Returns the version of this application, as resulting
+     * from the containing jar file.
+     * 
+     * @return a {@link String} or {@code null} if this 
+     *         class is not packaged in a jar file.
+     */
+    private static String getVersion() {
+        return Main.class.getPackage().getImplementationVersion();
+    }
+
 
 	private static String[] processArgs(final String[] args) {
 		final Pattern argPattern = Pattern.compile("(-[a-zA-Z_-]+)=(.*)");
