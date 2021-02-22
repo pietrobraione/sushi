@@ -12,6 +12,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import sushi.configure.Options;
 import sushi.exceptions.CoordinatorException;
 import sushi.exceptions.WorkerException;
 import sushi.execution.Coordinator;
@@ -26,7 +27,7 @@ public class EvosuiteCoordinator extends Coordinator {
 	private ArrayList<ArrayList<Future<ExecutionResult>>> tasksFutures; //alias for coordination
 	private final HashSet<Integer> coveredBranches = new HashSet<>();
 	private ArrayList<HashSet<Integer>> coverageData;
-	private ArrayList<Integer> traceOfTask;
+	private ArrayList<HashSet<Integer>> tracesOfTask;
 	private HashSet<Integer> branchesToIgnore;
 	private HashSet<Integer> cancelledTasks = new HashSet<>();
 	
@@ -38,7 +39,7 @@ public class EvosuiteCoordinator extends Coordinator {
 		this.tasksFutures = tasksFutures;
 		try {
 			loadCoverageData();
-			loadTraceOfTask();
+			loadTracesOfTask();
 			loadBranchesToIgnore();
 		} catch (IOException e) {
 			logger.fatal("Error occurred while reading coverage or minimizer data");
@@ -122,13 +123,24 @@ public class EvosuiteCoordinator extends Coordinator {
 		}
 	}
 	
-	private void loadTraceOfTask() throws IOException, NumberFormatException {
-		this.traceOfTask = new ArrayList<>();
+	private void loadTracesOfTask() throws IOException, NumberFormatException {
+		this.tracesOfTask = new ArrayList<>();
 		try (final BufferedReader r = Files.newBufferedReader(DirectoryUtils.I().getMinimizerOutFilePath())) {
 			String line;
+			HashSet<Integer> traces = null;
 			while ((line = r.readLine()) != null) {
+				if (traces == null) {
+					traces = new HashSet<>();
+				}
 				final String[] fields = line.split(",");
-				this.traceOfTask.add(Integer.parseInt(fields[0].trim()));
+				traces.add(Integer.parseInt(fields[0].trim()));
+				if (!Options.I().getUseMOSA()) {
+					this.tracesOfTask.add(traces);
+					traces = null;
+				}
+			}
+			if (traces != null) {
+				this.tracesOfTask.add(traces);
 			}
 		}
 	}
@@ -156,7 +168,7 @@ public class EvosuiteCoordinator extends Coordinator {
 	}
 	
 	private synchronized void cancelCovered() {
-		for (int task = 0; task < this.traceOfTask.size(); ++task) {
+		for (int task = 0; task < this.tracesOfTask.size(); ++task) {
 			if (taskCovered(task) && !this.cancelledTasks.contains(task)) {
 				cancelTask(task);
 				logger.info("Task " + task + " cancelled");
@@ -167,7 +179,9 @@ public class EvosuiteCoordinator extends Coordinator {
 	//here synchronization is possibly redundant
 
 	private synchronized HashSet<Integer> coverageOfTask(int taskNumber) {
-		return this.coverageData.get(this.traceOfTask.get(taskNumber));
+		final HashSet<Integer> retVal = new HashSet<>();
+		this.tracesOfTask.get(taskNumber).stream().map(trace -> this.coverageData.get(trace)).forEach(coverage -> retVal.addAll(coverage));
+		return retVal;
 	}
 	
 	private synchronized boolean taskCovered(int taskNumber) {
