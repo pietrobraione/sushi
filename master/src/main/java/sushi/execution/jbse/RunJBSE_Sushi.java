@@ -56,7 +56,9 @@ import jbse.mem.exc.InvalidNumberOfOperandsException;
 import jbse.mem.exc.ThreadStackEmptyException;
 import jbse.rewr.CalculatorRewriting;
 import jbse.rewr.RewriterCalculatorRewriting;
+import jbse.rewr.RewriterNegationElimination;
 import jbse.rewr.RewriterOperationOnSimplex;
+import jbse.rewr.RewriterZeroUnit;
 import jbse.tree.StateTree.BranchPoint;
 import jbse.val.HistoryPoint;
 import jbse.val.PrimitiveSymbolic;
@@ -566,6 +568,8 @@ public class RunJBSE_Sushi {
 		try {
 			calc = new CalculatorRewriting();
 			calc.addRewriter(new RewriterOperationOnSimplex()); //indispensable
+    		calc.addRewriter(new RewriterZeroUnit()); //indispensable
+    		calc.addRewriter(new RewriterNegationElimination()); //indispensable?
 			for (final Class<? extends Rewriter> rewriterClass : this.parameters.getRewriters()) {
 				if (rewriterClass == null) { 
 				    //no rewriter
