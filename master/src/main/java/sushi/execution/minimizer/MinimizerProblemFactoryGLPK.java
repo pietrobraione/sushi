@@ -60,27 +60,27 @@ final class MinimizerProblemFactoryGLPK extends MinimizerProblemFactory<Minimize
 		//calculates relevantTraceNumbers, traces2Cols and cols2Traces
 		calculateTracesAndTranslationToColumns();
 		
-		//the next three arrays encode the [a_i_j] matrix of the linear constraints. 
-		//The thing works as follows: ar stores the coefficients, ia and ja the 
-		//indices of the coefficient at the same position in ar:
-		//ar = {a_1_1, ..., a_1_t, a_2_1, ..., a_2_t, ...} 
-		//ia = {1,     ..., 1    , 2,     ..., 2,     ...}
-		//ja = {1,     ..., t    , 1,     ..., t,     ...}
-		//(actually, they are not in this exact order)
+		//the next three arrays encode the [a_i_j] matrix of the linear constraints:
+		//ar stores the coefficients, ia and ja the indices of the coefficient at 
+		//the same position in ar:
+		//ar = {*, a_1_1, ..., a_1_t, a_2_1, ..., a_2_t, ...} 
+		//ia = {*, 1,     ..., 1    , 2,     ..., 2,     ...}
+		//ja = {*, 1,     ..., t    , 1,     ..., t,     ...}
+		//(actually, they are not in this exact order). Note that the three arrays 
+		//have 1 element more than rows * cols because GLPK strangely wants you to 
+		//store everything starting from position 1 (position 0 is unused)
 		final SWIGTYPE_p_int ia = GLPK.new_intArray(this.rows * this.cols + 1); //the row (i) indices of the a_i_k coefficients
 		final SWIGTYPE_p_int ja = GLPK.new_intArray(this.rows * this.cols + 1); //the column (j) indices of the a_i_k coefficients
 		final SWIGTYPE_p_double ar = GLPK.new_doubleArray(this.rows * this.cols + 1); //all the a_i_j coefficients
-		//the three arrays above have 1 element more than rows * cols because GLPK
-		//strangely wants you to store everything starting from position 1
 
 		//makes an array for the costs
 		final ArrayList<Integer> costs = new ArrayList<>();
 
 		//reads the coverage information and fills all the arrays 
-		int pos = fillArrays(ia, ja, ar, costs);
+		final int pos = fillArrays(ia, ja, ar, costs);
 		
 		//generates the GLPK problem
-		glp_prob p = generateProblemGLPK(ia, ja, ar, costs, pos);
+		final glp_prob p = generateProblemGLPK(ia, ja, ar, costs, pos);
 		
 		//disposes garbage
 		GLPK.delete_doubleArray(ar);
