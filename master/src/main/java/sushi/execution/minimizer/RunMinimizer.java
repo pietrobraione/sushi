@@ -53,8 +53,6 @@ public class RunMinimizer {
 				if (!found) {
 					throw new TerminationException("Minimizer was unable to find a set of traces that covers the uncovered branches");
 				}
-				
-				//gets the solution and emits it
 				final ArrayList<Integer> solution = p.getSolution();
 				emitSolution(solution, !firstIteration);
 				factory.ignore(solution);

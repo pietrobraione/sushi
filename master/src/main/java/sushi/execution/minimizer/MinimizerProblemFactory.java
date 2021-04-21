@@ -10,50 +10,38 @@ import sushi.configure.MinimizerParameters;
 import sushi.exceptions.TerminationException;
 
 abstract class MinimizerProblemFactory<P extends MinimizerProblem> {
+	/** The parameters. */
 	protected final MinimizerParameters parameters;
 
-	/**
-	 * the number of branches
-	 */
+	/** The total number of branches. */
 	protected final int nBranches;
 	 
-	/**
-	  * the number of traces
-	  */
+	/** The total number of traces. */
 	protected final int nTraces;
 
-	/**
-	 * the set of all the branch numbers
-	 */
+	/** The set containing all the branch numbers. */
 	protected final TreeSet<Integer> branchNumbers;
 
-	/**
-	 * the set of all the trace numbers
-	 */
+	/** The set containing all the trace numbers. */
 	protected final TreeSet<Integer> traceNumbers; 
 
 	/**
-	 * the set of all the branch numbers that must be ignored 
-	 * because they are not coverage targets
+	 * The set of all the branch numbers that must be ignored 
+	 * because they are not coverage targets.
 	 */
 	protected final TreeSet<Integer> branchNumbersToIgnore;
 
 	/**
-	 * the set of all the trace numbers that must be ignored 
-	 * because they have been already tried; progressively
-	 * enriched by successive iteration of the linear problem
-	 * solution
+	 * The set of all the trace numbers that must be ignored 
+	 * because they have been already tried during previous
+	 * iterations.
 	 */
 	protected final TreeSet<Integer> traceNumbersToIgnore;
 
-	/**
-	 * the number of rows in the linear problem
-	 */
+	/** The number of rows in the linear problem. */
 	protected int rows;
 
-	/**
-	 * the number of columns in the linear problem
-	 */
+	/** The number of columns in the linear problem. */
 	protected int cols;
 	
 	MinimizerProblemFactory(MinimizerParameters parameters) throws IOException {

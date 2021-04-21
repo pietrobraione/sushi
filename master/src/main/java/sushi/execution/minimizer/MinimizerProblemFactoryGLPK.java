@@ -15,15 +15,54 @@ import org.gnu.glpk.glp_prob;
 import sushi.configure.MinimizerParameters;
 
 final class MinimizerProblemFactoryGLPK extends MinimizerProblemFactory<MinimizerProblemGLPK> {
+	/** The set of the relevant branches (i.e., the branches to cover). */
+	private TreeSet<Integer> relevantBranchNumbers;
+	
+	/** 
+	 * Maps branch numbers to the corresponding row numbers in the 
+	 * linear problem. 
+	 */
+	private HashMap<Integer, Integer> branches2Rows;
+	
+	/** 
+	 * Maps row numbers in the linear problem (the position in the 
+	 * list) to the corresponding branch numbers. 
+	 */
+	private ArrayList<Integer> rows2Branches;
+	
+	/** 
+	 * The set of the relevant traces (i.e., the traces not already
+	 * covered, or not already attempted to cover and failed). 
+	 */
+	private TreeSet<Integer> relevantTraceNumbers;
+		
+	/** 
+	 * Maps trace numbers to the corresponding column numbers in the 
+	 * linear problem. 
+	 */
+	private HashMap<Integer, Integer> traces2Cols;
+	
+	/** 
+	 * Maps column numbers in the linear problem (the position in the 
+	 * list) to the corresponding trace numbers. 
+	 */
+	private ArrayList<Integer> cols2Traces;
+	
 	MinimizerProblemFactoryGLPK(MinimizerParameters parameters) throws IOException {
 		super(parameters);
 	}
 
 	@Override
 	MinimizerProblemGLPK makeProblem() throws IOException, NumberFormatException {
-		final ArrayList<Integer> costs = new ArrayList<>();  //list of all costs
+		//calculates relevantBranchNumbers, branches2Rows and rows2Branches
+		calculateBranchesAndTranslationToRows();
+		
+		//calculates relevantTraceNumbers, traces2Cols and cols2Traces
+		calculateTracesAndTranslationToColumns();
+		
 		//the next three arrays encode the [a_i_j] matrix of the linear constraints. 
-		//The thing works as follows: ar stores the coefficients as 
+		//The thing works as follows: ar stores the coefficients, ia and ja the 
+		//indices of the coefficient at the same position in ar:
 		//ar = {a_1_1, ..., a_1_t, a_2_1, ..., a_2_t, ...} 
 		//ia = {1,     ..., 1    , 2,     ..., 2,     ...}
 		//ja = {1,     ..., t    , 1,     ..., t,     ...}
@@ -34,39 +73,50 @@ final class MinimizerProblemFactoryGLPK extends MinimizerProblemFactory<Minimize
 		//the three arrays above have 1 element more than rows * cols because GLPK
 		//strangely wants you to store everything starting from position 1
 
+		//makes an array for the costs
+		final ArrayList<Integer> costs = new ArrayList<>();
 
-		//calculates the relevant (i.e., to not ignore) branch numbers, and 
-		//the variables branches2Rows and rows2Branches, which map in 
-		//both directions branch numbers with their respective row numbers 
-		//in the linear problem
-		final TreeSet<Integer> relevantBranchNumbers = new TreeSet<>(this.branchNumbers);
-		relevantBranchNumbers.removeAll(this.branchNumbersToIgnore);
-		final HashMap<Integer, Integer> branches2Rows = new HashMap<>();
-		final ArrayList<Integer> rows2Branches = new ArrayList<>();
-		rows2Branches.add(0); //skips index 0 because rows are counted starting from 1
-		{
-			int row = 1;
-			for (Integer branchNumber : relevantBranchNumbers) {
-				branches2Rows.put(branchNumber, row++);
-				rows2Branches.add(branchNumber);
-			}
-		}
+		//reads the coverage information and fills all the arrays 
+		int pos = fillArrays(ia, ja, ar, costs);
 		
-		//similarly for traces and columns of the problem
-		final TreeSet<Integer> relevantTraceNumbers = new TreeSet<>(this.traceNumbers);
-		relevantTraceNumbers.removeAll(this.traceNumbersToIgnore);
-		final HashMap<Integer, Integer> traces2Cols = new HashMap<>();
-		final ArrayList<Integer> cols2Traces = new ArrayList<>();
-		cols2Traces.add(0); //skips index 0 because cols are counted starting from 1
-		{
-			int col = 1;
-			for (Integer traceNumber : relevantTraceNumbers) {
-				traces2Cols.put(traceNumber, col++);
-				cols2Traces.add(traceNumber);
-			}
-		}
+		//generates the GLPK problem
+		glp_prob p = generateProblemGLPK(ia, ja, ar, costs, pos);
 		
-		//reads coverage information and generates the constraint matrix rows for trace coverage
+		//disposes garbage
+		GLPK.delete_doubleArray(ar);
+		GLPK.delete_intArray(ja);
+		GLPK.delete_intArray(ia);
+		
+		return new MinimizerProblemGLPK(this.parameters, p, this.cols, this.cols2Traces);
+	}
+	
+	private void calculateBranchesAndTranslationToRows() {
+		this.relevantBranchNumbers = new TreeSet<>(this.branchNumbers);
+		this.relevantBranchNumbers.removeAll(this.branchNumbersToIgnore);
+		this.branches2Rows = new HashMap<>();
+		this.rows2Branches = new ArrayList<>();
+		this.rows2Branches.add(0); //skips index 0 because rows are counted starting from 1
+		int row = 1;
+		for (Integer branchNumber : this.relevantBranchNumbers) {
+			this.branches2Rows.put(branchNumber, row++);
+			this.rows2Branches.add(branchNumber);
+		}
+	}
+	
+	private void calculateTracesAndTranslationToColumns() {
+		this.relevantTraceNumbers = new TreeSet<>(this.traceNumbers);
+		this.relevantTraceNumbers.removeAll(this.traceNumbersToIgnore);
+		this.traces2Cols = new HashMap<>();
+		this.cols2Traces = new ArrayList<>();
+		this.cols2Traces.add(0); //skips index 0 because cols are counted starting from 1
+		int col = 1;
+		for (Integer traceNumber : this.relevantTraceNumbers) {
+			this.traces2Cols.put(traceNumber, col++);
+			this.cols2Traces.add(traceNumber);
+		}
+	}
+
+	private int fillArrays(SWIGTYPE_p_int ia, SWIGTYPE_p_int ja, SWIGTYPE_p_double ar, ArrayList<Integer> costs) throws IOException {
 		int pos = 1; //current position in ia, ja and ar; starts from position 1 as required by GLPK interface
 		try (final BufferedReader r = Files.newBufferedReader(this.parameters.getCoverageFilePath())) {
 			String line;
@@ -81,7 +131,7 @@ final class MinimizerProblemFactoryGLPK extends MinimizerProblemFactory<Minimize
 				//do not care here
 				final int cost = Integer.parseInt(fields[2].trim());
 				costs.add(cost);
-				final TreeSet<Integer> uncoveredByTraceBranchNumbers = new TreeSet<>(relevantBranchNumbers); //the branch numbers not covered by this trace
+				final TreeSet<Integer> uncoveredByTraceBranchNumbers = new TreeSet<>(this.relevantBranchNumbers); //the branch numbers not covered by this trace
 				for (int i = 3; i < fields.length; ++i) {
 					final int branchNumber = Integer.parseInt(fields[i].trim());
 					if (this.branchNumbersToIgnore.contains(branchNumber)) {
@@ -89,15 +139,15 @@ final class MinimizerProblemFactoryGLPK extends MinimizerProblemFactory<Minimize
 					}
 					uncoveredByTraceBranchNumbers.remove(branchNumber);
 					//sets a_i_j to 1
-					GLPK.intArray_setitem(ia, pos, branches2Rows.get(branchNumber));
-					GLPK.intArray_setitem(ja, pos, traces2Cols.get(traceNumber));
+					GLPK.intArray_setitem(ia, pos, this.branches2Rows.get(branchNumber));
+					GLPK.intArray_setitem(ja, pos, this.traces2Cols.get(traceNumber));
 					GLPK.doubleArray_setitem(ar, pos, 1.0);
 					++pos;
 				}
 				for (int branchNumber : uncoveredByTraceBranchNumbers) {
 					//sets a_i_j to 0
-					GLPK.intArray_setitem(ia, pos, branches2Rows.get(branchNumber));
-					GLPK.intArray_setitem(ja, pos, traces2Cols.get(traceNumber));
+					GLPK.intArray_setitem(ia, pos, this.branches2Rows.get(branchNumber));
+					GLPK.intArray_setitem(ja, pos, this.traces2Cols.get(traceNumber));
 					GLPK.doubleArray_setitem(ar, pos, 0.0);
 					++pos;
 				}
@@ -105,18 +155,21 @@ final class MinimizerProblemFactoryGLPK extends MinimizerProblemFactory<Minimize
 			}
 		}
 		
-		//generates the problem
+		return pos;
+	}
+	
+	private glp_prob generateProblemGLPK(SWIGTYPE_p_int ia, SWIGTYPE_p_int ja, SWIGTYPE_p_double ar, ArrayList<Integer> costs, int pos) {
 		glp_prob p = GLPK.glp_create_prob();
 		GLPK.glp_set_prob_name(p, "setCoverage");
 		GLPK.glp_add_rows(p, this.rows);
 		for (int row = 1; row <= this.rows; ++row) {
-			final int branchNumber = rows2Branches.get(row);
+			final int branchNumber = this.rows2Branches.get(row);
 			GLPK.glp_set_row_name(p, row, "branch" + branchNumber);
 			GLPK.glp_set_row_bnds(p, row, GLPK.GLP_LO, 1.0, 0.0);
 		}
 		GLPK.glp_add_cols(p, this.cols);
 		for (int col = 1; col <= this.cols; ++col) {
-			final int traceNumber = cols2Traces.get(col);
+			final int traceNumber = this.cols2Traces.get(col);
 			GLPK.glp_set_col_name(p, col, "trace" + traceNumber);
 			GLPK.glp_set_col_kind(p, col, GLPK.GLP_BV); //BV = binary variable
 		}
@@ -131,12 +184,6 @@ final class MinimizerProblemFactoryGLPK extends MinimizerProblemFactory<Minimize
 			}
 		}
 		
-		//disposes garbage
-		GLPK.delete_doubleArray(ar);
-		GLPK.delete_intArray(ja);
-		GLPK.delete_intArray(ia);
-		
-		return new MinimizerProblemGLPK(this.parameters, p, this.cols, cols2Traces);
+		return p;
 	}
-
 }

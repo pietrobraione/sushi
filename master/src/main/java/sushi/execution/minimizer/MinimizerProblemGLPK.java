@@ -28,13 +28,13 @@ class MinimizerProblemGLPK extends MinimizerProblem {
 		iocp.setMsg_lev(GLPK.GLP_MSG_OFF);
 		iocp.setTm_lim(this.parameters.getTimeout() * 200);
 		iocp.setPresolve(GLPK.GLP_ON);
-		final int res = GLPK.glp_intopt(p, iocp);
+		final int res = GLPK.glp_intopt(this.p, iocp);
 		return (res == 0 || res == GLPK.GLP_ETMLIM);
 	}
 
 	@Override
 	boolean solutionFound() {
-		final int status = GLPK.glp_mip_status(p);
+		final int status = GLPK.glp_mip_status(this.p);
 		return (status == GLPK.GLP_OPT || status == GLPK.GLP_FEAS);
 	}
 
@@ -42,7 +42,7 @@ class MinimizerProblemGLPK extends MinimizerProblem {
 	ArrayList<Integer> getSolution() {
 		final ArrayList<Integer> retVal = new ArrayList<>();
 		for (int col = 1; col <= this.cols; ++col) {
-			final double val = GLPK.glp_mip_col_val(p, col);
+			final double val = GLPK.glp_mip_col_val(this.p, col);
 			if (val >= 1) {
 				final int traceNumber = this.cols2Traces.get(col);
 				retVal.add(traceNumber);
@@ -53,6 +53,6 @@ class MinimizerProblemGLPK extends MinimizerProblem {
 
 	@Override
 	public void close() {
-		GLPK.glp_delete_prob(p);
+		GLPK.glp_delete_prob(this.p);
 	}
 }
