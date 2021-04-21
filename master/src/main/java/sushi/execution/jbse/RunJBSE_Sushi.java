@@ -1,7 +1,12 @@
 package sushi.execution.jbse;
 
 import static jbse.algo.Util.valueString;
+import static jbse.bc.Signatures.JAVA_CHARSEQUENCE;
+import static jbse.bc.Signatures.JAVA_OBJECT;
 import static jbse.bc.Signatures.JAVA_STRING;
+import static jbse.common.Type.BOOLEAN;
+import static jbse.common.Type.REFERENCE;
+import static jbse.common.Type.TYPEEND;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -505,6 +510,11 @@ public class RunJBSE_Sushi {
 			createFormatter();
 			final RunnerParameters runnerParameters = this.parameters.getRunnerParameters();
 			runnerParameters.setActions(new ActionsRun());
+			runnerParameters.setUseHashMapModel(true);
+			runnerParameters.addUninterpreted(JAVA_STRING, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + BOOLEAN, "equals");
+			runnerParameters.addUninterpreted(JAVA_STRING, "(" + REFERENCE + JAVA_CHARSEQUENCE + TYPEEND + ")" + BOOLEAN, "contains");
+			runnerParameters.addUninterpreted(JAVA_STRING, "(" + REFERENCE + JAVA_STRING + TYPEEND + ")" + BOOLEAN, "endsWith");
+			runnerParameters.addUninterpreted(JAVA_STRING, "(" + REFERENCE + JAVA_STRING + TYPEEND + ")" + BOOLEAN, "startsWith");
             final CalculatorRewriting calc = createCalculator();
 			final EngineParameters engineParameters = runnerParameters.getEngineParameters();
 			engineParameters.setCalculator(calc);
