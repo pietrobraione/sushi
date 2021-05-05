@@ -32,6 +32,7 @@ public class RunMinimizer {
 		try {
 			//TODO decide which factory based on parameters
 			factory = new MinimizerProblemFactoryGLPK(this.parameters);
+			//factory = new MinimizerProblemFactoryOjAlgo(this.parameters);
 		} catch (IOException e) {
 			e.printStackTrace();
 			return 1;

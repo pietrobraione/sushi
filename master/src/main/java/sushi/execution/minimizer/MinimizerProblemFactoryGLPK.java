@@ -80,14 +80,14 @@ final class MinimizerProblemFactoryGLPK extends MinimizerProblemFactory<Minimize
 		final int pos = fillArrays(ia, ja, ar, costs);
 		
 		//generates the GLPK problem
-		final glp_prob p = generateProblemGLPK(ia, ja, ar, costs, pos);
+		final glp_prob problemGLPK = generateProblemGLPK(ia, ja, ar, costs, pos);
 		
 		//disposes garbage
 		GLPK.delete_doubleArray(ar);
 		GLPK.delete_intArray(ja);
 		GLPK.delete_intArray(ia);
 		
-		return new MinimizerProblemGLPK(this.parameters, p, this.cols, this.cols2Traces);
+		return new MinimizerProblemGLPK(this.parameters, problemGLPK, this.cols, this.cols2Traces);
 	}
 	
 	private void calculateBranchesAndTranslationToRows() {

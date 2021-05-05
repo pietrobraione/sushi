@@ -19,6 +19,7 @@ repositories {
 
 dependencies {
     implementation 'org.gnu.glpk:glpk-java:' + glpkJavaVersion
+    implementation 'org.ojalgo:ojalgo:48.0.0'
     implementation name: 'tools'
     implementation project(':sushi-lib')
     implementation project(':jbse')

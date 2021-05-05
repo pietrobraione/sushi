@@ -159,9 +159,9 @@ abstract class MinimizerProblemFactory<P extends MinimizerProblem> {
 	 * <pre>
 	 * Minimize c_1 * x_1 + c_2 * x_2 + ... c_t * x_t
 	 * subject to
-	 *   a_1_1 * x_1 + ... + a_1_t * x_t >= 1 (or 0)
+	 *   a_1_1 * x_1 + ... + a_1_t * x_t >= 1
 	 *   ...
-	 *   a_b_1 * x_1 + ... + a_b_t * x_t >= 1 (or 0)
+	 *   a_b_1 * x_1 + ... + a_b_t * x_t >= 1
 	 * where
 	 *   x_1 binary
 	 *   ...
@@ -170,11 +170,8 @@ abstract class MinimizerProblemFactory<P extends MinimizerProblem> {
 	 * where t is the number of traces, x_1 ... x_t are binary variables
 	 * stating whether the associated trace belongs to the optimal subset
 	 * or not, c_1 ... c_t are the costs of the traces, b is the number of 
-	 * branches, a_i_j is 1 if trace j covers branch i, otherwise 0, the
-	 * linear constraints are >= 1 if the branch associated to the row 
-	 * must be covered, >= 0 if the branch is not a coverage target or is 
-	 * not covered by any trace in the set of all the traces. Actually the
-	 * problem is slightly more complex than that because the method allows
+	 * branches, a_i_j is 1 if trace j covers branch i, otherwise 0. Actually 
+	 * the problem is slightly more complex than that because the method allows
 	 * to exclude some branches and some traces.
 	 * 
 	 * @return a {@link MinimizerProblem}.
