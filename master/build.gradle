@@ -37,6 +37,13 @@ shadowJar {
     relocate 'org.ojalgo', 'sushi.org.ojalgo'
 }
 
+task copyToLib(type: Copy) {
+    into "${buildDir}/libs"
+    from configurations.compileClasspath
+}
+
+build.dependsOn(copyToLib)
+
 build.dependsOn 'shadowJar'
 
 eclipse {
