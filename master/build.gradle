@@ -13,11 +13,12 @@ repositories {
         url = 'https://www.xypron.de/repository' //for glpk-java
     }
     flatDir {
-    	dirs "${javaHome}/lib", "${project(':jbse').projectDir.toString()}/libs"
+    	dirs "${javaHome}/lib", "${project(':jbse').projectDir.toString()}/libs" //for tools.lib and for the patched javassist.jar
     }
 }
 
 dependencies {
+    implementation 'args4j:args4j:2.32'
     implementation 'org.gnu.glpk:glpk-java:' + glpkJavaVersion
     implementation 'org.ojalgo:ojalgo:48.0.0'
     implementation name: 'tools'

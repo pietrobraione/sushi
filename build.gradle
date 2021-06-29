@@ -8,7 +8,6 @@ allprojects {
     }
 
     dependencies {
-        implementation 'args4j:args4j:2.32'
         testImplementation 'junit:junit:4.11'
     }
     
