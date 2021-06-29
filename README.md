@@ -26,11 +26,12 @@ The runtime dependencies that are automatically resolved by Gradle and included 
 * The `tools.jar` library, that is part of every JDK 8 setup (note, *not* of the JRE).
 * [Javassist](http://jboss-javassist.github.io/javassist/), that is used by JBSE for all the bytecode manipulation tasks. The patched version of Javassist that is distributed with JBSE is necessary, and TARDIS will not work with an upstream Javassist version.
 * [args4j](http://args4j.kohsuke.org/), that is used by SUSHI to process command line arguments.
-* The jar part of GLPK (more on this later).
+* The Java wrapper to the linear constraint solver GLPK (more on this later).
+* [ojAlgo](https://www.ojalgo.org/), that is used by SUSHI in alternative to GLPK to solve linear constraints.
 
 Another runtime dependency that is included in the git project is:
 
-* [EvoSuite](http://www.evosuite.org/); SUSHI depends on a customized version of EvoSuite that can be found in the `evosuite` subdirectory. It will not work with the EvoSuite jars that you can download from the EvoSuite web page.
+* [EvoSuite](http://www.evosuite.org/); SUSHI depends on a customized version of EvoSuite that can be found in the `evosuite` subdirectory. It will not work with the upstream EvoSuite versions that you can download from the EvoSuite web page.
 
 There are two additional runtime dependencies that are not handled by Gradle so you will need to fix them manually. 
 
@@ -48,8 +49,8 @@ Gradle will download them to compile SUSHI-Lib, but you can avoid to deploy them
 
 Once installed GLPK-Java, you will (possibly) need to modify the `build.gradle` file in the `master` subdirectory. 
 
-* The provided `master/build.gradle` file instructs Gradle to use version 1.11.0 of the GLPK-Java jar file, but the jar file's version must match the version of the GLPK-Java native library that you installed. For this reason, if it happens that on your development machine you have a version of GLPK-Java different from 1.11.0 you must edit the `master/build.gradle` file as follows: Find the `def glpkVersion = ...` statement in the file and replace the version number on the right-hand side of the assignment with the version number of the GLPK-Java you installed on your platform. 
-* The `master/build.gradle` file must also be set with a path to the directory where the native part of GLPK-Java is found. This is not indispensable for building SUSHI, but it is for running it, especially under Eclipse. The provided path is `/usr/local/lib/jni`, thus in the case (notably under Windows) your actual setup path differs from this default you must edit the `def glpkJniLocation = ...` statement in the file and put the correct path on the right-hand side of the assignment. The GLPK-Java documentation will tell you where the native files are installed. 
+* The provided `master/build.gradle` file instructs Gradle to use version 1.12.0 of the GLPK-Java jar file, but the jar file's version must match the version of the GLPK-Java native library that you installed. For this reason, if it happens that on your development machine you have a version of GLPK-Java different from 1.12.0 you must edit the `master/build.gradle` file as follows: Find the `def glpkVersion = ...` statement in the file and replace the version number on the right-hand side of the assignment with the version number of the GLPK-Java you installed on your platform. 
+* The `master/build.gradle` file must also be set with a path to the directory where the native part of GLPK-Java is found. This is not indispensable for building SUSHI, but it is for running it, especially under Eclipse. The provided path is `/usr/local/lib/jni`, thus in the case (notably under Windows and Ubuntu) your actual setup path differs from this default you must edit the `def glpkJniLocation = ...` statement in the file and put the correct path on the right-hand side of the assignment. The GLPK-Java documentation will tell you where the native files are installed. 
 
 ## Working under Eclipse
 
@@ -80,12 +81,14 @@ Here follows detailed instructions for deploying SUSHI based on the plain jars:
 * Deploy the `sushi-master-<VERSION>.jar` and set the Java classpath to point at it.
 * Deploy either the `jbse-<version>.jar` or the `jbse-<version>-shaded.jar` and set the Java classpath to point at it.
 * Deploy the `sushi-lib-<VERSION>.jar` and set the Java classpath to point at it.
-* Deploy the two EvoSuite jars contained in the `evosuite` directory. SUSHI executes EvoSuite in a separate process, therefore you do not need to put the EvoSuite jars in the classpath. 
+* Deploy the EvoSuite jar contained in the `evosuite` directory. SUSHI executes EvoSuite in a separate process, therefore you do not need to put the EvoSuite jar in the classpath. 
 * SUSHI requires a full JDK (not just a JRE) version 8 installed on the platform it runs. Add the `tools.jar` of the JDK 8 installed on the platform to the classpath.
-* Deploy the args4j jar that you find in the Gradle cache and (if you do not use the `jbse-<version>-shaded.jar` uber-jar) the Javassist jar that you find in the `jbse/libs` directory. All these jars must be on the classpath.
+* Deploy the args4j jar that you find in the Gradle cache. This jar must be in the classpath.
+* Deploy the ojAlgo jar that you find in the Gradle cache. This jar must be in the classpath.
+* If you do not use the `jbse-<version>-shaded.jar` uber-jar, deploy the Javassist jar that you find in the `jbse/libs` directory. This jar must be in the classpath.
 * Deploy GPLK and GLPK-Java, ensuring that the version of GLPK-Java you are deploying is the same used during compilation. Then, set the Java native library path to point to the directory where the native libraries of GLPK-Java are installed, either by providing the `-Djava.library.path=...` option when launching SUSHI, or (under any UNIX-like system) by setting the environment variable `LD_LIBRARY_PATH`. Also, set the classpath to point at the GLPK-Java jar file.
 
-If you deploy the `sushi-master-<VERSION>-shaded.jar` uber-jar you do not need to deploy the JBSE, SUSHI-Lib, args4j and Javassist jars.
+If you deploy the `sushi-master-<VERSION>-shaded.jar` uber-jar you do not need to deploy the JBSE, SUSHI-Lib, args4j, ojAlgo and Javassist jars.
 
 ## Usage
 
@@ -116,13 +119,13 @@ You will find examples of this way of configuring SUSHI in the [sushi-experiment
 
     java -Xms16G -Xmx16G -cp sushi-master-0.2.0-SNAPSHOT.jar:sushi-lib-0.2.0-SNAPSHOT.jar:jbse-0.9.0-SNAPSHOT-shaded.jar:args4j-2.32.jar:/usr/lib/jvm/java-8-openjdk-amd64/lib/tools.jar:/usr/share/java/glpk-java.jar  -Djava.library.path=/usr/lib/jni sushi.Main -jbse_lib jbse-0.9.0-SNAPSHOT-shaded.jar -sushi_lib sushi-lib-0.2.0-SNAPSHOT.jar -evosuite evosuite-shaded-1.0.6-SNAPSHOT.jar -use_mosa -z3 /opt/local/bin/z3 -classes ./my-application/bin -target_class my/Class -tmp_base ./tmp -out ./tests
     
-In the case you prefer (at your own risk) to use the SUSHI uber-jar the command line becomes a bit shorter:
+In the case you prefer (at your own risk) to use the SUSHI uber-jar the command line becomes a bit (but not that much) shorter:
 
     java -Xms16G -Xmx16G -cp sushi-master-0.2.0-SNAPSHOT-shaded.jar:/usr/lib/jvm/java-8-openjdk-amd64/lib/tools.jar:/usr/share/java/glpk-java.jar  -Djava.library.path=/usr/lib/jni sushi.Main -jbse_lib sushi-master-0.2.0-SNAPSHOT-shaded.jar -sushi_lib sushi-master-0.2.0-SNAPSHOT-shaded.jar -evosuite evosuite-shaded-1.0.6-SNAPSHOT.jar -use_mosa -z3 /opt/local/bin/z3 -classes ./my-application/bin -target_class my/Class -tmp_base ./tmp -out ./tests
 
 ## Generated tests
 
-The tests are generated in EvoSuite format, where a test suite is composed by two classes: a scaffolding class, and the class containing all the test cases (the actual suite). In case the `-evosuite_no_dependency` option is active, the scaffolding class will not be generated, and the suite will be composed by the actual suite class only. SUSHI will produce many suites each containing exactly one test case: If, e.g., a run of SUSHI generates 10 test cases, then in the directory indicated with the `-out` command line parameter you will find 10 scaffolding classes, and 10 actual test suite classes each containing exactly 1 test case. Note that you do *not* need the scaffolding class to compile and run the tests in the test suite classes, but these depend on JUnit and on the EvoSuite jar (they will not depend on the EvoSuite jar when the `-evosuite_no_dependency` option is active). You can safely remove the latter dependency by manually editing the generated files, otherwise you need to put the EvoSuite jar used to generate the tests in the classpath when compiling and running the generated test suites.
+The generated tests are in EvoSuite format, where a test suite is composed by two classes: a scaffolding class, and the class containing all the test cases (the actual suite). In case the `-evosuite_no_dependency` option is active, the scaffolding class will not be generated, and the suite will be composed by the actual suite class only: Note, however, that without scaffolding the tests might end up being flaky. SUSHI will produce many suites each containing exactly one test case: If, e.g., a run of SUSHI generates 10 test cases, then in the directory indicated with the `-out` command line parameter you will find 10 scaffolding classes, and 10 actual test suite classes each containing exactly 1 test case. Note that you do *not* need the scaffolding class to compile and run the tests in the test suite classes, but these depend on JUnit and on the EvoSuite jar (they will not depend on the EvoSuite jar when the `-evosuite_no_dependency` option is active). You can safely remove the latter dependency by manually editing the generated files, otherwise you need to put the EvoSuite jar used to generate the tests in the classpath when compiling and running the generated test suites.
 
 The generated files have names structured as follows:
     
