@@ -124,7 +124,7 @@ If you launch SUSHI without options it will print a help screen that lists all t
 * `-out`: a path to a directory where SUSHI will put the generated tests.
 * `-evosuite_no_dependency`: when active, the generated test classes will not depend on the EvoSuite jar (i.e., no scaffolding class will be generated).
 
-If you are using the `sushi` script under the Docker container, you do not need to pass the `-java8_home`, `-evosuite`,  `-jbse_lib`, `-sushi_lib` and `-z3` options - the script does it already.
+If you are using the `sushi` script under the Docker environment, you do not need to pass the `-java8_home`, `-evosuite`,  `-jbse_lib`, `-sushi_lib` and `-z3` options - the script does it already.
 
 An alternative way to configure SUSHI is to define a subclass of the class `sushi.configure.ParametersModifier` contained in the runtime subproject. The subclass should override one or more of the `modify` methods that receive as input a  parameter object, and modify the object by setting the parameters of interest. In this case SUSHI must be invoked by specifying the following options:
 
@@ -133,33 +133,39 @@ An alternative way to configure SUSHI is to define a subclass of the class `sush
 
 You will find examples of this way of configuring SUSHI in the [sushi-experiments](https://github.com/pietrobraione/sushi-experiments), [sushi-experiments-closure01](https://github.com/pietrobraione/sushi-experiments-closure01) and [sushi-experiments-closure72](https://github.com/pietrobraione/sushi-experiments-closure72) projects. A possible example of command line is the following:
 
-    java -Xms16G -Xmx16G -cp /usr/lib/jvm/java-8-openjdk-amd64/lib/tools.jar:/usr/share/java/glpk-java.jar:./lib/sushi-master-0.2.0-SNAPSHOT.jar:./lib/sushi-lib-0.2.0-SNAPSHOT.jar:./lib/jbse-0.10.0-SNAPSHOT-shaded.jar:./lib/args4j-2.32.jar:./lib/ojalgo-48.0.0.jar:./lib/asm-debug-all-5.0.1.jar:./lib/org.jacoco.core-0.7.5.201505241946.jar -Djava.library.path=/usr/lib/jni sushi.Main -jbse_lib ./lib/jbse-0.10.0-SNAPSHOT-shaded.jar -sushi_lib ./lib/sushi-lib-0.2.0-SNAPSHOT.jar -evosuite ./lib/evosuite-shaded-1.0.6-SNAPSHOT.jar -z3 /opt/local/bin/z3 -classes ./my-application/bin -target_class my/Class -tmp_base ./tmp -out ./tests
+    $ java -Xms16G -Xmx16G -cp /usr/lib/jvm/java-8-openjdk-amd64/lib/tools.jar:/usr/share/java/glpk-java.jar:./libs/sushi-master-0.2.0-SNAPSHOT.jar:./libs/sushi-lib-0.2.0-SNAPSHOT.jar:./libs/jbse-0.10.0-SNAPSHOT-shaded.jar:./libs/args4j-2.32.jar:./libs/ojalgo-48.0.0.jar:./libs/asm-debug-all-5.0.1.jar:./libs/org.jacoco.core-0.7.5.201505241946.jar -Djava.library.path=/usr/lib/jni sushi.Main -jbse_lib ./libs/jbse-0.10.0-SNAPSHOT-shaded.jar -sushi_lib ./libs/sushi-lib-0.2.0-SNAPSHOT.jar -evosuite ./libs/evosuite-shaded-1.0.6-SNAPSHOT.jar -z3 /usr/bin/z3 -classes ./my-application/bin -target_class my/Class -tmp_base ./tmp -out ./tests
     
-In the case you prefer (at your own risk) to use the SUSHI uber-jar the command line becomes a bit (but not that much) shorter:
+where we assume that all the jars except for `tools.jar` and `glpk-java.jar` are in `./libs`, that the software to be tested is in `./my-application/bin`, that the class to generate tests for is `my.Class`, that a work directory where SUSHI can put intermediate files is `./tmp`, and that we want SUSHI to emit the generated tests in `./tests`. In the case you prefer (at your own risk) to use the SUSHI uber-jar the command line becomes a bit, but not that much, shorter:
 
-    java -Xms16G -Xmx16G -cp /usr/lib/jvm/java-8-openjdk-amd64/lib/tools.jar:/usr/share/java/glpk-java.jar:./lib/sushi-master-0.2.0-SNAPSHOT-shaded.jar -Djava.library.path=/usr/lib/jni sushi.Main -jbse_lib ./lib/sushi-master-0.2.0-SNAPSHOT-shaded.jar -sushi_lib ./lib/sushi-master-0.2.0-SNAPSHOT-shaded.jar -evosuite ./lib/evosuite-shaded-1.0.6-SNAPSHOT.jar -z3 /opt/local/bin/z3 -classes ./my-application/bin -target_class my/Class -tmp_base ./tmp -out ./tests
+    $ java -Xms16G -Xmx16G -cp /usr/lib/jvm/java-8-openjdk-amd64/lib/tools.jar:/usr/share/java/glpk-java.jar:./libs/sushi-master-0.2.0-SNAPSHOT-shaded.jar -Djava.library.path=/usr/lib/jni sushi.Main -jbse_lib ./libs/sushi-master-0.2.0-SNAPSHOT-shaded.jar -sushi_lib ./libs/sushi-master-0.2.0-SNAPSHOT-shaded.jar -evosuite ./libs/evosuite-shaded-1.0.6-SNAPSHOT.jar -z3 /usr/bin/z3 -classes ./my-application/bin -target_class my/Class -tmp_base ./tmp -out ./tests
     
-Under the Docker environment the command would be much shorter:
+### Running SUSHI from the Docker environment
 
-    sushi -classes ./my-application/bin -target_class my/Class -tmp_base ./tmp -out ./tests
+Under the Docker environment the previous example command would be very shorter:
+
+    $ sushi -classes ./my-application/bin -target_class my/Class -tmp_base ./tmp -out ./tests
+
+If you want to run SUSHI on the sushi-experiments subjects included in the Docker image you can exploit the settings classes included in the project. For instance, if you want to generate tests for the AVL tree example with accurate HEX invariants, run the following command from the `/root` directory:
+
+    $ sushi -params_modifier_path sushi-experiments/bin -params_modifier_class avl_tree.settings.AvlTreeParametersAccurate
+    
+SUSHI will put the generated tests in `/root/sushi-experiments/sushi-test` and the intermediate files in a subdirectory of `/root/sushi-experiments/sushi-out`.
 
 ## Generated tests
 
-The generated tests are in EvoSuite format, where a test suite is composed by two classes: a scaffolding class, and the class containing all the test cases (the actual suite). In case the `-evosuite_no_dependency` option is active, the scaffolding class will not be generated, and the suite will be composed by the actual suite class only: Note, however, that without scaffolding the tests might end up being flaky. SUSHI will produce many suites each containing exactly one test case: If, e.g., a run of SUSHI generates 10 test cases, then in the directory indicated with the `-out` command line parameter you will find 10 scaffolding classes, and 10 actual test suite classes each containing exactly 1 test case. Note that you do *not* need the scaffolding class to compile and run the tests in the test suite classes, but these depend on JUnit and on the EvoSuite jar (they will not depend on the EvoSuite jar when the `-evosuite_no_dependency` option is active). You can safely remove the latter dependency by manually editing the generated files, otherwise you need to put the EvoSuite jar used to generate the tests in the classpath when compiling and running the generated test suites.
+The generated tests are in EvoSuite format, where a test suite is composed by two classes: a scaffolding class, and the class containing all the test cases (the actual suite). In case the `-evosuite_no_dependency` option is active, the scaffolding class will not be generated, and the suite will be composed by the actual suite class only: Note, however, that without scaffolding the tests might be flaky. SUSHI will produce many suites each containing exactly one test case: If, e.g., a run of SUSHI generates 10 test cases, then in the directory indicated with the `-out` command line parameter you will find 10 scaffolding classes, and 10 actual test suite classes each containing exactly 1 test case. Note that all these classes depend on the JUnit and EvoSuite jars, therefore you will need to put these jars in the classpath when compiling and running the test suites. If the `-evosuite_no_dependency` option is active, the tests will have no dependence on EvoSuite so you will not need to put the EvoSuite jar in the classpath.
 
-The generated files have names structured as follows:
+The names of the generated files are structured as follows:
     
     <class name>_<method number>_<trace number>_Test_scaffolding.java //the scaffolding class
     <class name>_<method number>_<trace number>_Test.java             //the actual suite class
 
 where `<class name>` is the name of the class under test, `<method number>` is a number identifying the method under test, and `<trace number>` identifies the trace along which the test executes. To associate a method number with the corresponding method under test open the generated actual suite source file, e.g., `AvlTree_2_1_Test.java`: On top of the file you will find a comment line starting with the words "Covered goal", e.g., `//Covered goal: avl_tree.AvlTree.findMax()I:`. The method signature you find in the comment is the signature of the method under test (`findMax` in the example). Alternatively, go to the temporary directory of the SUSHI run that generated the tests, and look for the file `branches_<method number>.txt` (`branches_2.txt` in our example). The first line of the file contains the signature of the method under test. 
 
-The generated scaffolding/actual suite classes are declared in the same package as the class under test, so they can access its package-level members. This means, for example, that if you have specified the option `-out /your/out/dir`, an `avl_tree.AvlTree` class under test will produce a test `/your/out/dir/avl_tree/AvlTree_2_1_Test.java`. If you want to compile and execute the test suites add the output directory to the classpath and qualify the class name of the test suite with the package name, e.g.:
+The generated scaffolding/actual suite classes are in the same package as the class under test, so they can access its package-level members. This means, for example, that if you have specified the option `-out /your/out/dir`, an `avl_tree.AvlTree` class under test will produce a test `/your/out/dir/avl_tree/AvlTree_2_1_Test.java`. If you want to compile and execute the test suites add the output directory to the classpath and qualify the class name of the test suite with the package name, e.g.:
 
-    $ javac -cp junit.jar:evosuite-shaded-1.0.6-SNAPSHOT.jar:avltree.jar
-        /your/out/dir/avl_tree/AvlTree_2_1_Test.java
-    $ java -cp junit.jar:evosuite-shaded-1.0.6-SNAPSHOT.jar:avltree.jar:/your/out/dir
-        org.junit.runner.JUnitCore avl_tree.AvlTree_2_1_Test
+    $ javac -cp junit.jar:evosuite-shaded-1.0.6-SNAPSHOT.jar:avltree.jar ./tests/AvlTree_2_1_Test.java
+    $ java -cp junit.jar:evosuite-shaded-1.0.6-SNAPSHOT.jar:avltree.jar:./tests org.junit.runner.JUnitCore avl_tree.AvlTree_2_1_Test
 
 ## Disclaimer
 
