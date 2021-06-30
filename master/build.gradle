@@ -31,7 +31,6 @@ shadowJar {
     exclude 'tools.jar'
     exclude 'glpk-java*'
     relocate 'javassist', 'sushi.javassist'
-    relocate 'jbse', 'sushi.jbse'
     relocate 'org.kohsuke', 'sushi.org.kohsuke'
     relocate 'org.jacoco', 'sushi.org.jacoco'
     relocate 'org.objectweb', 'sushi.org.objectweb'
