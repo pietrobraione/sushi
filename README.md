@@ -12,15 +12,15 @@ There are two ways to install SUSHI. The easiest is via Docker; The less easy is
 
 ## Installing via Docker
 
-A convenient package is available from the SUSHI GitHub page. The package will allow you to install a Docker image containing the head revision of the master branch of SUSHI and a copy of the [sushi-experiments](https://github.com/pietrobraione/sushi-experiments) repository. From the command line run:
+A convenient package is available from the SUSHI GitHub page, that allows you to install a Docker image containing a setup of SUSHI and some examples to play with. From the command line run:
 
     $ docker pull ghcr.io/pietrobraione/sushi:master
     
-The resulting environment is an Ubuntu container, where at the current (`/root`) directory you will find a clone of the SUSHI and of the sushi-experiments repositories. On the path you will find a `sushi` command that alleviates the need of invoking Java and passing most of the command line parameters. The `sushi` script is at `/usr/local/bin` in the case you want to study it.
+The resulting environment is an Ubuntu container, where at the current (`/root`) directory you will find a clone of the head revision of the master branch of the SUSHI and of the [sushi-experiments](https://github.com/pietrobraione/sushi-experiments) repositories. On the path you will find a `sushi` command that alleviates the need of invoking Java and passing most of the command line parameters (see the "Usage" section below). The `sushi` script is at `/usr/local/bin` in the case you want to study it.
 
 ## Building SUSHI
 
-SUSHI is composed by several projects, some of which are imported as git submodules, and is built with Gradle version 6.7.1. First, ensure that all the dependencies are present, including Z3, GLPK and GLPK-Java (see section "Dependencies"). Then, clone the SUSHI git repository and init/update its submodules. If you work from the command line, this means running first `git clone`, and then `git submodule init && git submodule update`. Next, patch the `build.gradle` files to match the installed GLPK-Java, as explained in the subsection "Patching the build scripts". You shall also follow the instructions described in the subsection "Patching the tests" of the `README.md` file of the JBSE subproject. Finally, run the build Gradle task, e.g. by invoking `gradlew build` from the command line.
+SUSHI is composed by several projects, some of which are imported as git submodules, and is built with Gradle version 6.7.1. First, ensure that all the dependencies are present, including Z3, GLPK and GLPK-Java (see section "Dependencies"). Then, clone the SUSHI git repository and init/update its submodules. If you work from the command line, this means running first `git clone`, and then `git submodule init && git submodule update`. Next, patch the `build.gradle` files to match the installed GLPK-Java, as explained in the subsection "Patching the build scripts". You shall also follow the instructions described in the subsection "Patching the tests" of the `README.md` file of the JBSE subproject. Finally, run the build Gradle task, e.g. by invoking `./gradlew build` from the command line.
 
 ### Dependencies
 
@@ -32,14 +32,14 @@ SUSHI has many dependencies. It must be built using a JDK version 8 - neither le
 The runtime dependencies that are automatically resolved by Gradle and included in the build path are:
 
 * The `tools.jar` library, that is part of every JDK 8 setup (note, *not* of the JRE).
-* [Javassist](http://jboss-javassist.github.io/javassist/), that is used by JBSE for all the bytecode manipulation tasks. The patched version of Javassist that is distributed with JBSE is necessary, and TARDIS will not work with an upstream Javassist version.
+* [Javassist](http://jboss-javassist.github.io/javassist/), that is used by JBSE for all the bytecode manipulation tasks. The patched version of Javassist that is distributed with JBSE is necessary, and SUSHI will not work with an upstream Javassist version.
 * [args4j](http://args4j.kohsuke.org/), that is used by SUSHI to process command line arguments.
 * The Java wrapper to the linear constraint solver GLPK (more on this later).
-* [ojAlgo](https://www.ojalgo.org/), that is used by SUSHI in alternative to GLPK to solve linear constraints.
+* [ojAlgo](https://www.ojalgo.org/), that is used by SUSHI in alternative to GLPK to solve linear constraints; ojAlgo is slower than GLPK, but it is pure Java.
 
 Another runtime dependency that is included in the git project is:
 
-* [EvoSuite](http://www.evosuite.org/); SUSHI depends on a customized version of EvoSuite that can be found in the `evosuite` subdirectory. It will not work with the upstream EvoSuite versions that you can download from the EvoSuite web page.
+* [EvoSuite](http://www.evosuite.org/); SUSHI depends on a customized version of EvoSuite that can be found in the `libs` subdirectory. It will not work with the upstream EvoSuite versions that you can download from the EvoSuite web page.
 
 There are two additional runtime dependencies that are not handled by Gradle so you will need to fix them manually. 
 
@@ -57,7 +57,7 @@ Gradle will download them to compile SUSHI-Lib, but you can avoid to deploy them
 
 Once installed GLPK-Java, you will (possibly) need to modify the `build.gradle` file in the `master` subdirectory. 
 
-* The provided `master/build.gradle` file instructs Gradle to use version 1.12.0 of the GLPK-Java jar file, but the jar file's version must match the version of the GLPK-Java native library that you installed. For this reason, if it happens that on your development machine you have a version of GLPK-Java different from 1.12.0 you must edit the `master/build.gradle` file as follows: Find the `def glpkVersion = ...` statement in the file and replace the version number on the right-hand side of the assignment with the version number of the GLPK-Java you installed on your platform. 
+* The provided `master/build.gradle` file instructs Gradle to use version 1.12.0 of the GLPK-Java jar file that matches the version used in the `Dockerfile`, but in case your development machine uses a different version of GLPK-Java, the `master/build.gradle` file must be modified to match your setup. In this case you must edit the `master/build.gradle` file as follows: Find the `def glpkVersion = ...` statement in the file and replace the version number on the right-hand side of the assignment with the version number of the GLPK-Java you installed on your development machine. 
 * The `master/build.gradle` file must also be set with a path to the directory where the native part of GLPK-Java is found. This is not indispensable for building SUSHI, but it is for running it, especially under Eclipse. The provided path is `/usr/local/lib/jni`, thus in the case (notably under Windows and Ubuntu) your actual setup path differs from this default you must edit the `def glpkJniLocation = ...` statement in the file and put the correct path on the right-hand side of the assignment. The GLPK-Java documentation will tell you where the native files are installed. 
 
 ### Working under Eclipse
@@ -81,7 +81,7 @@ In the end, your Eclipse workspace should contain these projects:
 
 ### Deploying SUSHI
 
-Deploying SUSHI outside the build environment to a target machine is tricky. The `gradlew build` command will produce a SUSHI-Lib jar `runtime/build/libs/sushi-lib-<VERSION>.jar`, the JBSE jars in `jbse/build/libs` (refer to the JBSE project's README file for more information on them), and a jar for the main SUSHI application `master/build/libs/sushi-master-<VERSION>.jar`. You need to deploy them and all their dependencies. Moreover, `gradlew build` will produce an uber-jar `master/build/libs/sushi-master-<VERSION>-shaded.jar`, containing all the runtime dependencies excluded EvoSuite, `tools.jar`, the GLPK-Java jar file, and the native files (Z3 and the native parts of GLPK and GLPK-Java). Deploying based on the uber-jar is easier, but to our experience a setup based on the uber-jar is more crash-prone (on the other hand, using the uber-jar for JBSE is safe). 
+Deploying SUSHI outside the build environment to a target machine is tricky. The `gradlew build` command will produce a SUSHI-Lib jar `runtime/build/libs/sushi-lib-<VERSION>.jar`, the JBSE jars in `jbse/build/libs` (refer to the JBSE project's README file for more information on them), and a jar for the main SUSHI application `master/build/libs/sushi-master-<VERSION>.jar`. Moreover, it will copy all the dependencies of the SUSHI-Lib, JBSE and SUSHI projects in `runtime/build/libs`, `jbse/build/libs`, and `master/build/libs` respectively. You need to deploy all of them plus the native files  (Z3 and the native parts of GLPK and GLPK-Java). The build process will also produce an uber-jar `master/build/libs/sushi-master-<VERSION>-shaded.jar`, containing all the runtime dependencies excluded EvoSuite, `tools.jar`, the GLPK-Java jar file, and the native files. Deploying based on the uber-jar is easier, but to our experience a setup based on the uber-jar is more crash-prone (on the other hand, using the uber-jar for JBSE is safe). 
 
 Here follows detailed instructions for deploying SUSHI based on the plain jars:
 
@@ -89,12 +89,12 @@ Here follows detailed instructions for deploying SUSHI based on the plain jars:
 * Deploy the `sushi-master-<VERSION>.jar` and set the Java classpath to point at it.
 * Deploy either the `jbse-<version>.jar` or the `jbse-<version>-shaded.jar` and set the Java classpath to point at it.
 * Deploy the `sushi-lib-<VERSION>.jar` and set the Java classpath to point at it.
-* Deploy the EvoSuite jar contained in the `libs` directory. SUSHI executes EvoSuite in a separate process, therefore you do not need to put the EvoSuite jar in the classpath. 
-* SUSHI requires a full JDK (not just a JRE) version 8 installed on the platform it runs. Add the `tools.jar` of the JDK 8 installed on the platform to the classpath.
-* Deploy the args4j jar that you find in the Gradle cache. You will find a copy of it in the `master/build/libs` directory. This jar must be in the classpath.
-* Deploy the ojAlgo jar that you find in the Gradle cache. You will find a copy of it in the `master/build/libs` directory. This jar must be in the classpath.
-* If you do not use the `jbse-<version>-shaded.jar` uber-jar, deploy the Javassist jar that you find in the `jbse/libs` directory. This jar must be in the classpath.
-* Deploy GPLK and GLPK-Java, ensuring that the version of GLPK-Java you are deploying is the same used during compilation. Then, set the Java native library path to point to the directory where the native libraries of GLPK-Java are installed, either by providing the `-Djava.library.path=...` option when launching SUSHI, or (under any UNIX-like system) by setting the environment variable `LD_LIBRARY_PATH`. Also, set the classpath to point at the GLPK-Java jar file.
+* Deploy the EvoSuite jar contained in the `libs` directory. SUSHI executes EvoSuite in a separate process, therefore you do not need to add the EvoSuite jar to the Java classpath, unless you want to compile the emitted tests and these have scaffolding. 
+* SUSHI requires a full JDK (not just a JRE) version 8 installed on the platform it runs. Add the `tools.jar` of the JDK 8 installed on the platform to the Java classpath.
+* Deploy the args4j jar that you find in the Gradle cache. You will find a copy of it in the `master/build/libs` directory. This jar must be in the Java classpath.
+* Deploy the ojAlgo jar that you find in the Gradle cache. You will find a copy of it in the `master/build/libs` directory. This jar must be in the Java classpath.
+* If you do not use the `jbse-<version>-shaded.jar` uber-jar, deploy the Javassist jar that you find in the `jbse/libs` directory. This jar must be in the Java classpath.
+* Deploy GPLK and GLPK-Java, ensuring that the version of GLPK-Java you are deploying is the same used during compilation. Then, set the Java native library path to point to the directory where the native libraries of GLPK-Java are installed, either by providing the `-Djava.library.path=...` option when launching SUSHI, or (under any UNIX-like system) by setting the environment variable `LD_LIBRARY_PATH`. Also, set the Java classpath to point at the GLPK-Java jar file.
 
 You can study the `Dockerfile` as an example of a deployment workflow on Ubuntu.
 
@@ -106,7 +106,7 @@ Compile the target program with the debug symbols, then launch SUSHI from the co
 
     $ java -Xms16G -Xmx16G -cp <classpath> -Djava.library.path=<nativeLibraryPath> sushi.Main <options>
 
-where `<classpath>` and `<nativeLibraryPath>` must be set according to the indications of the previous section. If you have installed the Docker container we have provided a more convenient `sushi` script that invokes java, passes the classpath and the native library path and some of the indispensable options, so you can invoke SUSHI as follows:
+where `<classpath>` and `<nativeLibraryPath>` must be set according to the indications of the previous section. Under the Docker container we have provided a more convenient `sushi` script that invokes java, passes the classpath and the native library path and some of the indispensable options, so you can invoke SUSHI as follows:
 
     $ sushi <options>
 
@@ -124,7 +124,7 @@ If you launch SUSHI without options it will print a help screen that lists all t
 * `-out`: a path to a directory where SUSHI will put the generated tests.
 * `-evosuite_no_dependency`: when active, the generated test classes will not depend on the EvoSuite jar (i.e., no scaffolding class will be generated).
 
-If you have installed the Docker container and you are using the `sushi` script, you do not need to pass the `-java8_home`, `-evosuite`,  `-jbse_lib`, `-sushi_lib` and `-z3` options.
+If you are using the `sushi` script under the Docker container, you do not need to pass the `-java8_home`, `-evosuite`,  `-jbse_lib`, `-sushi_lib` and `-z3` options - the script does it already.
 
 An alternative way to configure SUSHI is to define a subclass of the class `sushi.configure.ParametersModifier` contained in the runtime subproject. The subclass should override one or more of the `modify` methods that receive as input a  parameter object, and modify the object by setting the parameters of interest. In this case SUSHI must be invoked by specifying the following options:
 
