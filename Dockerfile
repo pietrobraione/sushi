@@ -49,7 +49,7 @@ RUN mkdir bin
 RUN javac -cp ${CLASSPATH}:${HOME}/sushi-experiments/bin -d bin -g src/common/*.java
 RUN javac -cp ${CLASSPATH}:${HOME}/sushi-experiments/bin -d bin -g src/avl_tree/*.java
 RUN javac -cp ${CLASSPATH}:${HOME}/sushi-experiments/bin -d bin -g src/dll_hard/*.java
-RUN javac -cp ${CLASSPATH}:${HOME}/sushi-experiments/bin -d bin -g src/ganttproject/*.java
+RUN javac -cp ${CLASSPATH}:${HOME}/sushi-experiments/bin:${HOME}/sushi-experiments/libs/ganttproject-guava.jar -d bin -g src/ganttproject/*.java
 RUN javac -cp ${CLASSPATH}:${HOME}/sushi-experiments/bin -d bin -g src/node_caching_linked_list/*.java
 RUN javac -cp ${CLASSPATH}:${HOME}/sushi-experiments/bin -d bin -g src/treemap/*.java
 RUN javac -cp ${CLASSPATH}:${HOME}/sushi-experiments/bin -d bin -g src/tsafe/*.java
