@@ -41,15 +41,25 @@ RUN echo "#!/bin/sh" > /usr/local/bin/sushi
 RUN echo "java -Xms16G -Xmx16G -cp ${CLASSPATH} -Djava.library.path=${JNI_HOME} sushi.Main -evosuite ${JARS_HOME}/evosuite-shaded-1.0.6-SNAPSHOT.jar -jbse_lib ${JARS_HOME}/sushi-master-0.2.0-SNAPSHOT.jar -sushi_lib ${JARS_HOME}/sushi-master-0.2.0-SNAPSHOT-shaded.jar -z3 ${Z3_HOME}/z3 \$@" >> /usr/local/bin/sushi
 RUN chmod +x /usr/local/bin/sushi
 
-# Get some examples
+# Get some examples and compile them
 WORKDIR ${HOME}
 RUN git clone https://github.com/pietrobraione/sushi-experiments
 WORKDIR ${HOME}/sushi-experiments
 RUN mkdir bin
-RUN javac -cp ${CLASSPATH} -d bin src/common/*.java
-RUN javac -cp ${CLASSPATH} -d bin src/avl_tree/*.java
+RUN javac -cp ${CLASSPATH} -d bin -g src/common/*.java
+RUN javac -cp ${CLASSPATH} -d bin -g src/avl_tree/*.java
+RUN javac -cp ${CLASSPATH} -d bin -g src/dll_hard/*.java
+RUN javac -cp ${CLASSPATH} -d bin -g src/ganttproject/*.java
+RUN javac -cp ${CLASSPATH} -d bin -g src/node_caching_linked_list/*.java
+RUN javac -cp ${CLASSPATH} -d bin -g src/treemap/*.java
+RUN javac -cp ${CLASSPATH} -d bin -g src/tsafe/*.java
 RUN javac -cp ${CLASSPATH} -d bin sushi-src/common/*.java
 RUN javac -cp ${CLASSPATH}:${HOME}/sushi-experiments/src:${HOME}/sushi-experiments/sushi-src -d bin sushi-src/avl_tree/settings/*.java
+RUN javac -cp ${CLASSPATH}:${HOME}/sushi-experiments/src:${HOME}/sushi-experiments/sushi-src -d bin sushi-src/dll_hard/settings/*.java
+RUN javac -cp ${CLASSPATH}:${HOME}/sushi-experiments/src:${HOME}/sushi-experiments/sushi-src -d bin sushi-src/ganttproject/settings/*.java
+RUN javac -cp ${CLASSPATH}:${HOME}/sushi-experiments/src:${HOME}/sushi-experiments/sushi-src -d bin sushi-src/node_caching_linked_list/settings/*.java
+RUN javac -cp ${CLASSPATH}:${HOME}/sushi-experiments/src:${HOME}/sushi-experiments/sushi-src -d bin sushi-src/treemap/settings/*.java
+RUN javac -cp ${CLASSPATH}:${HOME}/sushi-experiments/src:${HOME}/sushi-experiments/sushi-src -d bin sushi-src/tsafe/settings/*.java
 
 WORKDIR ${HOME}
 

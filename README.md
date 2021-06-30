@@ -1,4 +1,4 @@
-# SUSHI
+# SUSHI <img width="10%" src="img/sushi-30-128.png">
 
 ## About
 
