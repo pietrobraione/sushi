@@ -133,11 +133,15 @@ An alternative way to configure SUSHI is to define a subclass of the class `sush
 
 You will find examples of this way of configuring SUSHI in the [sushi-experiments](https://github.com/pietrobraione/sushi-experiments), [sushi-experiments-closure01](https://github.com/pietrobraione/sushi-experiments-closure01) and [sushi-experiments-closure72](https://github.com/pietrobraione/sushi-experiments-closure72) projects. A possible example of command line is the following:
 
-    java -Xms16G -Xmx16G -cp sushi-master-0.2.0-SNAPSHOT.jar:sushi-lib-0.2.0-SNAPSHOT.jar:jbse-0.9.0-SNAPSHOT-shaded.jar:args4j-2.32.jar:/usr/lib/jvm/java-8-openjdk-amd64/lib/tools.jar:/usr/share/java/glpk-java.jar  -Djava.library.path=/usr/lib/jni sushi.Main -jbse_lib jbse-0.9.0-SNAPSHOT-shaded.jar -sushi_lib sushi-lib-0.2.0-SNAPSHOT.jar -evosuite evosuite-shaded-1.0.6-SNAPSHOT.jar -use_mosa -z3 /opt/local/bin/z3 -classes ./my-application/bin -target_class my/Class -tmp_base ./tmp -out ./tests
+    java -Xms16G -Xmx16G -cp /usr/lib/jvm/java-8-openjdk-amd64/lib/tools.jar:/usr/share/java/glpk-java.jar:./lib/sushi-master-0.2.0-SNAPSHOT.jar:./lib/sushi-lib-0.2.0-SNAPSHOT.jar:./lib/jbse-0.10.0-SNAPSHOT-shaded.jar:./lib/args4j-2.32.jar:./lib/ojalgo-48.0.0.jar:./lib/asm-debug-all-5.0.1.jar:./lib/org.jacoco.core-0.7.5.201505241946.jar -Djava.library.path=/usr/lib/jni sushi.Main -jbse_lib ./lib/jbse-0.10.0-SNAPSHOT-shaded.jar -sushi_lib ./lib/sushi-lib-0.2.0-SNAPSHOT.jar -evosuite ./lib/evosuite-shaded-1.0.6-SNAPSHOT.jar -z3 /opt/local/bin/z3 -classes ./my-application/bin -target_class my/Class -tmp_base ./tmp -out ./tests
     
 In the case you prefer (at your own risk) to use the SUSHI uber-jar the command line becomes a bit (but not that much) shorter:
 
-    java -Xms16G -Xmx16G -cp sushi-master-0.2.0-SNAPSHOT-shaded.jar:/usr/lib/jvm/java-8-openjdk-amd64/lib/tools.jar:/usr/share/java/glpk-java.jar  -Djava.library.path=/usr/lib/jni sushi.Main -jbse_lib sushi-master-0.2.0-SNAPSHOT-shaded.jar -sushi_lib sushi-master-0.2.0-SNAPSHOT-shaded.jar -evosuite evosuite-shaded-1.0.6-SNAPSHOT.jar -use_mosa -z3 /opt/local/bin/z3 -classes ./my-application/bin -target_class my/Class -tmp_base ./tmp -out ./tests
+    java -Xms16G -Xmx16G -cp /usr/lib/jvm/java-8-openjdk-amd64/lib/tools.jar:/usr/share/java/glpk-java.jar:./lib/sushi-master-0.2.0-SNAPSHOT-shaded.jar -Djava.library.path=/usr/lib/jni sushi.Main -jbse_lib ./lib/sushi-master-0.2.0-SNAPSHOT-shaded.jar -sushi_lib ./lib/sushi-master-0.2.0-SNAPSHOT-shaded.jar -evosuite ./lib/evosuite-shaded-1.0.6-SNAPSHOT.jar -z3 /opt/local/bin/z3 -classes ./my-application/bin -target_class my/Class -tmp_base ./tmp -out ./tests
+    
+Under the Docker environment the command would be much shorter:
+
+    sushi -classes ./my-application/bin -target_class my/Class -tmp_base ./tmp -out ./tests
 
 ## Generated tests
 
