@@ -13,7 +13,7 @@ repositories {
         url = 'https://www.xypron.de/repository' //for glpk-java
     }
     flatDir {
-    	dirs "${javaHome}/lib", "${project(':jbse').projectDir.toString()}/libs" //for tools.lib and for the patched javassist.jar
+    	dirs "${javaHome}/lib", "${project(':jbse').projectDir.toString()}/libs" //for tools.jar and for the patched javassist.jar
     }
 }
 
@@ -26,6 +26,11 @@ dependencies {
     implementation project(':jbse')
 }
 
+task copyToLib(type: Copy) {
+    into "${buildDir}/libs"
+    from configurations.compileClasspath
+}
+
 shadowJar {
     classifier = 'shaded'
     exclude 'tools.jar'
@@ -35,11 +40,6 @@ shadowJar {
     relocate 'org.jacoco', 'sushi.org.jacoco'
     relocate 'org.objectweb', 'sushi.org.objectweb'
     relocate 'org.ojalgo', 'sushi.org.ojalgo'
-}
-
-task copyToLib(type: Copy) {
-    into "${buildDir}/libs"
-    from configurations.compileClasspath
 }
 
 build.dependsOn(copyToLib)
