@@ -1,21 +1,25 @@
 package sushi.execution.loopmgr;
 
+import sushi.Options;
 import sushi.execution.Tool;
 import sushi.util.DirectoryUtils;
 
 public final class LoopMgr extends Tool<LoopMgrParameters> {
-	public LoopMgr() { }
+	private final Options options;
+	
+	public LoopMgr(Options options) {
+		this.options = options;
+	}
 
 	@Override
 	public LoopMgrParameters getInvocationParameters(int i) {
 		final LoopMgrParameters p = new LoopMgrParameters();
-		final DirectoryUtils dirs = DirectoryUtils.I();
-		p.setBranchesFilePath(dirs.getBranchesFilePath());
-		p.setCoverageFilePath(dirs.getCoverageFilePath());
-		p.setBranchesToIgnoreFilePath(dirs.getBranchesToIgnoreFilePath());
-		p.setTracesToIgnoreFilePath(dirs.getTracesToIgnoreFilePath());
-		p.setCoveredByTestFilePath(dirs.getCoveredByTestFilePath());
-		p.setMinimizerOutFilePath(dirs.getMinimizerOutFilePath());
+		p.setBranchesFilePath(DirectoryUtils.getBranchesFilePath(this.options));
+		p.setCoverageFilePath(DirectoryUtils.getCoverageFilePath(this.options));
+		p.setBranchesToIgnoreFilePath(DirectoryUtils.getBranchesToIgnoreFilePath(this.options));
+		p.setTracesToIgnoreFilePath(DirectoryUtils.getTracesToIgnoreFilePath(this.options));
+		p.setCoveredByTestFilePath(DirectoryUtils.getCoveredByTestFilePath(this.options));
+		p.setMinimizerOutFilePath(DirectoryUtils.getMinimizerOutFilePath(this.options));
 		
 		//no user defined parameters
 

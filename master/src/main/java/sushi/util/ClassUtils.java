@@ -6,11 +6,7 @@ package sushi.util;
  * @author andrea
  * 
  */
-public class ClassUtils {
-	private ClassUtils() { 
-		//do not instantiate me
-	}
-
+public final class ClassUtils {
 	public static String getCanonicalClassname(final String signature) {
 		return signature.substring(0, signature.lastIndexOf('.'));
 	}
@@ -37,4 +33,10 @@ public class ClassUtils {
 		return signature.substring(signature.lastIndexOf('.') + 1);
 	}
 	
+	/**
+	 * Do not instantiate!
+	 */
+	private ClassUtils() {
+		//nothing to do
+	}
 }

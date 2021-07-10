@@ -1,17 +1,21 @@
 package sushi.execution.bestpath;
 
+import sushi.Options;
 import sushi.execution.Tool;
 import sushi.util.DirectoryUtils;
 
 public final class BestPath extends Tool<BestPathParameters> {
-	public BestPath() { }
+	private final Options options;
+	
+	public BestPath(Options options) {
+		this.options = options;
+	}
 
 	@Override
 	public BestPathParameters getInvocationParameters(int i) {
-		final DirectoryUtils dirs = DirectoryUtils.I();
 		final BestPathParameters p = new BestPathParameters();
-		p.setCoverageFilePath(dirs.getCoverageFilePath());
-		p.setOutputFilePath(dirs.getMinimizerOutFilePath());
+		p.setCoverageFilePath(DirectoryUtils.getCoverageFilePath(this.options));
+		p.setOutputFilePath(DirectoryUtils.getMinimizerOutFilePath(this.options));
 
 		return p;
 	}

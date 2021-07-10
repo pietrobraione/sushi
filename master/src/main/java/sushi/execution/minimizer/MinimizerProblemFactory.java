@@ -6,7 +6,6 @@ import java.nio.file.Files;
 import java.util.List;
 import java.util.TreeSet;
 
-import sushi.configure.MinimizerParameters;
 import sushi.exceptions.TerminationException;
 
 abstract class MinimizerProblemFactory<P extends MinimizerProblem> {

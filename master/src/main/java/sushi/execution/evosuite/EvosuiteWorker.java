@@ -3,6 +3,7 @@ package sushi.execution.evosuite;
 import java.io.IOException;
 import java.nio.file.Path;
 
+import sushi.Options;
 import sushi.exceptions.EvosuiteException;
 import sushi.execution.ExecutionResult;
 import sushi.execution.Worker;
@@ -12,10 +13,12 @@ import sushi.util.DirectoryUtils;
 public class EvosuiteWorker extends Worker {
 	private static final Logger logger = new Logger(EvosuiteWorker.class);
 
+	private final Options options;
 	private final Evosuite evosuite;
 
-	public EvosuiteWorker(Evosuite evosuite, int taskNumber) {
+	public EvosuiteWorker(Options options, Evosuite evosuite, int taskNumber) {
 		super(taskNumber);
+		this.options = options;
 		this.evosuite = evosuite;
 	}
 
@@ -24,7 +27,7 @@ public class EvosuiteWorker extends Worker {
 		final String[] p = this.evosuite.getInvocationParameters(this.taskNumber);
 		logger.debug("Task " + this.taskNumber + ": invoking " + this.evosuite.getCommandLine());
 		
-		final Path logFilePath = DirectoryUtils.I().getTmpDirPath().resolve("evosuite-task-" + this.taskNumber + "-" + Thread.currentThread().getName() + ".log");		
+		final Path logFilePath = DirectoryUtils.getTmpDirPath(this.options).resolve("evosuite-task-" + this.taskNumber + "-" + Thread.currentThread().getName() + ".log");		
 		final ProcessBuilder pb = new ProcessBuilder(p).redirectErrorStream(true);
 		Process process = null; //to keep the compiler happy
 		TestDetector td = null; //to keep the compiler happy

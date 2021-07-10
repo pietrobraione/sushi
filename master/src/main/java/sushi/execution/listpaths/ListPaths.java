@@ -1,17 +1,21 @@
 package sushi.execution.listpaths;
 
+import sushi.Options;
 import sushi.execution.Tool;
 import sushi.util.DirectoryUtils;
 
 public final class ListPaths extends Tool<ListPathsParameters> {
-	public ListPaths() { }
+	private final Options options;
+	
+	public ListPaths(Options options) {
+		this.options = options;
+	}
 
 	@Override
 	public ListPathsParameters getInvocationParameters(int i) {
-		final DirectoryUtils dirs = DirectoryUtils.I();
 		final ListPathsParameters p = new ListPathsParameters();
-		p.setCoverageFilePath(dirs.getCoverageFilePath());
-		p.setOutputFilePath(dirs.getMinimizerOutFilePath());
+		p.setCoverageFilePath(DirectoryUtils.getCoverageFilePath(this.options));
+		p.setOutputFilePath(DirectoryUtils.getMinimizerOutFilePath(this.options));
 
 		return p;
 	}

@@ -14,14 +14,14 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import sushi.configure.Options;
+import sushi.Options;
 import sushi.exceptions.ReflectionUtilsException;
 import sushi.logging.Logger;
 
-public class ClassReflectionUtils {
+public final class ClassReflectionUtils {
 	private static final Logger logger = new Logger(ClassReflectionUtils.class);
 	
-	private final static Set<String> excluded;
+	private static final Set<String> excluded;
 	
 	static {
 		excluded = new HashSet<String>();
@@ -32,8 +32,8 @@ public class ClassReflectionUtils {
 		excluded.add("immutableEnumSet");
 	}
 	
-	public static ClassLoader getInternalClassloader() {
-		final List<Path> classpath = Options.I().getClassesPath();
+	public static ClassLoader getInternalClassloader(Options options) {
+		final List<Path> classpath = options.getClassesPath();
 		final ClassLoader classLoader;
 		try {
 			ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
@@ -72,7 +72,8 @@ public class ClassReflectionUtils {
 	/**
 	 * Returns the externally callable methods of a class.
 	 * 
-	 * @param className the name of the class.
+	 * @param options an {@link Options} object.
+	 * @param className a {@link String}, the name of the class.
 	 * @param onlyPublic {@code true} to restrict the list to the public methods of the class.
 	 * @return a {@link List}{@code <}{@link List}{@code <}{@link String}{@code >>} of the methods
 	 *         of the class {@code className} that are not private, nor synthetic, nor one of the 
@@ -81,8 +82,8 @@ public class ClassReflectionUtils {
 	 *         has three elements and is a method signature.
 	 * @throws ClassNotFoundException if the class is not in the classpath.
 	 */
-	public static List<List<String>> getVisibleMethods(String className, boolean onlyPublic) throws ClassNotFoundException {
-		final ClassLoader ic = getInternalClassloader();
+	public static List<List<String>> getVisibleMethods(Options options, String className, boolean onlyPublic) throws ClassNotFoundException {
+		final ClassLoader ic = getInternalClassloader(options);
 		final Class<?> clazz = ic.loadClass(className.replace('/', '.'));
 		final List<List<String>> methods = new ArrayList<>();
 		for (Method m : clazz.getDeclaredMethods()) {
@@ -145,5 +146,13 @@ public class ClassReflectionUtils {
 		} else {
 			return "L" + s + ";";
 		}
+	}
+
+	
+	/**
+	 * Do not instantiate!
+	 */
+	private ClassReflectionUtils() {
+		//nothing to do
 	}
 }

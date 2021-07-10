@@ -7,7 +7,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import sushi.configure.Options;
+import sushi.Options;
 import sushi.exceptions.JavacException;
 import sushi.execution.Tool;
 import sushi.logging.Logger;
@@ -18,12 +18,15 @@ import sushi.util.IOUtils;
 public final class Javac extends Tool<String[]> {
 	private static final Logger logger = new Logger(Javac.class);
 
+	private final Options options;
 	private String commandLine;
 	private ArrayList<Integer> tasks = null;
 	private ArrayList<Integer> targetMethodNumbers = null;
 	private ArrayList<Integer> traceNumbersLocal = null;
 
-	public Javac() { }
+	public Javac(Options options) { 
+		this.options = options;
+	}
 
 	public String getCommandLine() {
 		return this.commandLine;
@@ -35,7 +38,7 @@ public final class Javac extends Tool<String[]> {
 			this.tasks = new ArrayList<>();
 			this.targetMethodNumbers = new ArrayList<>();
 			this.traceNumbersLocal = new ArrayList<>();
-			try (final BufferedReader r = Files.newBufferedReader(DirectoryUtils.I().getMinimizerOutFilePath())) {
+			try (final BufferedReader r = Files.newBufferedReader(DirectoryUtils.getMinimizerOutFilePath(this.options))) {
 				String line;
 				int task = 0;
 				while ((line = r.readLine()) != null) {
@@ -46,7 +49,7 @@ public final class Javac extends Tool<String[]> {
 					++task;
 				}
 			} catch (IOException e) {
-				logger.error("Unable to find and open minimizer output file " + DirectoryUtils.I().getMinimizerOutFilePath().toString());
+				logger.error("Unable to find and open minimizer output file " + DirectoryUtils.getMinimizerOutFilePath(this.options).toString());
 				throw new JavacException(e);
 			}
 		}
@@ -56,10 +59,10 @@ public final class Javac extends Tool<String[]> {
 	@Override
 	public String[] getInvocationParameters(int i) {
 		final String classPath = IOUtils.concatClassPath( 
-				IOUtils.concatClassPath(Options.I().getClassesPath()),
-				IOUtils.concatClassPath(Options.I().getSushiLibPath()));
-		final Path destinationDirectory = DirectoryUtils.I().getTmpDirPath();
-		final Path fileToCompile = DirectoryUtils.I().getJBSEOutFilePath(this.targetMethodNumbers.get(i), this.traceNumbersLocal.get(i));
+				IOUtils.concatClassPath(this.options.getClassesPath()),
+				IOUtils.concatClassPath(this.options.getSushiLibPath()));
+		final Path destinationDirectory = DirectoryUtils.getTmpDirPath(this.options);
+		final Path fileToCompile = DirectoryUtils.getJBSEOutFilePath(this.options, this.targetMethodNumbers.get(i), this.traceNumbersLocal.get(i));
 		final ArrayList<String> javac = new ArrayList<>();
 		javac.add("-cp");
 		javac.add(classPath);
@@ -77,11 +80,11 @@ public final class Javac extends Tool<String[]> {
 
 	@Override
 	public int getTimeBudget() {
-		return Options.I().getJavacBudget();
+		return this.options.getJavacBudget();
 	}
 
 	@Override
 	public JavacWorker getWorker(int taskNumber) {
-		return new JavacWorker(this, taskNumber);
+		return new JavacWorker(this.options, this, taskNumber);
 	}
 }

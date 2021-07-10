@@ -9,8 +9,6 @@ import org.ojalgo.optimisation.ExpressionsBasedModel;
 import org.ojalgo.optimisation.Optimisation;
 import org.ojalgo.optimisation.Optimisation.Result;
 
-import sushi.configure.MinimizerParameters;
-
 final class MinimizerProblemOjAlgo extends MinimizerProblem {
 	private final MinimizerParameters parameters;
 	private final ExpressionsBasedModel modelOjAlgo;

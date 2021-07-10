@@ -1,6 +1,6 @@
 package sushi.exceptions;
 
-public class InternalUnexpectedException extends RuntimeException {
+public class InternalUnexpectedException extends Exception {
 
 	private static final long serialVersionUID = -7753989753958447660L;
 

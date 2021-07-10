@@ -4,12 +4,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-public class CollectionUtils {
-
-	private CollectionUtils() {
-		//do not instantiate me
-	}
-	
+public final class CollectionUtils {	
 	public static String[] toStringArray(Collection<?> collection) {
 		return collection
 				.stream()
@@ -26,4 +21,10 @@ public class CollectionUtils {
 				.toArray(ArrayUtils.EMPTY_STRING_ARRAY);
 	}
 
+	/**
+	 * Do not instantiate!
+	 */
+	private CollectionUtils() {
+		//nothing to do
+	}
 }

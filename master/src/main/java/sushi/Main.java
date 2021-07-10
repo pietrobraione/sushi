@@ -1,5 +1,10 @@
 package sushi;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -10,9 +15,10 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.ParserProperties;
 
-import sushi.configure.Options;
+import sushi.exceptions.CheckClasspathException;
 import sushi.exceptions.InternalUnexpectedException;
 import sushi.exceptions.TerminationException;
+import sushi.exceptions.ToolAbortException;
 import sushi.execution.ExecutionManager;
 import sushi.execution.ExecutionResult;
 import sushi.execution.Tool;
@@ -27,92 +33,168 @@ import sushi.execution.loopmgr.LoopMgr;
 import sushi.execution.merger.Merger;
 import sushi.execution.minimizer.Minimizer;
 import sushi.logging.Logger;
-import sushi.modifier.Modifier;
-import sushi.util.ClasspathUtils;
+import sushi.util.ClassReflectionUtils;
+import sushi.util.DirectoryUtils;
 
 public class Main {
-	private boolean timeout;
+	/** The configuration {@link Options}. */
+	private final Options options;
+	
+	/** A flag that indicates if the global timeout has expired. */
+	private boolean timedOut;
 
-	public Main() { }
-
-	public static void main(String[] args) {
-		final Main main = new Main();
-		main.startSushi(args);
+	public Main(Options options) { 
+		this.options = options;
 	}
 	
-	private void startSushi(String[] args) {
-		final Options options = Options.I();
-		
-		final CmdLineParser parser = new CmdLineParser(options, ParserProperties.defaults().withUsageWidth(200));
+	public int start() {
 		try {
-			parser.parseArgument(processArgs(args));
-		} catch (CmdLineException e) {
-			System.err.println("Error: " + e.getMessage());
-			printUsage(parser);
-			System.exit(-1);
-		}
-		
-		if (!options.isConsistent()) {
-			System.err.println("Error: one of -target_class, -target_method, or -params_modifier_class options must be specified.");
-			printUsage(parser);
-			System.exit(1);
-		}
-		
-		if (options.getHelp()) {
-			printUsage(parser);
-			System.exit(0);
-		}
-		
-		Modifier.I().modify(options);
+			configureLogger();
+			final Logger logger = new Logger(Main.class);
 
-		Logger.setLevel(options.getLogLevel());
-		final Logger logger = new Logger(Main.class);
-		logger.info("This is " + getName() + ", version " + getVersion() + ", " + '\u00a9' + " 2015-2021 " + getVendor());
-		
-		ClasspathUtils.checkClasspath();
-		
-		final Tool<?>[] tools;
-		final int repeatFrom;
-		switch (options.getCoverage()) {
-		case PATHS:
-			tools = new Tool[]{ new JBSEMethods(true), new Merger(), new ListPaths(), new Javac(), new Evosuite(), new LoopEnd() };
-			repeatFrom = -1;
+			logger.info("This is " + getName() + ", version " + getVersion() + ", " + '\u00a9' + " 2015-2021 " + getVendor());
+
+			checkPrerequisites(logger);
+
+			final Tool<?>[] tools;
+			final int repeatFrom;
+			switch (this.options.getCoverage()) {
+			case PATHS:
+				tools = new Tool[]{ new JBSEMethods(this.options, true), new Merger(this.options), new ListPaths(this.options), new Javac(this.options), new Evosuite(this.options), new LoopEnd() };
+				repeatFrom = -1;
+				break;
+			case UNSAFE:
+				tools = new Tool[]{ new JBSEMethods(this.options, false), new Merger(this.options), new BestPath(this.options), new JBSETraces(this.options), new Javac(this.options), new Evosuite(this.options), new LoopEnd() };
+				repeatFrom = -1;
+				break;
+			case BRANCHES:
+				tools = new Tool[]{ new JBSEMethods(this.options, false), new Merger(this.options), new Minimizer(this.options), new JBSETraces(this.options), new Javac(this.options), new Evosuite(this.options), new LoopMgr(this.options) };
+				repeatFrom = 2;
+				break;
+			default:
+				logger.error("Unexpected internal error: unexpected value for -cov option");
+				return 2;
+			}
+
+			final boolean doEverything = (this.options.getPhases() == null);
+
+			makeGlobalTimeoutThread();
+
+			doMainToolsLoop(logger, tools, repeatFrom, doEverything);
+
+			logger.info(getName() + " terminates");
+			return 0;
+		} catch (CheckClasspathException e) {
+			return 1;
+		} catch (ToolAbortException e) {
+			return 1;
+		} catch (IOException e) {
+			return 1;
+		} catch (InternalUnexpectedException e) {
+			return 2;
+		}
+	}
+	
+    /**
+     * Configures the logger.
+     * 
+     * @throws InternalUnexpectedException if some unexpected logging level
+     *         is encountered. 
+     */
+	private void configureLogger() throws InternalUnexpectedException {
+		switch (this.options.getLogLevel()) {
+		case DEBUG:
+			Logger.setLevel(sushi.logging.Level.DEBUG);
 			break;
-		case UNSAFE:
-			tools = new Tool[]{ new JBSEMethods(false), new Merger(), new BestPath(), new JBSETraces(), new Javac(), new Evosuite(), new LoopEnd() };
-			repeatFrom = -1;
+		case INFO:
+			Logger.setLevel(sushi.logging.Level.INFO);
 			break;
-		case BRANCHES:
-			tools = new Tool[]{ new JBSEMethods(false), new Merger(), new Minimizer(), new JBSETraces(), new Javac(), new Evosuite(), new LoopMgr() };
-			repeatFrom = 2;
+		case WARN:
+			Logger.setLevel(sushi.logging.Level.WARN);
+			break;
+		case ERROR:
+			Logger.setLevel(sushi.logging.Level.ERROR);
+			break;
+		case FATAL:
+			Logger.setLevel(sushi.logging.Level.FATAL);
 			break;
 		default:
-			logger.error("Unexpected internal error: unexpected value for -emit option");
-			throw new InternalUnexpectedException("Unexpected internal error: unexpected value for -emit option");
+			throw new InternalUnexpectedException("Unrecognized logging level " + this.options.getLogLevel());
 		}
+	}
+	
+    /**
+     * Checks prerequisites.
+     * 
+     * @param logger a {@link Logger}.
+     * @throws CheckClasspathException if some required element in the provided
+     *         paths does not exist or is not as expected.
+     * @throws IOException if some I/O exception occurs while trying to create
+     *         the temporary directories.
+     */
+	private void checkPrerequisites(Logger logger) throws CheckClasspathException, IOException {
+		//check classpath: if the class is not found it raises an exception
+		logger.debug("Checking classpath");
+		final String className = (this.options.getTargetMethod() == null ?
+				this.options.getTargetClass() :
+				this.options.getTargetMethod().get(0));
+		try {
+			final ClassLoader ic = ClassReflectionUtils.getInternalClassloader(this.options);
+			ic.loadClass(className.replace('/', '.'));
+		} catch (ClassNotFoundException e) {
+			logger.error("Could not find class under test: " + className);
+			throw new CheckClasspathException(e);
+		}
+		logger.debug("Classpath OK");
 		
-		final boolean doEverything = (options.getPhases() == null);
+		//checks the presence of EvoSuite
+		logger.debug("Checking EvoSuite");
+		if (!Files.exists(this.options.getEvosuitePath()) || !Files.isReadable(this.options.getEvosuitePath())) {
+			logger.error("Could not find or execute EvoSuite");
+			throw new CheckClasspathException("Could not find or execute EvoSuite");
+		}
+		logger.debug("EvoSuite OK");
 		
-		this.timeout = false;
-		if (options.getGlobalBudget() > 0) {
+		//checks the presence of (or creates) the temporary directories 
+		DirectoryUtils.possiblyCreateTmpDir(this.options);
+	}
+	
+	/**
+	 * Makes and runs a thread that detects when the global
+	 * timeout expires.
+	 */
+	private void makeGlobalTimeoutThread() {
+		this.timedOut = false;
+		if (this.options.getGlobalBudget() > 0) {
 			Thread chrono = new Thread(() -> {
 				try {
-					Thread.sleep(options.getGlobalBudget() * 1000);
+					Thread.sleep(this.options.getGlobalBudget() * 1000);
 				} catch (InterruptedException e) {
 					//should never happen, in any case fallthrough
 					//should be ok
 				}
-				setTimeout();
+				setTimedOut();
 			});
 			chrono.start();
 		}
-		
+	}
+	
+	private synchronized void setTimedOut() {
+		this.timedOut = true;
+	}
+	
+	private synchronized boolean timedOut() {
+		return this.timedOut;
+	}
+	
+	private void doMainToolsLoop(Logger logger, Tool<?>[] tools, int repeatFrom, boolean doEverything) 
+	throws ToolAbortException {
 		int currentPhase = 1;
 		int nextToolIndex = 0;
-		int lastRequiredPhase = (doEverything ? -1 : Collections.max(options.getPhases()));
+		int lastRequiredPhase = (doEverything ? -1 : Collections.max(this.options.getPhases()));
 		while (true) {
 			final Tool<?> tool = tools[nextToolIndex];
-			if (doEverything || options.getPhases().contains(currentPhase)) {
+			if (doEverything || this.options.getPhases().contains(currentPhase)) {
 				logger.info("Phase " + currentPhase + ": executing tool " + tool.getName());
 				final ExecutionResult[] result;
 				try {
@@ -127,7 +209,7 @@ public class Main {
 				for (int i = 0; i < result.length; ++i) {
 					if (result[i] != null && result[i].getExitStatus() != 0) {
 						logger.error("Tool " + tool.getName() + " task " + tool.tasks().get(i / tool.redundance()) + " terminated with exit status " + result[i].getExitStatus());
-						System.exit(1);
+						throw new ToolAbortException();
 					}
 				}
 			} else if (currentPhase > lastRequiredPhase) {
@@ -140,9 +222,6 @@ public class Main {
 				break;
 			}
 		}
-
-		logger.info(getName() + " terminates");
-		System.exit(0);
 	}
 
     /**
@@ -178,7 +257,47 @@ public class Main {
         return Main.class.getPackage().getImplementationVersion();
     }
 
+    //Here starts the static part of the class, for managing the command line
 
+	public static void main(String[] args) {
+		final Options options = new Options();
+		
+        //parses options from the command line and exits if the command line
+        //is ill-formed
+		final CmdLineParser parser = new CmdLineParser(options, ParserProperties.defaults().withUsageWidth(200));
+		try {
+			parser.parseArgument(processArgs(args));
+		} catch (CmdLineException e) {
+			System.err.println("Error: " + e.getMessage());
+			printUsage(parser);
+			System.exit(1);
+		}
+		
+		if (!options.isConsistent()) {
+			System.err.println("Error: one of -target_class, -target_method, or -params_modifier_class options must be specified.");
+			printUsage(parser);
+			System.exit(1);
+		}
+		
+		if (options.getHelp()) {
+			printUsage(parser);
+			System.exit(0);
+		}
+		
+		configureOptions(options);
+
+		final Main main = new Main(options);
+		final int exitCode = main.start();
+		System.exit(exitCode);
+	}
+
+    /**
+     * Processes the command line arguments so they
+     * can be parsed by the command line parser.
+     * 
+     * @param args the {@link String}{@code []} from the command line.
+     * @return a processed {@link String}{@code []}.
+     */
 	private static String[] processArgs(final String[] args) {
 		final Pattern argPattern = Pattern.compile("(-[a-zA-Z_-]+)=(.*)");
 		final Pattern quotesPattern = Pattern.compile("^['\"](.*)['\"]$");
@@ -203,6 +322,11 @@ public class Main {
 		return processedArgs.toArray(new String[0]);
 	}
 
+    /**
+     * Prints usage on the standard error.
+     * 
+     * @param parser a {@link CmdLineParser}.
+     */
 	private static void printUsage(final CmdLineParser parser) {
 		System.err.println("Usage: java " + Main.class.getName() + " <options>");
 		System.err.println("where <options> are:");
@@ -210,11 +334,47 @@ public class Main {
 		parser.printUsage(System.err);
 	}
 	
-	private synchronized void setTimeout() {
-		this.timeout = true;
-	}
-	
-	private synchronized boolean timedOut() {
-		return this.timeout;
-	}
+    /**
+     * Applies a {@link ParametersModifier} to an {@link Options} object.
+     * 
+     * @param options an {@link Options} object. It must contain the information
+     *        about the {@link ParametersModifier} that will be applied to 
+     *        configure it.
+     */
+    private static void configureOptions(Options options) {
+		if (options.getParametersModifierClassname() == null) {
+			//no modifier
+			return; 
+		}
+    	final URL url;
+    	try {
+    		url = options.getParametersModifierPath().toUri().toURL();
+		} catch (MalformedURLException e) {
+			System.err.println("Parameters modifier class home folder " + options.getParametersModifierPath() + " not found: " + e);
+			return; 
+		}
+    	final ParametersModifier modi;
+	    try {
+	    	@SuppressWarnings("resource")
+			final URLClassLoader loader = new URLClassLoader(new URL[] { url });
+	    	final Class<? extends ParametersModifier> clazz =  
+	            loader.loadClass(options.getParametersModifierClassname()).
+	            asSubclass(ParametersModifier.class);
+            modi = clazz.newInstance();
+	    } catch (ClassNotFoundException e) {
+	    	System.err.println("Parameters modifier class " + options.getParametersModifierClassname() + " not found: " + e);
+			return; 
+	    } catch (ClassCastException e) {
+	    	System.err.println("Parameters modifier class " + options.getParametersModifierClassname() + " not a subclass of " + ParametersModifier.class.getCanonicalName() + ": " + e);
+			return; 
+	    } catch (InstantiationException e) {
+	    	System.err.println("Parameters modifier class " + options.getParametersModifierClassname() + " cannot be instantiated or has no nullary constructor: " + e);
+			return; 
+		} catch (IllegalAccessException e) {
+			System.err.println("Parameters modifier class " + options.getParametersModifierClassname() + " constructor is not visible: " + e);
+			return; 
+		}
+    	modi.modify(options);
+    	options.setParametersModifier(modi);
+   }
 }

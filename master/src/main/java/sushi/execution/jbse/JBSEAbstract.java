@@ -6,17 +6,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import sushi.configure.JBSEParameters;
-import sushi.configure.JBSEParameters.DecisionProcedureType;
-import sushi.configure.JBSEParameters.StateFormatMode;
-import sushi.configure.Options;
-import sushi.configure.ParseException;
-import sushi.configure.Visibility;
+import sushi.Options;
+import sushi.ParseException;
+import sushi.Visibility;
 import sushi.exceptions.JBSEException;
 import sushi.execution.Tool;
 import sushi.execution.Worker;
+import sushi.execution.jbse.JBSEParameters.DecisionProcedureType;
+import sushi.execution.jbse.JBSEParameters.StateFormatMode;
 import sushi.logging.Logger;
-import sushi.modifier.Modifier;
 import sushi.util.ArrayUtils;
 import sushi.util.CollectionUtils;
 import sushi.util.DirectoryUtils;
@@ -28,33 +26,33 @@ public abstract class JBSEAbstract extends Tool<JBSEParameters> {
 	private final boolean emitWrappers;
 	private final boolean mustLogCoverageData;
 	
+	protected final Options options;
 	protected List<List<String>> testMethods = null;	
 
-	protected JBSEAbstract(boolean emitWrappers, boolean mustLogCoverageData) { 
+	protected JBSEAbstract(Options options, boolean emitWrappers, boolean mustLogCoverageData) {
+		this.options = options;
 		this.emitWrappers = emitWrappers;
 		this.mustLogCoverageData = mustLogCoverageData;
-		final Options options = Options.I();
-		if (options.getTargetMethod() == null) {
-			final String targetClass = options.getTargetClass();
+		if (this.options.getTargetMethod() == null) {
+			final String targetClass = this.options.getTargetClass();
 			if (targetClass == null) {
 				logger.error("ERROR: neither a target class nor a target method was specified.");
 				throw new JBSEException("ERROR: neither a target class nor a target method was specified.");
 			}
 			try {
-				this.testMethods = ClassReflectionUtils.getVisibleMethods(targetClass, options.getVisibility() == Visibility.PUBLIC);
+				this.testMethods = ClassReflectionUtils.getVisibleMethods(this.options, targetClass, this.options.getVisibility() == Visibility.PUBLIC);
 			} catch (ClassNotFoundException e) {
 				logger.error("Unexpected error: Cannot load the target class.");
 				throw new JBSEException(e);
 			}
 		} else {
-			final List<String> methodSignature = options.getTargetMethod();
+			final List<String> methodSignature = this.options.getTargetMethod();
 			this.testMethods = Collections.singletonList(methodSignature);
 		}
 	}
 	
 	@Override
 	public JBSEParameters getInvocationParameters(int taskNumber) {
-		final Options options = Options.I();
 		final JBSEParameters p = new JBSEParameters();
 		p.addClasspath(options.getJBSELibraryPath().toString()); //for Analysis.*
 		p.addClasspath(CollectionUtils.toStringArray(options.getClassesPath())); //target code
@@ -65,11 +63,10 @@ public abstract class JBSEAbstract extends Tool<JBSEParameters> {
 		p.setDecisionProcedureType(DecisionProcedureType.Z3);
 		p.setExternalDecisionProcedurePath(options.getZ3Path().toString());
 		p.setMustLogCoverageData(this.mustLogCoverageData);
-		final DirectoryUtils utils = DirectoryUtils.I();
-		p.setWrapperFilePathBuilder(utils::getJBSEOutFilePath);
-		p.setCoverageFilePathBuilder(utils::getCoverageFilePath);
-		p.setBranchesFilePathBuilder(utils::getBranchesFilePath);
-		p.setTracesFilePathBuilder(utils::getTracesFilePath);
+		p.setWrapperFilePathBuilder((t1, t2) -> DirectoryUtils.getJBSEOutFilePath(this.options, t1, t2));
+		p.setCoverageFilePathBuilder((t) -> DirectoryUtils.getCoverageFilePath(this.options, t));
+		p.setBranchesFilePathBuilder((t) -> DirectoryUtils.getBranchesFilePath(this.options, t));
+		p.setTracesFilePathBuilder((t) -> DirectoryUtils.getTracesFilePath(this.options, t));
 		p.setStateFormatMode(this.emitWrappers ? StateFormatMode.SUSHI_PATH_CONDITION : null);
 		//BEGIN settings for debugging with jbse.run.Run
 		/*p.setOutputFileName(DirectoryUtils.I().getExperimentDirPath().resolve("foo.txt").toString());
@@ -88,7 +85,7 @@ public abstract class JBSEAbstract extends Tool<JBSEParameters> {
 	
 	private void setUserDefinedParameters(JBSEParameters p) {
 	    try {
-            Modifier.I().modify(p);
+	    	this.options.getParametersModifier().modify(p);
 		} catch (FileNotFoundException e) {
 			logger.error("Settings file for symbolic execution not found", e);
 			throw new JBSEException(e);
@@ -103,7 +100,7 @@ public abstract class JBSEAbstract extends Tool<JBSEParameters> {
 	
 	@Override
 	public int getTimeBudget() {
-		return Options.I().getJBSEBudget();
+		return this.options.getJBSEBudget();
 	}
 
 	@Override
@@ -113,6 +110,6 @@ public abstract class JBSEAbstract extends Tool<JBSEParameters> {
 	
 	@Override
 	public int degreeOfParallelism() {
-		return (Options.I().getParallelismJBSE() == 0 ? tasks().size() * redundance() : Options.I().getParallelismJBSE());
+		return (this.options.getParallelismJBSE() == 0 ? tasks().size() * redundance() : this.options.getParallelismJBSE());
 	}
 }

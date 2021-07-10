@@ -14,8 +14,6 @@ import org.ojalgo.optimisation.Expression;
 import org.ojalgo.optimisation.ExpressionsBasedModel;
 import org.ojalgo.optimisation.Variable;
 
-import sushi.configure.MinimizerParameters;
-
 final class MinimizerProblemFactoryOjAlgo extends MinimizerProblemFactory<MinimizerProblemOjAlgo> {
 	/** The set of the relevant branches (i.e., the branches to cover). */
 	private TreeSet<Integer> relevantBranchNumbers;

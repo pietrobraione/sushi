@@ -8,7 +8,6 @@ import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 
-import sushi.configure.MinimizerParameters;
 import sushi.exceptions.MinimizerException;
 import sushi.exceptions.TerminationException;
 

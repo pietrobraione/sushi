@@ -6,9 +6,8 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
-import sushi.configure.Coverage;
-import sushi.configure.JBSEParameters;
-import sushi.configure.Options;
+import sushi.Coverage;
+import sushi.Options;
 import sushi.exceptions.JBSEException;
 import sushi.logging.Logger;
 import sushi.util.DirectoryUtils;
@@ -18,8 +17,8 @@ public final class JBSEMethods extends JBSEAbstract {
 	
 	private List<Integer> tasks = null;
 
-	public JBSEMethods(boolean emitWrappers) {
-		super(emitWrappers, true);
+	public JBSEMethods(Options options, boolean emitWrappers) {
+		super(options, emitWrappers, true);
 	}
 	
 	@Override
@@ -30,7 +29,7 @@ public final class JBSEMethods extends JBSEAbstract {
 				this.tasks.add(i);
 			}
 			
-			try (final BufferedWriter w = Files.newBufferedWriter(DirectoryUtils.I().getMethodsFilePath())) {
+			try (final BufferedWriter w = Files.newBufferedWriter(DirectoryUtils.getMethodsFilePath(this.options))) {
 				for (List<String> signature : this.testMethods) {
 					w.write(signature.get(0));
 					w.write(":");
@@ -40,7 +39,7 @@ public final class JBSEMethods extends JBSEAbstract {
 					w.newLine();
 				}
 			} catch (IOException e) {
-				logger.error("Unable to find and open methods output file " + DirectoryUtils.I().getMethodsFilePath().toString());
+				logger.error("Unable to find and open methods output file " + DirectoryUtils.getMethodsFilePath(this.options).toString());
 				throw new JBSEException(e);
 			}
 		}
@@ -50,7 +49,7 @@ public final class JBSEMethods extends JBSEAbstract {
 	@Override
 	public JBSEParameters getInvocationParameters(int taskNumber) {
 		JBSEParameters p = super.getInvocationParameters(taskNumber);
-		p.setShowSafe(Options.I().getCoverage() == Coverage.UNSAFE ? false : true);
+		p.setShowSafe(this.options.getCoverage() == Coverage.UNSAFE ? false : true);
 		p.setShowUnsafe(true);
 		p.setShowOutOfScope(false);
 		p.setShowContradictory(false);

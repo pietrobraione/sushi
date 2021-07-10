@@ -6,7 +6,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
-import sushi.configure.JBSEParameters;
+import sushi.Options;
 import sushi.exceptions.JBSEException;
 import sushi.logging.Logger;
 import sushi.util.DirectoryUtils;
@@ -19,8 +19,8 @@ public final class JBSETraces extends JBSEAbstract {
 	private List<Integer> traceNumbersLocal = null;
 	private String[] traceIds = null;
 
-	public JBSETraces() {
-		super(true, false);
+	public JBSETraces(Options options) {
+		super(options, true, false);
 	}
 
 	@Override
@@ -30,7 +30,7 @@ public final class JBSETraces extends JBSEAbstract {
 			this.methodNumbers = new ArrayList<>();
 			this.traceNumbersLocal = new ArrayList<>();
 			final ArrayList<Integer> traceNumbersGlobal = new ArrayList<>();
-			try (final BufferedReader r = Files.newBufferedReader(DirectoryUtils.I().getMinimizerOutFilePath())) {
+			try (final BufferedReader r = Files.newBufferedReader(DirectoryUtils.getMinimizerOutFilePath(this.options))) {
 				String line;
 				int task = 0;
 				while ((line = r.readLine()) != null) {
@@ -42,12 +42,12 @@ public final class JBSETraces extends JBSEAbstract {
 					++task;						
 				}
 			} catch (IOException e) {
-				logger.error("Unable to find and open minimizer output file " + DirectoryUtils.I().getMinimizerOutFilePath().toString());
+				logger.error("Unable to find and open minimizer output file " + DirectoryUtils.getMinimizerOutFilePath(this.options).toString());
 				throw new JBSEException(e);
 			}
 
 			this.traceIds = new String[traceNumbersGlobal.size()];
-			try (final BufferedReader r = Files.newBufferedReader(DirectoryUtils.I().getTracesFilePath())) {
+			try (final BufferedReader r = Files.newBufferedReader(DirectoryUtils.getTracesFilePath(this.options))) {
 				String line;					
 				int currentPos = 0;
 				while ((line = r.readLine()) != null) {
@@ -59,7 +59,7 @@ public final class JBSETraces extends JBSEAbstract {
 					++currentPos;
 				}
 			} catch (IOException e) {
-				logger.error("Unable to find and open traces output file " + DirectoryUtils.I().getTracesFilePath().toString());
+				logger.error("Unable to find and open traces output file " + DirectoryUtils.getTracesFilePath(this.options).toString());
 				throw new JBSEException(e);
 			}
 		}

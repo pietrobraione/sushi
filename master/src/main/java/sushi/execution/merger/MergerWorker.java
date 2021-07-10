@@ -11,7 +11,6 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import sushi.configure.MergerParameters;
 import sushi.exceptions.MergerException;
 import sushi.execution.ExecutionResult;
 import sushi.execution.Worker;

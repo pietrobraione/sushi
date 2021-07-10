@@ -4,14 +4,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import sushi.configure.Options;
+import sushi.Options;
 import sushi.logging.Logger;
 
-public class DirectoryUtils {
-
+public final class DirectoryUtils {
 	private static final Logger logger = new Logger(DirectoryUtils.class);
 
-	private static DirectoryUtils instance = null;
 	public static final String jbseGeneratedOutClass = "EvoSuiteWrapper";
 	private static final String javaSourceExtension = ".java"; 
 	private static final String methodsFileName = "methods.txt"; 
@@ -26,98 +24,94 @@ public class DirectoryUtils {
 	private static final String minimizerOutFileName = "traces.txt"; 
 	private static final String coveredByTestFileName = "covered_by_test.txt"; 
 	
-	public static DirectoryUtils I() {
-		if (instance == null) {
-			instance = new DirectoryUtils();
-			instance.possiblyCreateTmpDir();
-		}
-		return instance;
-	}
-	
-	public static void reset() {
-		instance = null;
-	}
-
-	private void possiblyCreateTmpDir() {
+	public static void possiblyCreateTmpDir(Options options) throws IOException {
 		logger.debug("Creating experiment directories");
 		
-		final Path path = getJBSEOutDirPath();
+		final Path path = getJBSEOutDirPath(options);
 		try {
 			Files.createDirectories(path); //this creates the temporary directory and all the subdirectories for the wrappers
 		} catch (IOException e) {
 			logger.error("Unable to create experiment directories: ", e);
+			throw e;
 		}
 
 		logger.debug("Creating experiment directories - done");
 	}
 	
-	public String getJBSEOutClass(long targetMethodNumber, long traceNumberLocal) {
+	public static String getJBSEOutClass(long targetMethodNumber, long traceNumberLocal) {
 		return jbseGeneratedOutClass + "_" + targetMethodNumber + "_" + traceNumberLocal;
 	}
 
-	public String getJBSEOutClassQualified(long targetMethodNumber, long traceNumberLocal) {
-		final String targetClass = (Options.I().getTargetClass() == null ? Options.I().getTargetMethod().get(0) : Options.I().getTargetClass()); 
+	public static String getJBSEOutClassQualified(Options options, long targetMethodNumber, long traceNumberLocal) {
+		final String targetClass = (options.getTargetClass() == null ? options.getTargetMethod().get(0) : options.getTargetClass()); 
 		final int endOfPackageNameIndex = targetClass.lastIndexOf('/');
 		final String targetClassPackageName = (endOfPackageNameIndex == -1 ? "" : (targetClass.substring(0, endOfPackageNameIndex) + ".")).replace('/', '.');
 		return targetClassPackageName + getJBSEOutClass(targetMethodNumber, traceNumberLocal);
 	}
 
-	public Path getJBSEOutFilePath(long targetMethodNumber, long traceNumberLocal) {
-		return getJBSEOutDirPath().resolve(getJBSEOutClass(targetMethodNumber, traceNumberLocal) + javaSourceExtension);
+	public static Path getJBSEOutFilePath(Options options, long targetMethodNumber, long traceNumberLocal) {
+		return getJBSEOutDirPath(options).resolve(getJBSEOutClass(targetMethodNumber, traceNumberLocal) + javaSourceExtension);
 	}	
 	
-	public Path getTmpDirPath() {
-		return Options.I().getTmpDirectoryBase().resolve(Options.I().getTmpDirectoryName());
+	public static Path getTmpDirPath(Options options) {
+		return options.getTmpDirectoryBase().resolve(options.getTmpDirectoryName());
 	}
 	
-	public Path getJBSEOutDirPath() {
-		final String targetClass = (Options.I().getTargetClass() == null ? Options.I().getTargetMethod().get(0) : Options.I().getTargetClass()); 
+	public static Path getJBSEOutDirPath(Options options) {
+		final String targetClass = (options.getTargetClass() == null ? options.getTargetMethod().get(0) : options.getTargetClass()); 
 		final int endOfPackageNameIndex = targetClass.lastIndexOf('/');
 		final String targetClassPackageName = (endOfPackageNameIndex == -1 ? "" : targetClass.substring(0, endOfPackageNameIndex));
-		return getTmpDirPath().resolve(targetClassPackageName);
+		return getTmpDirPath(options).resolve(targetClassPackageName);
 	}
 	
-	public Path getMethodsFilePath() {
-		return getTmpDirPath().resolve(methodsFileName);
+	public static Path getMethodsFilePath(Options options) {
+		return getTmpDirPath(options).resolve(methodsFileName);
 	}
 	
-	public Path getBranchesFilePath() {
-		return getTmpDirPath().resolve(branchesFileName);
+	public static Path getBranchesFilePath(Options options) {
+		return getTmpDirPath(options).resolve(branchesFileName);
 	}
 	
-	public Path getBranchesFilePath(long i) {
-		return getTmpDirPath().resolve(branchesFileNamePattern.replace("$", Long.toString(i)));
+	public static Path getBranchesFilePath(Options options, long i) {
+		return getTmpDirPath(options).resolve(branchesFileNamePattern.replace("$", Long.toString(i)));
 	}
 	
-	public Path getCoverageFilePath() {
-		return getTmpDirPath().resolve(coverageFileName);
+	public static Path getCoverageFilePath(Options options) {
+		return getTmpDirPath(options).resolve(coverageFileName);
 	}
 
-	public Path getCoverageFilePath(long i) {
-		return getTmpDirPath().resolve(coverageFileNamePattern.replace("$", Long.toString(i)));
+	public static Path getCoverageFilePath(Options options, long i) {
+		return getTmpDirPath(options).resolve(coverageFileNamePattern.replace("$", Long.toString(i)));
 	}
 
-	public Path getTracesFilePath() {
-		return getTmpDirPath().resolve(tracesFileName);
+	public static Path getTracesFilePath(Options options) {
+		return getTmpDirPath(options).resolve(tracesFileName);
 	}
 	
-	public Path getTracesFilePath(long i) {
-		return getTmpDirPath().resolve(tracesFileNamePattern.replace("$", Long.toString(i)));
+	public static Path getTracesFilePath(Options options, long i) {
+		return getTmpDirPath(options).resolve(tracesFileNamePattern.replace("$", Long.toString(i)));
 	}	
 	
-	public Path getBranchesToIgnoreFilePath() {
-		return getTmpDirPath().resolve(branchesToIgnoreFileName);
+	public static Path getBranchesToIgnoreFilePath(Options options) {
+		return getTmpDirPath(options).resolve(branchesToIgnoreFileName);
 	}
 	
-	public Path getTracesToIgnoreFilePath() {
-		return getTmpDirPath().resolve(tracesToIgnoreFileName);
+	public static Path getTracesToIgnoreFilePath(Options options) {
+		return getTmpDirPath(options).resolve(tracesToIgnoreFileName);
 	}
 	
-	public Path getMinimizerOutFilePath() {
-		return getTmpDirPath().resolve(minimizerOutFileName);
+	public static Path getMinimizerOutFilePath(Options options) {
+		return getTmpDirPath(options).resolve(minimizerOutFileName);
 	}
 	
-	public Path getCoveredByTestFilePath() {
-		return getTmpDirPath().resolve(coveredByTestFileName);
+	public static Path getCoveredByTestFilePath(Options options) {
+		return getTmpDirPath(options).resolve(coveredByTestFileName);
+	}
+	
+	/**
+	 * Do not instantiate!
+	 */
+	private DirectoryUtils() {
+		//nothing to do
 	}
 }

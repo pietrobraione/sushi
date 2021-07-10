@@ -1,26 +1,28 @@
 package sushi.execution.merger;
 
-import sushi.configure.MergerParameters;
+import sushi.Options;
 import sushi.execution.Tool;
-import sushi.modifier.Modifier;
 import sushi.util.DirectoryUtils;
 
 public final class Merger extends Tool<MergerParameters> {
-	public Merger() { }
+	private final Options options;
+	
+	public Merger(Options options) { 
+		this.options = options;
+	}
 
 	@Override
 	public MergerParameters getInvocationParameters(int i) {
-		final DirectoryUtils dirUtils = DirectoryUtils.I();
 		final MergerParameters p = new MergerParameters();
-		p.setMethodsFilePath(dirUtils.getMethodsFilePath());
-		p.setBranchesFilePathGlobal(dirUtils.getBranchesFilePath());
-		p.setCoverageFilePathGlobal(dirUtils.getCoverageFilePath());
-		p.setTracesFilePathGlobal(dirUtils.getTracesFilePath());
-		p.setBranchesFilePathLocal(dirUtils::getBranchesFilePath);
-		p.setCoverageFilePathLocal(dirUtils::getCoverageFilePath);
-		p.setTracesFilePathLocal(dirUtils::getTracesFilePath);
-		p.setBranchesToIgnoreFilePath(dirUtils.getBranchesToIgnoreFilePath());
-		p.setTracesToIgnoreFilePath(dirUtils.getTracesToIgnoreFilePath());
+		p.setMethodsFilePath(DirectoryUtils.getMethodsFilePath(this.options));
+		p.setBranchesFilePathGlobal(DirectoryUtils.getBranchesFilePath(this.options));
+		p.setCoverageFilePathGlobal(DirectoryUtils.getCoverageFilePath(this.options));
+		p.setTracesFilePathGlobal(DirectoryUtils.getTracesFilePath(this.options));
+		p.setBranchesFilePathLocal((n) -> DirectoryUtils.getBranchesFilePath(this.options, n));
+		p.setCoverageFilePathLocal((n) -> DirectoryUtils.getCoverageFilePath(this.options, n));
+		p.setTracesFilePathLocal((n) -> DirectoryUtils.getTracesFilePath(this.options, n));
+		p.setBranchesToIgnoreFilePath(DirectoryUtils.getBranchesToIgnoreFilePath(this.options));
+		p.setTracesToIgnoreFilePath(DirectoryUtils.getTracesToIgnoreFilePath(this.options));
 		
 		setUserDefinedParameters(p);
 
@@ -28,7 +30,7 @@ public final class Merger extends Tool<MergerParameters> {
 	}
 	
 	private void setUserDefinedParameters(MergerParameters p) {
-	    Modifier.I().modify(p);
+		this.options.getParametersModifier().modify(p);
 	}
 	
 	@Override

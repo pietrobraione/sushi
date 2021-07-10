@@ -6,8 +6,6 @@ import org.gnu.glpk.GLPK;
 import org.gnu.glpk.glp_iocp;
 import org.gnu.glpk.glp_prob;
 
-import sushi.configure.MinimizerParameters;
-
 final class MinimizerProblemGLPK extends MinimizerProblem {
 	private final MinimizerParameters parameters;
 	private final glp_prob problemGLPK;

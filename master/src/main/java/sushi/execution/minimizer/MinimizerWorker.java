@@ -1,6 +1,5 @@
 package sushi.execution.minimizer;
 
-import sushi.configure.MinimizerParameters;
 import sushi.execution.ExecutionResult;
 import sushi.execution.Worker;
 

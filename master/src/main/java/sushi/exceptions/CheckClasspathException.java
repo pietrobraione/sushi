@@ -1,6 +1,6 @@
 package sushi.exceptions;
 
-public class CheckClasspathException extends RuntimeException {
+public class CheckClasspathException extends Exception {
 
 	private static final long serialVersionUID = 6581122057199703982L;
 

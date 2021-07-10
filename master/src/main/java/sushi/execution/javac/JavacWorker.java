@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 
+import sushi.Options;
 import sushi.exceptions.JavacException;
 import sushi.execution.ExecutionResult;
 import sushi.execution.Worker;
@@ -17,10 +18,13 @@ import sushi.util.DirectoryUtils;
 
 public class JavacWorker extends Worker {
 	private static final Logger logger = new Logger(JavacWorker.class);
+	
+	private final Options options;
 	private final Javac javac;
 
-	public JavacWorker(Javac javac, int taskNumber) {
+	public JavacWorker(Options options, Javac javac, int taskNumber) {
 		super(taskNumber);
+		this.options = options;
 		this.javac = javac;
 	}
 
@@ -35,7 +39,7 @@ public class JavacWorker extends Worker {
 			throw new JavacException(new NullPointerException());
 		}
 
-		final Path logFilePath = DirectoryUtils.I().getTmpDirPath().resolve("javac-task-" + this.taskNumber + "-" + Thread.currentThread().getName() + ".log");		
+		final Path logFilePath = DirectoryUtils.getTmpDirPath(this.options).resolve("javac-task-" + this.taskNumber + "-" + Thread.currentThread().getName() + ".log");		
 		try (final OutputStream w = new BufferedOutputStream(Files.newOutputStream(logFilePath))) {
 			final int exitStatus = compiler.run(null, w, w, p);
 

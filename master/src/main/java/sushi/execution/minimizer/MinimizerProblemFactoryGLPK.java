@@ -12,8 +12,6 @@ import org.gnu.glpk.SWIGTYPE_p_double;
 import org.gnu.glpk.SWIGTYPE_p_int;
 import org.gnu.glpk.glp_prob;
 
-import sushi.configure.MinimizerParameters;
-
 final class MinimizerProblemFactoryGLPK extends MinimizerProblemFactory<MinimizerProblemGLPK> {
 	/** The set of the relevant branches (i.e., the branches to cover). */
 	private TreeSet<Integer> relevantBranchNumbers;

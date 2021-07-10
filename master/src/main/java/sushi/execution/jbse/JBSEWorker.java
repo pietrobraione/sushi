@@ -1,6 +1,5 @@
 package sushi.execution.jbse;
 
-import sushi.configure.JBSEParameters;
 import sushi.execution.ExecutionResult;
 import sushi.execution.Worker;
 import sushi.logging.Logger;

@@ -12,8 +12,8 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import sushi.configure.Coverage;
-import sushi.configure.Options;
+import sushi.Coverage;
+import sushi.Options;
 import sushi.exceptions.CoordinatorException;
 import sushi.exceptions.WorkerException;
 import sushi.execution.Coordinator;
@@ -25,6 +25,7 @@ import sushi.util.DirectoryUtils;
 public class EvosuiteCoordinator extends Coordinator implements TestGenerationNotifier {
 	private static final Logger logger = new Logger(EvosuiteCoordinator.class);
 	
+	private final Options options;
 	private ArrayList<ArrayList<Future<ExecutionResult>>> tasksFutures; //alias for coordination
 	private final HashSet<Integer> coveredBranches = new HashSet<>();
 	private ArrayList<String[]> methods;
@@ -34,7 +35,10 @@ public class EvosuiteCoordinator extends Coordinator implements TestGenerationNo
 	private HashSet<Integer> branchesToIgnore;
 	private HashSet<Integer> cancelledTasks = new HashSet<>();
 	
-	public EvosuiteCoordinator(Tool<?> tool) { super(tool); }
+	public EvosuiteCoordinator(Tool<?> tool, Options options) { 
+		super(tool);
+		this.options = options;
+	}
 	
 	@Override
 	public ExecutionResult[] start(ArrayList<ArrayList<Future<ExecutionResult>>> tasksFutures) {
@@ -76,13 +80,13 @@ public class EvosuiteCoordinator extends Coordinator implements TestGenerationNo
 		}
 		
 		this.coveredBranches.removeAll(this.branchesToIgnore);
-		try (final BufferedWriter w = Files.newBufferedWriter(DirectoryUtils.I().getCoveredByTestFilePath())) {
+		try (final BufferedWriter w = Files.newBufferedWriter(DirectoryUtils.getCoveredByTestFilePath(this.options))) {
 			for (Integer branch : this.coveredBranches) {
 				w.write(branch.toString());
 				w.newLine();
 			}
 		} catch (IOException e) {
-			logger.error("I/O error while writing " + DirectoryUtils.I().getCoveredByTestFilePath().toString());
+			logger.error("I/O error while writing " + DirectoryUtils.getCoveredByTestFilePath(this.options).toString());
 			throw new CoordinatorException(e);
 		}
 		return retVal;
@@ -90,7 +94,7 @@ public class EvosuiteCoordinator extends Coordinator implements TestGenerationNo
 	
 	private void loadMethods() throws IOException {
 		this.methods = new ArrayList<>();
-		try (final BufferedReader r = Files.newBufferedReader(DirectoryUtils.I().getMethodsFilePath())) {
+		try (final BufferedReader r = Files.newBufferedReader(DirectoryUtils.getMethodsFilePath(this.options))) {
 			String line;
 			while ((line = r.readLine()) != null) {
 				final String[] fields = line.split(":");
@@ -101,7 +105,7 @@ public class EvosuiteCoordinator extends Coordinator implements TestGenerationNo
 	
 	private void loadCoverageData() throws IOException, NumberFormatException {
 		this.coverageData = new ArrayList<>();
-		try (final BufferedReader r = Files.newBufferedReader(DirectoryUtils.I().getCoverageFilePath())) {
+		try (final BufferedReader r = Files.newBufferedReader(DirectoryUtils.getCoverageFilePath(this.options))) {
 			String line;
 			while ((line = r.readLine()) != null) {
 				final HashSet<Integer> coverage = new HashSet<>();
@@ -116,7 +120,7 @@ public class EvosuiteCoordinator extends Coordinator implements TestGenerationNo
 	
 	private void loadTracesOfTasks() throws IOException, NumberFormatException {
 		this.tracesOfTask = new ArrayList<>();
-		try (final BufferedReader r = Files.newBufferedReader(DirectoryUtils.I().getMinimizerOutFilePath())) {
+		try (final BufferedReader r = Files.newBufferedReader(DirectoryUtils.getMinimizerOutFilePath(this.options))) {
 			String line;
 			int mosaTargetsCounter = 0;
 			HashSet<Integer> traces = null;
@@ -127,7 +131,7 @@ public class EvosuiteCoordinator extends Coordinator implements TestGenerationNo
 				final String[] fields = line.split(",");
 				traces.add(Integer.parseInt(fields[0].trim()));
 				++mosaTargetsCounter;
-				if (mosaTargetsCounter == Options.I().getNumMOSATargets()) {
+				if (mosaTargetsCounter == this.options.getNumMOSATargets()) {
 					this.tracesOfTask.add(traces);
 					traces = null;
 					mosaTargetsCounter = 0;
@@ -141,7 +145,7 @@ public class EvosuiteCoordinator extends Coordinator implements TestGenerationNo
 	
 	private void loadMinimizerOutput() throws IOException, NumberFormatException {
 		this.minimizerOutput = new ArrayList<>();
-		try (final BufferedReader r = Files.newBufferedReader(DirectoryUtils.I().getMinimizerOutFilePath())) {
+		try (final BufferedReader r = Files.newBufferedReader(DirectoryUtils.getMinimizerOutFilePath(this.options))) {
 			String line;
 			while ((line = r.readLine()) != null) {
 				final int[] row = new int[3];
@@ -156,7 +160,7 @@ public class EvosuiteCoordinator extends Coordinator implements TestGenerationNo
 	
 	private void loadBranchesToIgnore() throws IOException, NumberFormatException {
 		this.branchesToIgnore = new HashSet<>();
-		try (final BufferedReader r = Files.newBufferedReader(DirectoryUtils.I().getBranchesToIgnoreFilePath())) {
+		try (final BufferedReader r = Files.newBufferedReader(DirectoryUtils.getBranchesToIgnoreFilePath(this.options))) {
 			String line;
 			while ((line = r.readLine()) != null) {
 				this.branchesToIgnore.add(Integer.parseInt(line.trim()));
@@ -172,7 +176,7 @@ public class EvosuiteCoordinator extends Coordinator implements TestGenerationNo
 		branchesNew.removeAll(this.branchesToIgnore);
 		this.coveredBranches.addAll(branchesOfTarget);
 		final int numBranchesNew = branchesNew.size();
-		if (Options.I().getCoverage() == Coverage.BRANCHES) {
+		if (this.options.getCoverage() == Coverage.BRANCHES) {
 			logger.info("Generated test, covered " + numBranchesNew + " new branches");
 			if (numBranchesNew > 0) {
 				cancelTasksFullyCoveredBranches();
@@ -187,7 +191,7 @@ public class EvosuiteCoordinator extends Coordinator implements TestGenerationNo
 	//here synchronization is possibly redundant
 
 	private synchronized HashSet<Integer> branchesOfTarget(int taskNumber, int methodNumber, int localTraceNumber) {
-		for (int i = taskNumber * Options.I().getNumMOSATargets(); i < Math.min((taskNumber + 1) * Options.I().getNumMOSATargets(), this.minimizerOutput.size()); ++i) {
+		for (int i = taskNumber * this.options.getNumMOSATargets(); i < Math.min((taskNumber + 1) * this.options.getNumMOSATargets(), this.minimizerOutput.size()); ++i) {
 			final int[] row = this.minimizerOutput.get(i);
 			if (row[1] == methodNumber && row[2] == localTraceNumber) {
 				final int trace = row[0];
@@ -228,19 +232,19 @@ public class EvosuiteCoordinator extends Coordinator implements TestGenerationNo
             final int lastSlash = relativeTestFileName.lastIndexOf('/');
             if (lastSlash != -1) {
                 final String dirs = relativeTestFileName.substring(0, lastSlash);
-                final Path destinationDir = Options.I().getOutDirPath().resolve(dirs);
+                final Path destinationDir = this.options.getOutDirPath().resolve(dirs);
                 Files.createDirectories(destinationDir);
             }
             
             //copies the test file
-            final Path source = DirectoryUtils.I().getTmpDirPath().resolve(relativeTestFileName);
-            final Path destination = Options.I().getOutDirPath().resolve(relativeTestFileName);
+            final Path source = DirectoryUtils.getTmpDirPath(this.options).resolve(relativeTestFileName);
+            final Path destination = this.options.getOutDirPath().resolve(relativeTestFileName);
             Files.copy(source, destination, StandardCopyOption.REPLACE_EXISTING);
 
             //possibly copies the scaffolding file
-            if (!Options.I().getEvosuiteNoDependency()) {
-            	final Path sourceScaffolding = DirectoryUtils.I().getTmpDirPath().resolve(relativeScaffoldingFileName);
-            	final Path destinationScaffolding = Options.I().getOutDirPath().resolve(relativeScaffoldingFileName);
+            if (!this.options.getEvosuiteNoDependency()) {
+            	final Path sourceScaffolding = DirectoryUtils.getTmpDirPath(this.options).resolve(relativeScaffoldingFileName);
+            	final Path destinationScaffolding = this.options.getOutDirPath().resolve(relativeScaffoldingFileName);
             	Files.copy(sourceScaffolding, destinationScaffolding, StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException e) {

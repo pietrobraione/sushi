@@ -1,26 +1,27 @@
 package sushi.execution.minimizer;
 
-import sushi.configure.MinimizerParameters;
-import sushi.configure.Options;
+import sushi.Options;
 import sushi.execution.Tool;
 import sushi.execution.Worker;
-import sushi.modifier.Modifier;
 import sushi.util.DirectoryUtils;
 
 public class Minimizer extends Tool<MinimizerParameters> {
-	public Minimizer() { }
+	private final Options options;
+	
+	public Minimizer(Options options) { 
+		this.options = options;
+	}
 
 	@Override
 	public MinimizerParameters getInvocationParameters(int i) {
-		final DirectoryUtils dirs = DirectoryUtils.I();
 		final MinimizerParameters p = new MinimizerParameters();
-		p.setBranchesFilePath(dirs.getBranchesFilePath());
-		p.setCoverageFilePath(dirs.getCoverageFilePath());
-		p.setOutputFilePath(dirs.getMinimizerOutFilePath());
-		p.setBranchesToIgnoreFilePath(dirs.getBranchesToIgnoreFilePath());
-		p.setTracesToIgnoreFilePath(dirs.getTracesToIgnoreFilePath());
-		p.setNumberOfTasks(Options.I().getParallelismEvosuite() / Options.I().getRedundanceEvosuite());
-		p.setTimeout(Options.I().getMinimizerBudget());
+		p.setBranchesFilePath(DirectoryUtils.getBranchesFilePath(this.options));
+		p.setCoverageFilePath(DirectoryUtils.getCoverageFilePath(this.options));
+		p.setOutputFilePath(DirectoryUtils.getMinimizerOutFilePath(this.options));
+		p.setBranchesToIgnoreFilePath(DirectoryUtils.getBranchesToIgnoreFilePath(this.options));
+		p.setTracesToIgnoreFilePath(DirectoryUtils.getTracesToIgnoreFilePath(this.options));
+		p.setNumberOfTasks(this.options.getParallelismEvosuite() / this.options.getRedundanceEvosuite());
+		p.setTimeout(this.options.getMinimizerBudget());
 		
 		setUserDefinedParameters(p);
 		
@@ -28,12 +29,12 @@ public class Minimizer extends Tool<MinimizerParameters> {
 	}
 	
 	private void setUserDefinedParameters(MinimizerParameters p) {
-	    Modifier.I().modify(p);
+		this.options.getParametersModifier().modify(p);
 	}
 	
 	@Override
 	public int getTimeBudget() {
-		return Options.I().getMinimizerBudget();
+		return this.options.getMinimizerBudget();
 	}
 
 	@Override
