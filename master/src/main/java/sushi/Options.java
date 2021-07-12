@@ -18,6 +18,7 @@ import org.kohsuke.args4j.spi.PatternOptionHandler;
 
 import sushi.optionhandlers.HeapScopeOptionHandler;
 import sushi.optionhandlers.MultiPathOptionHandlerPatched;
+import sushi.optionhandlers.MultiSignatureOptionHandler;
 import sushi.optionhandlers.PhasesOptionHandler;
 import sushi.optionhandlers.RewritersOptionHandler;
 import sushi.optionhandlers.SignatureOptionHandler;
@@ -196,6 +197,11 @@ public final class Options {
 			usage = "The count scope of symbolic execution; 0 means unlimited.")
 	private int countScope = 0;
 	
+    @Option(name = "-uninterpreted",
+            usage = "List of signatures of uninterpreted methods",
+            handler = MultiSignatureOptionHandler.class)
+    private List<List<String>> uninterpreted = new ArrayList<>();
+
 	@Option(name = "-do_sign_analysis",
 			usage = "Whether the sign analysis decision procedure must be active.")
 	private boolean doSignAnalysis = false;
@@ -207,7 +213,7 @@ public final class Options {
 	@Option(name = "-rewriters",
 			usage = "The rewriters to apply in order to simplify numeric expressions.",
 			handler = RewritersOptionHandler.class)
-	private EnumSet<Rewriter> rewriters;
+	private EnumSet<Rewriter> rewriters = EnumSet.noneOf(Rewriter.class);
 	
 	public boolean isConsistent() {
 		if (this.paramsClass == null &&
@@ -536,6 +542,30 @@ public final class Options {
         this.countScope = 0; 
     }
 	
+    public List<List<String>> getUninterpreted() {
+        return this.uninterpreted;
+    }
+
+    public static List<String> sig(String className, String descriptor, String name) {
+        return Arrays.asList(className, descriptor, name);
+    }
+
+    @SafeVarargs
+    public final void setUninterpreted(List<String>... signatures) {
+        if (signatures == null) {
+            throw new IllegalArgumentException("Attempted to set the uninterpreted functions signatures to null.");
+        }
+        for (List<String> sig : signatures) {
+            if (sig == null) {
+                throw new IllegalArgumentException("Attempted to set a uninterpreted function signature to null.");
+            }
+            if (sig.size() != 3) {
+                throw new IllegalArgumentException("Attempted to set a uninterpreted function signature to unrecognized sequence of strings.");
+            }
+        }
+        this.uninterpreted = Arrays.asList(signatures.clone());
+    }
+
 	public boolean getDoSignAnalysis() {
 		return this.doSignAnalysis;
 	}

@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import jbse.rewr.RewriterAbsSum;
@@ -87,6 +88,16 @@ public abstract class JBSEAbstract extends Tool<JBSEParameters> {
 			logger.error("Error while closing settings file", e);
 			throw new JBSEException(e);
 		}
+		for (Map.Entry<String, Integer> entry : this.options.getHeapScope().entrySet()) {
+			p.setHeapScope(entry.getKey(), entry.getValue());
+		}
+		p.setDepthScope(this.options.getDepthScope());
+		p.setCountScope(this.options.getCountScope());
+		for (List<String> sig : this.options.getUninterpreted()) {
+			p.addUninterpreted(sig.get(0), sig.get(1), sig.get(2));
+		}
+		p.setDoSignAnalysis(this.options.getDoSignAnalysis());
+		p.setDoEqualityAnalysis(this.options.getDoEqualityAnalysis());
 		setRewriters(this.options.getRewriters(), p);
 		return p;
 	}
