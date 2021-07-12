@@ -161,7 +161,7 @@ public class Evosuite extends Tool<String[]> {
         evo.add("-Dalgorithm=DYNAMOSA");
         evo.add("-generateMOSuite");
 
-		setUserDefinedParameters(evo);
+		evo.addAll(this.options.getAdditionalEvosuiteArgs());
 
 		this.commandLine = evo.toString().replaceAll("\\[", "").replaceAll("\\]", "").replaceAll(",", "");
 
@@ -188,10 +188,6 @@ public class Evosuite extends Tool<String[]> {
 		return IOUtils.concatClassPath(
 				IOUtils.concatClassPath(this.options.getClassesPath()),
 				IOUtils.concatClassPath(this.options.getSushiLibPath(), this.options.getJBSELibraryPath()));
-	}
-	
-	private void setUserDefinedParameters(List<String> evo) {
-        this.options.getParametersModifier().modify(evo);
 	}
 	
 	@Override

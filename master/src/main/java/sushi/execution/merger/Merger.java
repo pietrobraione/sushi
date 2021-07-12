@@ -23,14 +23,10 @@ public final class Merger extends Tool<MergerParameters> {
 		p.setTracesFilePathLocal((n) -> DirectoryUtils.getTracesFilePath(this.options, n));
 		p.setBranchesToIgnoreFilePath(DirectoryUtils.getBranchesToIgnoreFilePath(this.options));
 		p.setTracesToIgnoreFilePath(DirectoryUtils.getTracesToIgnoreFilePath(this.options));
-		
-		setUserDefinedParameters(p);
+		p.setBranchesToIgnore(this.options.getBranchesToIgnore());
+		p.setBranchesToCover(this.options.getBranchesToCover());
 
 		return p;
-	}
-	
-	private void setUserDefinedParameters(MergerParameters p) {
-		this.options.getParametersModifier().modify(p);
 	}
 	
 	@Override

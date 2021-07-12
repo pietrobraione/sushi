@@ -16,7 +16,7 @@ import java.util.function.Function;
 
 import jbse.apps.run.CannotBuildDecisionProcedureException;
 import jbse.apps.run.RunParameters;
-import jbse.bc.Classpath;
+import jbse.apps.settings.SettingsReader;
 import jbse.bc.Signature;
 import jbse.common.exc.InvalidInputException;
 import jbse.common.exc.UnexpectedInternalException;
@@ -33,22 +33,11 @@ import jbse.rewr.CalculatorRewriting;
 import jbse.rewr.RewriterCalculatorRewriting;
 import jbse.rules.ClassInitRulesRepo;
 import jbse.rules.LICSRulesRepo;
+import jbse.rules.TriggerRulesRepo;
 import jbse.val.ReferenceSymbolic;
+import sushi.ParseException;
 
-public final class JBSEParameters implements Cloneable {
-	/**
-	 * Enumeration of the possible decision procedures.
-	 * 
-	 * @author Pietro Braione
-	 */
-	public static enum DecisionProcedureType {
-		/** Uses Z3. */
-		Z3,
-		
-		/** Uses CVC4. */
-		CVC4
-	}
-
+final class JBSEParameters implements Cloneable {
 	/**
 	 * A Strategy for creating {@link DecisionProcedure}s. 
 	 * The strategy receives as inputs the necessary dependencies
@@ -140,12 +129,6 @@ public final class JBSEParameters implements Cloneable {
 
 	/** The {@link Class}es of all the rewriters to be applied to terms (order matters). */
 	private ArrayList<Class<? extends RewriterCalculatorRewriting>> rewriterClasses = new ArrayList<>();
-	
-	/**
-	 * The decision procedure to be used for deciding the 
-	 * arithmetic conditions.
-	 */
-	private DecisionProcedureType decisionProcedureType = DecisionProcedureType.Z3;
 	
 	/** The {@link Path} where the executable of the external decision procedure is. */
 	private Path externalDecisionProcedurePath = null;
@@ -257,28 +240,6 @@ public final class JBSEParameters implements Cloneable {
 	}
 
 	/**
-	 * Sets the state identification mode, i.e., how a state will be
-	 * identified.
-	 * 
-	 * @param stateIdMode a {@link StateIdentificationMode}.
-	 * @throws NullPointerException if {@code stateIdMode == null}.
-	 */
-	public void setStateIdentificationMode(StateIdentificationMode stateIdMode) {
-		this.runnerParameters.setStateIdentificationMode(stateIdMode);
-	}
-	
-	/**
-	 * Sets the breadth mode, i.e., how many branches 
-	 * will be created during execution.
-	 * 
-	 * @param breadthMode a {@link BreadthMode}.
-	 * @throws NullPointerException if {@code breadthMode == null}.
-	 */
-	public void setBreadthMode(BreadthMode breadthMode) {
-		this.runnerParameters.setBreadthMode(breadthMode);
-	}
-
-	/**
 	 * Sets the symbolic execution's classpath; the 
 	 * default classpath is {@code "."}.
 	 * 
@@ -289,23 +250,34 @@ public final class JBSEParameters implements Cloneable {
 		this.runnerParameters.addUserClasspath(paths);
 	}
 	
-    /**
-     * Clears the symbolic execution's classpath.
-     */
-	public void clearClasspath() {
-	    this.runnerParameters.clearUserClasspath();
+	/**
+	 * Returns the method number.
+	 * 
+	 * @return the identifying number of the method that is executed.
+	 */
+	public long getMethodNumber() {
+		return this.methodNumber;
+	}
+	
+	/**
+	 * Sets the method number.
+	 * 
+	 * @param methodNumber a {@code long} identifying the method that is executed.
+	 */
+	public void setMethodNumber(long methodNumber) {
+		this.methodNumber = methodNumber;
 	}
 
 	/**
-	 * Returns the symbolic execution's classpath.
+	 * Gets the signature of the method which must be symbolically executed.
 	 * 
-	 * @return a {@link Classpath} object. 
-	 * @throws IOException if an I/O error occurs while scanning the classpath.
+	 * @return a {@link Signature}, or {@code null} if no method signature
+	 *         has been provided.
 	 */
-	public Classpath getClasspath() throws IOException {
-		return this.runnerParameters.getClasspath();
+	public Signature getMethodSignature() {
+		return this.runnerParameters.getMethodSignature();
 	}
-
+	
 	/**
 	 * Sets the signature of the method which must be symbolically executed.
 	 * 
@@ -319,15 +291,318 @@ public final class JBSEParameters implements Cloneable {
 	}
 	
 	/**
-	 * Gets the signature of the method which must be symbolically executed.
+	 * Sets a timeout for execution.
 	 * 
-	 * @return a {@link Signature}, or {@code null} if no method signature
-	 *         has been provided.
+	 * @param time a {@code long}, the amount of time.
+	 * @param timeUnit the {@link TimeUnit} of {@code long}.
 	 */
-	public Signature getMethodSignature() {
-		return this.runnerParameters.getMethodSignature();
+	public void setTimeout(long time, TimeUnit timeUnit) { 
+		this.runnerParameters.setTimeout(time, timeUnit);
 	}
 	
+	/**
+	 * Gets the pathname of the executable
+	 * of the decision procedure set with 
+	 * {@link #setExternalDecisionProcedurePath(String)}.
+	 * 
+	 * @return a nonnull {@link String}.
+	 */
+	public Path getExternalDecisionProcedurePath() {
+		return this.externalDecisionProcedurePath;
+	}
+
+	/**
+	 * Sets the pathname of the executable
+	 * of the decision procedure (should match 
+	 * {@link #setDecisionProcedureType(DecisionProcedureType)}).
+	 * 
+	 * @param externalDecisionProcedurePath a {@link String} containing a valid 
+	 *        pathname for the decision procedure executable.
+	 * @throws NullPointerException if {@code externalDecisionProcedurePath == null}.
+	 * @throws InvalidPathException if {@code externalDecisionProcedurePath} is not
+	 *         a valid path file name.
+	 */
+	public void setExternalDecisionProcedurePath(String externalDecisionProcedurePath) { 
+		if (externalDecisionProcedurePath == null) {
+			throw new NullPointerException();
+		}
+		this.externalDecisionProcedurePath = Paths.get(externalDecisionProcedurePath); 
+	}
+	
+	/**
+	 * Gets the state output format mode.
+	 * 
+	 * @return A {@link StateFormatMode}.
+	 */
+	public StateFormatMode getStateFormatMode() {
+	    return this.stateFormatMode;
+	}
+		
+	/**
+	 * Sets the state output format mode. 
+	 * 
+	 * @param stateFormatMode A {@link StateFormatMode} 
+	 *        representing the output format mode of the
+	 *        states, or {@code null} if nothing must be
+	 *        emitted.
+	 */
+	public void setStateFormatMode(StateFormatMode stateFormatMode) { 
+		this.stateFormatMode = stateFormatMode; 
+	}
+	
+	/**
+	 * Gets whether the coverage, branches and traces log files
+	 * must be emitted.
+	 * 
+	 * @return a {@code boolean}.
+	 */
+	public boolean getMustLogCoverageData() {
+		return this.mustLogCoverageData;
+	}
+	
+	/**
+	 * Sets whether the coverage, branches and traces log files
+	 * must be emitted.
+	 * 
+	 * @param mustLogCoverageData a {@code boolean}.
+	 */
+	public void setMustLogCoverageData(boolean mustLogCoverageData) {
+		this.mustLogCoverageData = mustLogCoverageData;
+	}
+	
+	/**
+	 * Returns the path of the wrapper file.
+	 * 
+	 * @param localTraceNumber a {@code long}, local trace number.
+	 * @return a {@link Path}.
+	 */
+	public Path getWrapperFilePath(long localTraceNumber) {
+		return this.wrapperFilePathBuilder.apply(this.methodNumber, localTraceNumber);
+	}
+	
+	/**
+	 * Sets the path of the wrapper file.
+	 * 
+	 * @param wrapperFilePathBuilder A {@link BiFunction} accepting as parameters two {@link Long}s, 
+	 *        a method number and a local trace number, and returning a {@link Path}
+	 *        for the wrapper file for that trace. 
+	 * @throws NullPointerException if {@code wrapperFilePathBuilder == null}.
+	 */
+	public void setWrapperFilePathBuilder(BiFunction<Long, Long, Path> wrapperFilePathBuilder) {
+		if (wrapperFilePathBuilder == null) {
+			throw new NullPointerException();
+		}
+		this.wrapperFilePathBuilder = wrapperFilePathBuilder;
+	}
+	
+	/**
+	 * Returns the path of the coverage file.
+	 * 
+	 * @return a {@link Path}.
+	 */
+	public Path getCoverageFilePath() {
+		return this.coverageFilePathBuilder.apply(this.methodNumber);
+	}
+		
+	/**
+	 * Sets the path of the coverage file.
+	 * 
+	 * @param coverageFilePathBuilder A {@link Function} accepting as parameter a {@link Long}s, 
+	 *        a method number, and returning a {@link Path} for the coverage file for that method. 
+	 * @throws NullPointerException if {@code coverageFilePathBuilder == null}.
+	 */
+	public void setCoverageFilePathBuilder(Function<Long, Path> coverageFilePathBuilder) {
+		if (coverageFilePathBuilder == null) {
+			throw new NullPointerException();
+		}
+		this.coverageFilePathBuilder = coverageFilePathBuilder;
+	}
+	
+	/**
+	 * Returns the path of the branches file.
+	 * 
+	 * @return a {@link Path}.
+	 */
+	public Path getBranchesFilePath() {
+		return this.branchesFilePathBuilder.apply(this.methodNumber);
+	}
+	
+	/**
+	 * Sets the path of the branches file.
+	 * 
+	 * @param branchesFilePathBuilder A {@link Function} accepting as parameter a {@link Long}s, 
+	 *        a method number, and returning a {@link Path} for the branches file for that method. 
+	 * @throws NullPointerException if {@code branchesFilePathBuilder == null}.
+	 */
+	public void setBranchesFilePathBuilder(Function<Long, Path> branchesFilePathBuilder) {
+		if (branchesFilePathBuilder == null) {
+			throw new NullPointerException();
+		}
+		this.branchesFilePathBuilder = branchesFilePathBuilder;
+	}
+	
+	/**
+	 * Returns the path of the traces file.
+	 * 
+	 * @return a {@link Path}.
+	 */
+	public Path getTracesFilePath() {
+		return this.tracesFilePathBuilder.apply(this.methodNumber);
+	}
+	
+	/**
+	 * Sets the path of the traces file.
+	 * 
+	 * @param tracesFilePathBuilder A {@link Function} accepting as parameter a {@link Long}s, 
+	 *        a method number, and returning a {@link Path} for the traces file for that method. 
+	 * @throws NullPointerException if {@code tracesFilePathBuilder == null}.
+	 */
+	public void setTracesFilePathBuilder(Function<Long, Path> tracesFilePathBuilder) {
+		if (tracesFilePathBuilder == null) {
+			throw new NullPointerException();
+		}
+		this.tracesFilePathBuilder = tracesFilePathBuilder;
+	}
+	
+	/**
+	 * Filters which leaves/summaries must be shown.
+	 * 
+	 * @param show {@code true} iff the leaves/summaries 
+	 *        of safe traces must be shown.
+	 */
+	public void setShowSafe(boolean show) {
+		if (show) {
+			this.tracesToShow.add(TraceTypes.SAFE);
+		} else {
+			this.tracesToShow.remove(TraceTypes.SAFE);
+		}
+	}
+	
+	/**
+	 * Filters which leaves/summaries must be shown.
+	 * 
+	 * @param show {@code true} iff the leaves/summaries 
+	 *        of unsafe traces must be shown.
+	 */
+	public void setShowUnsafe(boolean show) {
+		if (show) {
+			this.tracesToShow.add(TraceTypes.UNSAFE);
+		} else {
+			this.tracesToShow.remove(TraceTypes.UNSAFE);
+		}
+	}
+	
+	/**
+	 * Filters which leaves/summaries must be shown.
+	 * 
+	 * @param show {@code true} iff the leaves/summaries 
+	 *        of contradictory traces must be shown.
+	 */
+	public void setShowContradictory(boolean show) {
+		if (show) {
+			this.tracesToShow.add(TraceTypes.CONTRADICTORY);
+		} else {
+			this.tracesToShow.remove(TraceTypes.CONTRADICTORY);
+		}
+	}
+	
+	/**
+	 * Filters which leaves/summaries must be shown.
+	 * 
+	 * @param show {@code true} iff the leaves/summaries 
+	 *        of out of scope traces must be shown.
+	 */
+	public void setShowOutOfScope(boolean show) {
+		if (show) {
+			this.tracesToShow.add(TraceTypes.OUT_OF_SCOPE);
+		} else {
+			this.tracesToShow.remove(TraceTypes.OUT_OF_SCOPE);
+		}
+	}
+	
+	/**
+	 * Filters which leaves/summaries must be shown.
+	 * 
+	 * @param show {@code true} iff the leaves/summaries 
+	 *        of unmanageable traces must be shown.
+	 */
+	public void setShowUnmanageable(boolean show) {
+		if (show) {
+			this.tracesToShow.add(TraceTypes.UNMANAGEABLE);
+		} else {
+			this.tracesToShow.remove(TraceTypes.UNMANAGEABLE);
+		}
+	}
+	
+	/**
+	 * Returns the traces types to be shown.
+	 * 
+	 * @return an {@link EnumSet}{@code <}{@link TraceTypes}{@code >}
+	 *         containing the trace types to be shown.
+	 */
+	public EnumSet<TraceTypes> getTracesToShow() {
+	    return this.tracesToShow.clone();
+	}
+	
+	/**
+	 * Gets the start value of the trace counter.
+	 * 
+	 * @return a {@code long}.
+	 */
+	public long getTraceCounterStart() {
+		return this.traceCounterStart;
+	}
+	
+	/**
+	 * Sets the start value of the trace counter.
+	 * 
+	 * @param traceCounterStart a {@code long}.
+	 * @throws IllegalArgumentException if {@code traceCounterStart < 0}.
+	 */
+	public void setTraceCounterStart(long traceCounterStart) {
+		if (traceCounterStart < 0) {
+			throw new IllegalArgumentException();
+		}
+		this.traceCounterStart = traceCounterStart;
+	}
+	
+	/**
+	 * Sets the identifier of the initial state in the state space subregion 
+	 * to be explored.
+	 * 
+	 * @param identifierSubregion a {@link String}, the subregion identifier.
+	 *        For example, if {@code identifierSubregion == ".1.2.1"} the 
+	 *        execution will explore only the traces whose identifier starts
+	 *        with .1.2.1 (i.e., 1.2.1.1.2, 1.2.1.3.2.1.4, and not 1.2.2.1.2).
+	 * @throws NullPointerException if {@code identifierSubregion == null}.
+	 */
+	public void setIdentifierSubregion(String identifierSubregion) {
+		this.runnerParameters.setIdentifierSubregion(identifierSubregion);
+	}
+	
+	/**
+	 * Loads a set of HEX configuration files.
+	 * 
+	 * @param paths a {@link List}{@code <}{@link Path}{@code >} to the file.
+	 * @throws ParseException if a parse error is encountered while reading the file.
+	 * @throws IOException if a I/O error occurs.
+	 */
+	public void loadHEXFiles(List<Path> paths) throws ParseException, IOException {
+		for (Path path : paths) {
+			final SettingsReader sr;
+			try {
+				sr = new SettingsReader(path);
+			} catch (jbse.apps.settings.ParseException e) {
+				throw new sushi.ParseException("File " + path.toString() + ": " + e.getMessage());
+			}
+			sr.fillRunnerParameters(this.runnerParameters);
+			sr.fillRulesLICS(this.repoLICS);
+			sr.fillRulesClassInit(this.repoInit);
+		}
+	}
+	
+	//Yet to expose
+
 	/**
 	 * Specifies an alternative, meta-level implementation of a method 
 	 * that must override the standard one. 
@@ -357,25 +632,18 @@ public final class JBSEParameters implements Cloneable {
 	public void addUninterpreted(String className, String descriptor, String methodName) {
 		this.runnerParameters.addUninterpreted(className, descriptor, methodName);
 	}
-		
+	
 	/**
-	 * Sets a timeout for execution.
+	 * Gets the heap scope for the objects of a given class. 
 	 * 
-	 * @param time a {@code long}, the amount of time.
-	 * @param timeUnit the {@link TimeUnit} of {@code long}.
+	 * @return heapScope a {@link Map}{@code <}{@link String}{@code , }{@link Integer}{@code >}, 
+	 *        associating class names with their respective heap scopes.
+	 *        If a class is not present in the map, its scope is unlimited.
 	 */
-	public void setTimeout(long time, TimeUnit timeUnit) { 
-		this.runnerParameters.setTimeout(time, timeUnit);
+	public Map<String, Integer> getHeapScope() {
+		return this.runnerParameters.getHeapScope();
 	}
 
-	/**
-	 * Sets no time limit for execution. This is the 
-	 * default behavior.
-	 */
-	public void setTimeoutUnlimited() { 
-		this.runnerParameters.setTimeoutUnlimited();
-	}
-	
 	/**
 	 * Sets a limited heap scope for the objects of a given class. 
 	 * The heap scope is the maximum number of objects of a given class 
@@ -411,15 +679,14 @@ public final class JBSEParameters implements Cloneable {
 		this.runnerParameters.setHeapScopeUnlimited(); 
 	}
 	
-	/**
-	 * Gets the heap scope for the objects of a given class. 
-	 * 
-	 * @return heapScope a {@link Map}{@code <}{@link String}{@code , }{@link Integer}{@code >}, 
-	 *        associating class names with their respective heap scopes.
-	 *        If a class is not present in the map, its scope is unlimited.
-	 */
-	public Map<String, Integer> getHeapScope() {
-		return this.runnerParameters.getHeapScope();
+    /**
+     * Gets the depth scope.
+     * 
+     * @return an {@code int}, the depth scope or {@code 0}
+     *         for unlimited depth scope.
+     */
+	public int getDepthScope() {
+		return this.runnerParameters.getDepthScope();
 	}
 	
 	/**
@@ -443,6 +710,16 @@ public final class JBSEParameters implements Cloneable {
 		this.runnerParameters.setDepthScopeUnlimited(); 
 	}
 	
+    /**
+     * Gets the count scope.
+     * 
+     * @return an {@code int}, the count scope or {@code 0}
+     *         for unlimited count scope.
+     */
+	public int getCountScope() {
+		return this.runnerParameters.getCountScope();
+	}
+	
 	/**
 	 * Sets a limited count scope. 
 	 * If a state has a number of predecessor states greater than the 
@@ -462,26 +739,15 @@ public final class JBSEParameters implements Cloneable {
 	}
 	
 	/**
-	 * Sets the identifier of the initial state in the state space subregion 
-	 * to be explored.
-	 * 
-	 * @param identifierSubregion a {@link String}, the subregion identifier.
-	 *        For example, if {@code identifierSubregion == ".1.2.1"} the 
-	 *        execution will explore only the traces whose identifier starts
-	 *        with .1.2.1 (i.e., 1.2.1.1.2, 1.2.1.3.2.1.4, and not 1.2.2.1.2).
-	 * @throws NullPointerException if {@code identifierSubregion == null}.
+	 * Returns the classes of the rewriters to be applied to
+     * the terms created during symbolic execution.
+     * 
+	 * @return a {@link List}{@code <}{@link Class}{@code <? extends }
+	 * {@link RewriterCalculatorRewriting}{@code >>}. It may contain {@code null}.
 	 */
-	public void setIdentifierSubregion(String identifierSubregion) {
-		this.runnerParameters.setIdentifierSubregion(identifierSubregion);
+    public List<Class<? extends RewriterCalculatorRewriting>> getRewriters() {
+	    return new ArrayList<>(this.rewriterClasses);
 	}
-	
-	/**
-	 * Instructs to explore the whole state space starting
-	 * from the root state. This is the default behavior.
-	 */
-	public void setIdentifierSubregionRoot() {
-		this.runnerParameters.setIdentifierSubregionRoot();
-	}	
 	
 	/**
 	 * Sets the classes of the rewriters to be applied to
@@ -505,70 +771,16 @@ public final class JBSEParameters implements Cloneable {
 	public void clearRewriters() {
 	    this.rewriterClasses.clear();
 	}
-	
-	/**
-	 * Returns the classes of the rewriters to be applied to
-     * the terms created during symbolic execution.
+    
+    /**
+     * Returns all the strategies for creating the {@link DecisionProcedure},
+     * in their order of addition.
      * 
-	 * @return a {@link List}{@code <}{@link Class}{@code <? extends }
-	 * {@link RewriterCalculatorRewriting}{@code >>}. It may contain {@code null}.
-	 */
-    public List<Class<? extends RewriterCalculatorRewriting>> getRewriters() {
-	    return new ArrayList<>(this.rewriterClasses);
-	}
-
-	/**
-	 * Sets the decision procedure. Overrides any previous call to
-	 * {@link #setDecisionProcedureGuidance}.
-	 * 
-	 * @param decisionProcedureType A {@link DecisionProcedureType} 
-	 * representing the decision procedure.
-	 * @throws NullPointerException if {@code decisionProcedureType == null}.
-	 */
-	public void setDecisionProcedureType(DecisionProcedureType decisionProcedureType) { 
-		if (decisionProcedureType == null) {
-			throw new NullPointerException();
-		}
-		this.decisionProcedureType = decisionProcedureType; 
-	}
-	
-	/**
-	 * Gets the decision procedure type.
-	 * 
-	 * @return a {@link DecisionProcedureType}.
-	 */
-	public DecisionProcedureType getDecisionProcedureType() {
-		return this.decisionProcedureType;
-	}
-
-	/**
-	 * Sets the pathname of the executable
-	 * of the decision procedure (should match 
-	 * {@link #setDecisionProcedureType(DecisionProcedureType)}).
-	 * 
-	 * @param externalDecisionProcedurePath a {@link String} containing a valid 
-	 *        pathname for the decision procedure executable.
-	 * @throws NullPointerException if {@code externalDecisionProcedurePath == null}.
-	 * @throws InvalidPathException if {@code externalDecisionProcedurePath} is not
-	 *         a valid path file name.
-	 */
-	public void setExternalDecisionProcedurePath(String externalDecisionProcedurePath) { 
-		if (externalDecisionProcedurePath == null) {
-			throw new NullPointerException();
-		}
-		this.externalDecisionProcedurePath = Paths.get(externalDecisionProcedurePath); 
-	}
-	
-	/**
-	 * Gets the pathname of the executable
-	 * of the decision procedure set with 
-	 * {@link #setExternalDecisionProcedurePath(String)}.
-	 * 
-	 * @return a nonnull {@link String}.
-	 */
-	public Path getExternalDecisionProcedurePath() {
-		return this.externalDecisionProcedurePath;
-	}
+     * @return a {@link List}{@code <}{@link DecisionProcedureCreationStrategy}{@code >}.
+     */
+    public List<DecisionProcedureCreationStrategy> getDecisionProcedureCreationStrategies() {
+        return new ArrayList<>(this.creationStrategies);
+    }
     
     /**
      * Adds a creation strategy to the strategies 
@@ -592,27 +804,6 @@ public final class JBSEParameters implements Cloneable {
     public void clearDecisionProcedureCreationStrategies() {
         this.creationStrategies.clear();
     }
-    
-    /**
-     * Returns all the strategies for creating the {@link DecisionProcedure},
-     * in their order of addition.
-     * 
-     * @return a {@link List}{@code <}{@link DecisionProcedureCreationStrategy}{@code >}.
-     */
-    public List<DecisionProcedureCreationStrategy> getDecisionProcedureCreationStrategies() {
-        return new ArrayList<>(this.creationStrategies);
-    }
-	
-	/**
-	 * Sets whether the engine should perform sign analysis
-	 * for deciding inequations before invoking the decision procedure
-	 * set with {@link #setDecisionProcedureType(DecisionProcedureType)}.
-	 * 
-	 * @param doSignAnalysis {@code true} iff the engine must do sign analysis.
-	 */
-	public void setDoSignAnalysis(boolean doSignAnalysis) {
-		this.doSignAnalysis = doSignAnalysis;
-	}
 	
 	/**
 	 * Gets whether the engine should perform sign analysis
@@ -625,13 +816,14 @@ public final class JBSEParameters implements Cloneable {
 	}
 	
 	/**
-	 * Sets whether the engine should decide equality with a
-	 * simple closure algorithm. 
+	 * Sets whether the engine should perform sign analysis
+	 * for deciding inequations before invoking the decision procedure
+	 * set with {@link #setDecisionProcedureType(DecisionProcedureType)}.
 	 * 
-	 * @param doEqualityAnalysis {@code true} iff the engine must decide equalities.
+	 * @param doSignAnalysis {@code true} iff the engine must do sign analysis.
 	 */
-	public void setDoEqualityAnalysis(boolean doEqualityAnalysis) {
-		this.doEqualityAnalysis = doEqualityAnalysis;
+	public void setDoSignAnalysis(boolean doSignAnalysis) {
+		this.doSignAnalysis = doSignAnalysis;
 	}
 
 	/**
@@ -642,6 +834,26 @@ public final class JBSEParameters implements Cloneable {
     public boolean getDoEqualityAnalysis() {
         return this.doEqualityAnalysis;
     }
+	
+	/**
+	 * Sets whether the engine should decide equality with a
+	 * simple closure algorithm. 
+	 * 
+	 * @param doEqualityAnalysis {@code true} iff the engine must decide equalities.
+	 */
+	public void setDoEqualityAnalysis(boolean doEqualityAnalysis) {
+		this.doEqualityAnalysis = doEqualityAnalysis;
+	}
+	
+	/**
+	 * Returns whether the engine shall invoke or not the conservative
+     * repOk methods at every heap expansion.
+	 * 
+	 * @return {@code true} iff conservative repOk methods are invoked.
+	 */
+	public boolean getUseConservativeRepOks() {
+	    return this.useConservativeRepOks;
+	}
     
 	/**
 	 * Sets whether the engine shall invoke or not the conservative
@@ -656,13 +868,14 @@ public final class JBSEParameters implements Cloneable {
 	}
 	
 	/**
-	 * Returns whether the engine shall invoke or not the conservative
-     * repOk methods at every heap expansion.
+	 * Gets the conservative repOK methods of classes.
 	 * 
-	 * @return {@code true} iff conservative repOk methods are invoked.
+	 * @return a {@link Map}{@code <}{@link String}{@code , }{@link String}{@code >}
+	 *         mapping class names with the name of their respective conservative
+	 *         repOK methods.
 	 */
-	public boolean getUseConservativeRepOks() {
-	    return this.useConservativeRepOks;
+	public Map<String, String> getConservativeRepOks() {
+	    return new HashMap<>(this.conservativeRepOks);
 	}
 
 	/**
@@ -685,20 +898,29 @@ public final class JBSEParameters implements Cloneable {
 	public void clearConservativeRepOks() {
 	    this.conservativeRepOks.clear();
 	}
-	
+
 	/**
-	 * Gets the conservative repOK methods of classes.
+	 * Returns a new {@link RunnerParameters} that can be used
+	 * to run a concretization method (sets only scopes).
 	 * 
-	 * @return a {@link Map}{@code <}{@link String}{@code , }{@link String}{@code >}
-	 *         mapping class names with the name of their respective conservative
-	 *         repOK methods.
+	 * @return a new instance of {@link RunnerParameters}.
 	 */
-	public Map<String, String> getConservativeRepOks() {
-	    return new HashMap<>(this.conservativeRepOks);
+	public RunnerParameters getConcretizationDriverParameters() {
+		final RunnerParameters retVal = this.runnerParameters.clone();
+		retVal.setStateIdentificationMode(StateIdentificationMode.COMPACT);
+		retVal.setBreadthMode(BreadthMode.MORE_THAN_ONE);
+		/* TODO should be:
+		 * retVal.setHeapScopeUnlimited();
+		 * retVal.setDepthScopeUnlimited();
+		 * retVal.setCountScopeUnlimited();
+		 */
+		retVal.setHeapScopeComputed(this.concretizationHeapScope);
+		retVal.setDepthScope(this.concretizationDepthScope);
+		retVal.setCountScope(this.concretizationCountScope);
+		retVal.setIdentifierSubregionRoot();
+		return retVal;
 	}
 	
-	//TODO static (noncomputed) concretization heap scope
-
 	/**
 	 * Sets a limited heap scope for the objects of a given class
 	 * during the symbolic execution of the concretization methods. 
@@ -788,6 +1010,17 @@ public final class JBSEParameters implements Cloneable {
 	}
     
     /**
+     * Gets whether the engine should use LICS rules
+     * to decide on references resolution.
+     * 
+     * @return {@code true} iff the engine must 
+     * use LICS rules.
+     */
+    public boolean getUseLICS() {
+        return this.useLICS;
+    }
+    
+    /**
      * Sets whether the engine should use LICS rules
      * to decide on references resolution. By default
      * LICS rules are used.
@@ -797,17 +1030,6 @@ public final class JBSEParameters implements Cloneable {
      */
     public void setUseLICS(boolean useLICS) {
         this.useLICS = useLICS;
-    }
-    
-    /**
-     * Gets whether the engine should use LICS rules
-     * to decide on references resolution.
-     * 
-     * @return {@code true} iff the engine must 
-     * use LICS rules.
-     */
-    public boolean getUseLICS() {
-        return this.useLICS;
     }
     
     /**
@@ -822,21 +1044,6 @@ public final class JBSEParameters implements Cloneable {
      */
     public LICSRulesRepo getLICSRulesRepo() {
         return this.repoLICS;
-    }
-
-    /**
-     * Returns the {@link ClassInitRulesRepo} 
-     * containing all the class initialization 
-     * rules (list of classes that are assumed
-     * not to be initialized) that must be used.
-     * 
-     * @return a {@link ClassInitRulesRepo}. It
-     *         is the one that backs this
-     *         {@link EngineParameters}, not a
-     *         safety copy.
-     */
-    public ClassInitRulesRepo getClassInitRulesRepo() {
-        return this.repoInit;
     }
     
     /**
@@ -1009,12 +1216,41 @@ public final class JBSEParameters implements Cloneable {
 	}
 
     /**
+     * Returns the {@link ClassInitRulesRepo} 
+     * containing all the class initialization 
+     * rules (list of classes that are assumed
+     * not to be initialized) that must be used.
+     * 
+     * @return a {@link ClassInitRulesRepo}. It
+     *         is the one that backs this
+     *         {@link EngineParameters}, not a
+     *         safety copy.
+     */
+    public ClassInitRulesRepo getClassInitRulesRepo() {
+        return this.repoInit;
+    }
+
+    /**
      * Adds class names to the set of not initialized classes.
      * 
      * @param notInitializedClasses a list of class names as a {@link String} varargs.
      */
     public void addNotInitializedClasses(String... notInitializedClasses) {
         this.repoInit.addNotInitializedClassPattern(notInitializedClasses);
+    }
+
+    /**
+     * Returns the {@link TriggerRulesRepo} 
+     * containing all the trigger rules that
+     * must be used.
+     * 
+     * @return a {@link TriggerRulesRepo}. It
+     *         is the one that backs this
+     *         {@link EngineParameters}, not a
+     *         safety copy.
+     */
+    public TriggerRulesRepo getTriggerRulesRepo() {
+        return this.runnerParameters.getTriggerRulesRepo();
     }
     
     /**
@@ -1188,273 +1424,42 @@ public final class JBSEParameters implements Cloneable {
 	}
 	
 	/**
-	 * Sets the method number.
+	 * Tests whether the symbolic execution is guided.
 	 * 
-	 * @param methodNumber a {@code long} identifying the method that is executed.
+	 * @return {@code true} iff the symbolic execution is guided.
 	 */
-	public void setMethodNumber(long methodNumber) {
-		this.methodNumber = methodNumber;
+	public boolean isGuided() {
+		return this.guided;
 	}
 	
 	/**
-	 * Returns the method number.
+	 * Returns a new {@link RunnerParameters} that can be used
+	 * to run the guidance driver method.
 	 * 
-	 * @return the identifying number of the method that is executed.
+	 * @param calc the {@link CalculatorRewriting} to be used by the decision procedure.
+	 * @return a new instance of {@link RunnerParameters}, 
+	 * or {@code null} iff {@link #isGuided()} {@code == false}.
+	 * @throws InvalidInputException if {@code calc == null}.
 	 */
-	public long getMethodNumber() {
-		return this.methodNumber;
-	}
-	
-	/**
-	 * Sets the start value of the trace counter.
-	 * 
-	 * @param traceCounterStart a {@code long}.
-	 * @throws IllegalArgumentException if {@code traceCounterStart < 0}.
-	 */
-	public void setTraceCounterStart(long traceCounterStart) {
-		if (traceCounterStart < 0) {
-			throw new IllegalArgumentException();
-		}
-		this.traceCounterStart = traceCounterStart;
-	}
-	
-	/**
-	 * Gets the start value of the trace counter.
-	 * 
-	 * @return a {@code long}.
-	 */
-	public long getTraceCounterStart() {
-		return this.traceCounterStart;
-	}
-	
-	/**
-	 * Sets whether the coverage, branches and traces log files
-	 * must be emitted.
-	 * 
-	 * @param mustLogCoverageData a {@code boolean}.
-	 */
-	public void setMustLogCoverageData(boolean mustLogCoverageData) {
-		this.mustLogCoverageData = mustLogCoverageData;
-	}
-	
-	/**
-	 * Gets whether the coverage, branches and traces log files
-	 * must be emitted.
-	 * 
-	 * @return a {@code boolean}.
-	 */
-	public boolean getMustLogCoverageData() {
-		return this.mustLogCoverageData;
-	}
-	
-	/**
-	 * Sets the path of the wrapper file.
-	 * 
-	 * @param wrapperFilePathBuilder A {@link BiFunction} accepting as parameters two {@link Long}s, 
-	 *        a method number and a local trace number, and returning a {@link Path}
-	 *        for the wrapper file for that trace. 
-	 * @throws NullPointerException if {@code wrapperFilePathBuilder == null}.
-	 */
-	public void setWrapperFilePathBuilder(BiFunction<Long, Long, Path> wrapperFilePathBuilder) {
-		if (wrapperFilePathBuilder == null) {
-			throw new NullPointerException();
-		}
-		this.wrapperFilePathBuilder = wrapperFilePathBuilder;
-	}
-	
-	/**
-	 * Returns the path of the wrapper file.
-	 * 
-	 * @param localTraceNumber a {@code long}, local trace number.
-	 * @return a {@link Path}.
-	 */
-	public Path getWrapperFilePath(long localTraceNumber) {
-		return this.wrapperFilePathBuilder.apply(this.methodNumber, localTraceNumber);
-	}
-		
-	/**
-	 * Sets the path of the coverage file.
-	 * 
-	 * @param coverageFilePathBuilder A {@link Function} accepting as parameter a {@link Long}s, 
-	 *        a method number, and returning a {@link Path} for the coverage file for that method. 
-	 * @throws NullPointerException if {@code coverageFilePathBuilder == null}.
-	 */
-	public void setCoverageFilePathBuilder(Function<Long, Path> coverageFilePathBuilder) {
-		if (coverageFilePathBuilder == null) {
-			throw new NullPointerException();
-		}
-		this.coverageFilePathBuilder = coverageFilePathBuilder;
-	}
-	
-	/**
-	 * Returns the path of the coverage file.
-	 * 
-	 * @return a {@link Path}.
-	 */
-	public Path getCoverageFilePath() {
-		return this.coverageFilePathBuilder.apply(this.methodNumber);
-	}
-	
-	/**
-	 * Sets the path of the branches file.
-	 * 
-	 * @param branchesFilePathBuilder A {@link Function} accepting as parameter a {@link Long}s, 
-	 *        a method number, and returning a {@link Path} for the branches file for that method. 
-	 * @throws NullPointerException if {@code branchesFilePathBuilder == null}.
-	 */
-	public void setBranchesFilePathBuilder(Function<Long, Path> branchesFilePathBuilder) {
-		if (branchesFilePathBuilder == null) {
-			throw new NullPointerException();
-		}
-		this.branchesFilePathBuilder = branchesFilePathBuilder;
-	}
-	
-	/**
-	 * Returns the path of the branches file.
-	 * 
-	 * @return a {@link Path}.
-	 */
-	public Path getBranchesFilePath() {
-		return this.branchesFilePathBuilder.apply(this.methodNumber);
-	}
-	
-	/**
-	 * Sets the path of the traces file.
-	 * 
-	 * @param tracesFilePathBuilder A {@link Function} accepting as parameter a {@link Long}s, 
-	 *        a method number, and returning a {@link Path} for the traces file for that method. 
-	 * @throws NullPointerException if {@code tracesFilePathBuilder == null}.
-	 */
-	public void setTracesFilePathBuilder(Function<Long, Path> tracesFilePathBuilder) {
-		if (tracesFilePathBuilder == null) {
-			throw new NullPointerException();
-		}
-		this.tracesFilePathBuilder = tracesFilePathBuilder;
-	}
-	
-	/**
-	 * Returns the path of the traces file.
-	 * 
-	 * @return a {@link Path}.
-	 */
-	public Path getTracesFilePath() {
-		return this.tracesFilePathBuilder.apply(this.methodNumber);
-	}
-	
-	/**
-	 * Relevant only when {@link #setStepShowMode(StepShowMode)}
-	 * is set to {@link StepShowMode#LEAVES} or 
-	 * {@link StepShowMode#SUMMARIES} to further filter
-	 * which leaves/summaries must be shown.
-	 * 
-	 * @param show {@code true} iff the leaves/summaries 
-	 *        of safe traces must be shown.
-	 */
-	public void setShowSafe(boolean show) {
-		if (show) {
-			this.tracesToShow.add(TraceTypes.SAFE);
-		} else {
-			this.tracesToShow.remove(TraceTypes.SAFE);
-		}
-	}
-	
-	/**
-	 * Relevant only when {@link #setStepShowMode(StepShowMode)}
-	 * is set to {@link StepShowMode#LEAVES} or 
-	 * {@link StepShowMode#SUMMARIES} to further filter
-	 * which leaves/summaries must be shown.
-	 * 
-	 * @param show {@code true} iff the leaves/summaries 
-	 *        of unsafe traces must be shown.
-	 */
-	public void setShowUnsafe(boolean show) {
-		if (show) {
-			this.tracesToShow.add(TraceTypes.UNSAFE);
-		} else {
-			this.tracesToShow.remove(TraceTypes.UNSAFE);
-		}
-	}
-	
-	/**
-	 * Relevant only when {@link #setStepShowMode(StepShowMode)}
-	 * is set to {@link StepShowMode#LEAVES} or 
-	 * {@link StepShowMode#SUMMARIES} to further filter
-	 * which leaves/summaries must be shown.
-	 * 
-	 * @param show {@code true} iff the leaves/summaries 
-	 *        of contradictory traces must be shown.
-	 */
-	public void setShowContradictory(boolean show) {
-		if (show) {
-			this.tracesToShow.add(TraceTypes.CONTRADICTORY);
-		} else {
-			this.tracesToShow.remove(TraceTypes.CONTRADICTORY);
-		}
-	}
-	
-	/**
-	 * Relevant only when {@link #setStepShowMode(StepShowMode)}
-	 * is set to {@link StepShowMode#LEAVES} or 
-	 * {@link StepShowMode#SUMMARIES} to further filter
-	 * which leaves/summaries must be shown.
-	 * 
-	 * @param show {@code true} iff the leaves/summaries 
-	 *        of out of scope traces must be shown.
-	 */
-	public void setShowOutOfScope(boolean show) {
-		if (show) {
-			this.tracesToShow.add(TraceTypes.OUT_OF_SCOPE);
-		} else {
-			this.tracesToShow.remove(TraceTypes.OUT_OF_SCOPE);
-		}
-	}
-	
-	/**
-	 * Relevant only when {@link #setStepShowMode(StepShowMode)}
-	 * is set to {@link StepShowMode#LEAVES} or 
-	 * {@link StepShowMode#SUMMARIES} to further filter
-	 * which leaves/summaries must be shown.
-	 * 
-	 * @param show {@code true} iff the leaves/summaries 
-	 *        of unmanageable traces must be shown.
-	 */
-	public void setShowUnmanageable(boolean show) {
-		if (show) {
-			this.tracesToShow.add(TraceTypes.UNMANAGEABLE);
-		} else {
-			this.tracesToShow.remove(TraceTypes.UNMANAGEABLE);
-		}
-	}
-	
-	/**
-	 * Returns the traces types to be shown.
-	 * 
-	 * @return an {@link EnumSet}{@code <}{@link TraceTypes}{@code >}
-	 *         containing the trace types to be shown.
-	 */
-	public EnumSet<TraceTypes> getTracesToShow() {
-	    return this.tracesToShow.clone();
-	}
-	
-	/**
-	 * Sets the state output format mode. 
-	 * 
-	 * @param stateFormatMode A {@link StateFormatMode} 
-	 *        representing the output format mode of the
-	 *        states, or {@code null} if nothing must be
-	 *        emitted.
-	 */
-	public void setStateFormatMode(StateFormatMode stateFormatMode) { 
-		this.stateFormatMode = stateFormatMode; 
-	}
-	
-	/**
-	 * Gets the state output format mode.
-	 * 
-	 * @return A {@link StateFormatMode}.
-	 */
-	public StateFormatMode getStateFormatMode() {
-	    return this.stateFormatMode;
+	public RunnerParameters getGuidanceDriverParameters(CalculatorRewriting calc) {
+	    final RunnerParameters retVal;
+	    if (isGuided()) {
+	        retVal = this.runnerParameters.clone();
+	        retVal.setMethodSignature(this.driverSignature.getClassName(), this.driverSignature.getDescriptor(), this.driverSignature.getName());
+	        retVal.setCalculator(calc);
+	        try {
+	            retVal.setDecisionProcedure(new DecisionProcedureAlgorithms(new DecisionProcedureClassInit(new DecisionProcedureAlwSat(calc), new ClassInitRulesRepo())));
+	        } catch (InvalidInputException e) {
+	            //this should never happen
+	            throw new UnexpectedInternalException(e);
+	        }
+	        retVal.setStateIdentificationMode(StateIdentificationMode.COMPACT);
+	        retVal.setBreadthMode(BreadthMode.MORE_THAN_ONE);
+	        retVal.setIdentifierSubregionRoot();
+	    } else {
+	        retVal = null;
+	    }
+	    return retVal;
 	}
 
 	/**
@@ -1486,87 +1491,6 @@ public final class JBSEParameters implements Cloneable {
 		this.driverSignature = null;
 	}
 	
-	/**
-	 * Tests whether the symbolic execution is guided.
-	 * 
-	 * @return {@code true} iff the symbolic execution is guided.
-	 */
-	public boolean isGuided() {
-		return this.guided;
-	}
-
-	/**
-	 * Returns a new {@link RunnerParameters} that can be used
-	 * to run a conservative repOk method.
-	 * 
-	 * @return a new instance of {@link RunnerParameters}.
-	 */
-	public RunnerParameters getConservativeRepOkDriverParameters(DecisionProcedureAlgorithms dec) {
-		final RunnerParameters retVal = this.runnerParameters.clone();
-		retVal.setDecisionProcedure(dec);
-		retVal.setStateIdentificationMode(StateIdentificationMode.COMPACT);
-		retVal.setBreadthMode(BreadthMode.MORE_THAN_ONE);
-		/* TODO should be:
-		 * retVal.setHeapScopeUnlimited();
-		 * retVal.setDepthScopeUnlimited();
-		 * retVal.setCountScopeUnlimited();
-		 */
-		retVal.setHeapScopeComputed(this.concretizationHeapScope);
-		retVal.setDepthScope(this.concretizationDepthScope);
-		retVal.setCountScope(this.concretizationCountScope);
-		retVal.setIdentifierSubregionRoot();
-		return retVal;
-	}
-	
-	//TODO move these two methods, and do not use cloning but set all the parameters in a predictable way.
-
-	/**
-	 * Returns a new {@link RunnerParameters} that can be used
-	 * to run a concretization method (sets only scopes).
-	 * 
-	 * @return a new instance of {@link RunnerParameters}.
-	 */
-	public RunnerParameters getConcretizationDriverParameters() {
-		final RunnerParameters retVal = this.runnerParameters.clone();
-		retVal.setStateIdentificationMode(StateIdentificationMode.COMPACT);
-		retVal.setBreadthMode(BreadthMode.MORE_THAN_ONE);
-		retVal.setHeapScopeComputed(this.concretizationHeapScope);
-		retVal.setDepthScope(this.concretizationDepthScope);
-		retVal.setCountScope(this.concretizationCountScope);
-		retVal.setIdentifierSubregionRoot();
-		return retVal;
-	}
-
-	/**
-	 * Returns a new {@link RunnerParameters} that can be used
-	 * to run the guidance driver method.
-	 * 
-	 * @param calc the {@link CalculatorRewriting} to be used by the decision procedure.
-	 * @return a new instance of {@link RunnerParameters}, 
-	 * or {@code null} iff {@link #isGuided()} {@code == false}.
-	 * @throws InvalidInputException if {@code calc == null}.
-	 */
-	public RunnerParameters getGuidanceDriverParameters(CalculatorRewriting calc) {
-	    final RunnerParameters retVal;
-	    if (isGuided()) {
-	        retVal = this.runnerParameters.clone();
-	        retVal.setMethodSignature(this.driverSignature.getClassName(), this.driverSignature.getDescriptor(), this.driverSignature.getName());
-	        retVal.setCalculator(calc);
-	        try {
-	            retVal.setDecisionProcedure(new DecisionProcedureAlgorithms(new DecisionProcedureClassInit(new DecisionProcedureAlwSat(calc), new ClassInitRulesRepo())));
-	        } catch (InvalidInputException e) {
-	            //this should never happen
-	            throw new UnexpectedInternalException(e);
-	        }
-	        retVal.setStateIdentificationMode(StateIdentificationMode.COMPACT);
-	        retVal.setBreadthMode(BreadthMode.MORE_THAN_ONE);
-	        retVal.setIdentifierSubregionRoot();
-	    } else {
-	        retVal = null;
-	    }
-	    return retVal;
-	}
-
 	@SuppressWarnings("unchecked")
 	@Override 
 	public JBSEParameters clone() {

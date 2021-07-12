@@ -335,10 +335,10 @@ public class Main {
 	}
 	
     /**
-     * Applies a {@link ParametersModifier} to an {@link Options} object.
+     * Applies a {@link OptionsConfigurator} to an {@link Options} object.
      * 
      * @param options an {@link Options} object. It must contain the information
-     *        about the {@link ParametersModifier} that will be applied to 
+     *        about the {@link OptionsConfigurator} that will be applied to 
      *        configure it.
      */
     private static void configureOptions(Options options) {
@@ -353,19 +353,19 @@ public class Main {
 			System.err.println("Parameters modifier class home folder " + options.getParametersModifierPath() + " not found: " + e);
 			return; 
 		}
-    	final ParametersModifier modi;
+    	final OptionsConfigurator modi;
 	    try {
 	    	@SuppressWarnings("resource")
 			final URLClassLoader loader = new URLClassLoader(new URL[] { url });
-	    	final Class<? extends ParametersModifier> clazz =  
+	    	final Class<? extends OptionsConfigurator> clazz =  
 	            loader.loadClass(options.getParametersModifierClassname()).
-	            asSubclass(ParametersModifier.class);
+	            asSubclass(OptionsConfigurator.class);
             modi = clazz.newInstance();
 	    } catch (ClassNotFoundException e) {
 	    	System.err.println("Parameters modifier class " + options.getParametersModifierClassname() + " not found: " + e);
 			return; 
 	    } catch (ClassCastException e) {
-	    	System.err.println("Parameters modifier class " + options.getParametersModifierClassname() + " not a subclass of " + ParametersModifier.class.getCanonicalName() + ": " + e);
+	    	System.err.println("Parameters modifier class " + options.getParametersModifierClassname() + " not a subclass of " + OptionsConfigurator.class.getCanonicalName() + ": " + e);
 			return; 
 	    } catch (InstantiationException e) {
 	    	System.err.println("Parameters modifier class " + options.getParametersModifierClassname() + " cannot be instantiated or has no nullary constructor: " + e);
@@ -374,7 +374,6 @@ public class Main {
 			System.err.println("Parameters modifier class " + options.getParametersModifierClassname() + " constructor is not visible: " + e);
 			return; 
 		}
-    	modi.modify(options);
-    	options.setParametersModifier(modi);
+    	modi.configure(options);
    }
 }

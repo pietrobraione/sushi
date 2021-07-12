@@ -3,22 +3,54 @@ package sushi;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.spi.PathOptionHandler;
+import org.kohsuke.args4j.spi.PatternOptionHandler;
 
+import sushi.optionhandlers.HeapScopeOptionHandler;
 import sushi.optionhandlers.MultiPathOptionHandlerPatched;
 import sushi.optionhandlers.PhasesOptionHandler;
+import sushi.optionhandlers.RewritersOptionHandler;
 import sushi.optionhandlers.SignatureOptionHandler;
 
+/**
+ * The configuration options for SUSHI.
+ * 
+ * @author Pietro Braione
+ */
 public final class Options {
 	@Option(name = "-help",
 			usage = "Prints usage and exits",
 			help = true)
 	private boolean help = false;
+
+	@Option(name = "-log_level",
+			usage = "Logging level to be used: FATAL, ERROR, WARN, INFO, DEBUG")
+	private Level logLevel = Level.INFO;
+
+	@Option(name = "-verbose",
+			usage = "Produce verbose output of tools executions")
+	private boolean verbose = false;
+
+	@Option(name = "-options_config_path",
+			usage = "Path for the classfile of the parameters modifier",
+			handler = PathOptionHandler.class)
+	private Path paramsHome = Paths.get(".", "params");
+
+	@Option(name = "-options_config_class",
+			forbids = {"-target_class", "-target_method"},
+			depends = {"-options_config_path"},
+			usage = "Parameters modifier class name (default: none, either this or the -target_class option or the -target_method option must be specified)")
+	private String paramsClass;
 
 	@Option(name = "-classes",
 			usage = "Classpath of the project to analyze",
@@ -26,13 +58,13 @@ public final class Options {
 	private List<Path> classesPath;
 
 	@Option(name = "-target_method",
-			forbids = {"-target_class", "-params_modifier_class"},
+			forbids = {"-target_class", "-options_config_class"},
 			usage = "Java signature of the method for which the tests must be generated (default: none, either this or the -target_class option or the -params_modifier_class option must be specified)",
 			handler = SignatureOptionHandler.class)
 	private List<String> targetMethodSignature;
 
 	@Option(name = "-target_class",
-			forbids = {"-target_method", "-params_modifier_class"},
+			forbids = {"-target_method", "-options_config_class"},
 			usage = "Java signature of the class for which the tests must be generated (default: none, either this or the -target_method option or the -params_modifier_class option must be specified)")
 	private String targetClassSignature;
 
@@ -129,28 +161,54 @@ public final class Options {
 	@Option(name = "-num_mosa_targets",
 			usage = "Maximum number of target passed to a MOSA job")
 	private int numMOSATargets = 5;
-
-	@Option(name = "-log_level",
-			usage = "Logging level to be used: FATAL, ERROR, WARN, INFO, DEBUG")
-	private Level logLevel = Level.INFO;
-
-	@Option(name = "-verbose",
-			usage = "Produce verbose output of tools executions")
-	private boolean verbose = false;
-
-	@Option(name = "-params_modifier_path",
-			usage = "Path for the classfile of the parameters modifier",
-			handler = PathOptionHandler.class)
-	private Path paramsHome = Paths.get(".", "params");
-
-	@Option(name = "-params_modifier_class",
-			forbids = {"-target_class", "-target_method"},
-			depends = {"-params_modifier_path"},
-			usage = "Parameters modifier class name (default: none, either this or the -target_class option or the -target_method option must be specified)")
-	private String paramsClass;
 	
-	private ParametersModifier parametersModifier;
+	@Option(name = "-branches_to_ignore",
+			forbids = {"-branches_to_cover"},
+			usage = "A regular expression specifying which branches must be ignored for coverage. It is considered only when -cov is set to BRANCHES. It cannot be used with -branches_to_cover.",
+			handler = PatternOptionHandler.class)
+	private Pattern branchesToIgnore;
+	
+	@Option(name = "-branches_to_cover",
+			forbids = {"-branches_to_ignore"},
+			usage = "A regular expression specifying which branches must be considered for coverage. It is considered only when -cov is set to BRANCHES. It cannot be used with -branches_to_ignore.",
+			handler = PatternOptionHandler.class)
+	private Pattern branchesToCover;
+	
+	@Option(name = "-additional_evosuite_args",
+			usage = "A string that is appended as a set of additional args to the EvoSuite command line.")
+	private String additionalEvosuiteArgs;
+	
+	@Option(name = "-hex_files",
+			usage = "List of paths to HEX files",
+			handler = MultiPathOptionHandlerPatched.class)
+	private List<Path> hexFiles;
+	
+	@Option(name = "-heap_scope",
+			usage = "The heap scope of symbolic execution, as a sequence of pairs className=maxNumberOfInstances.",
+			handler = HeapScopeOptionHandler.class)
+	private Map<String, Integer> heapScope;
 
+	@Option(name = "-depth_scope",
+			usage = "The depth scope of symbolic execution; 0 means unlimited.")
+	private int depthScope = 0;
+
+	@Option(name = "-count_scope",
+			usage = "The count scope of symbolic execution; 0 means unlimited.")
+	private int countScope = 0;
+	
+	@Option(name = "-do_sign_analysis",
+			usage = "Whether the sign analysis decision procedure must be active.")
+	private boolean doSignAnalysis = false;
+	
+	@Option(name = "-do_equality_analysis",
+			usage = "Whether the equality analysis decision procedure must be active.")
+	private boolean doEqualityAnalysis = false;
+
+	@Option(name = "-rewriters",
+			usage = "The rewriters to apply in order to simplify numeric expressions.",
+			handler = RewritersOptionHandler.class)
+	private EnumSet<Rewriter> rewriters;
+	
 	public boolean isConsistent() {
 		if (this.paramsClass == null &&
 			this.targetClassSignature == null &&
@@ -164,8 +222,40 @@ public final class Options {
 		return this.help;
 	}
 
+	public Level getLogLevel() {
+		return this.logLevel;
+	}
+
+	public void setLogLevel(Level logLevel) {
+		this.logLevel = logLevel;
+	}
+
+	public boolean isVerbose() {
+		return this.verbose;
+	}
+
+	public void setVerbose(boolean verbose) {
+		this.verbose = verbose;
+	}
+
+	public Path getParametersModifierPath() {
+		return this.paramsHome;
+	}
+
+	public void setParametersModifierPath(Path paramsModifierPath) {
+		this.paramsHome = paramsModifierPath;
+	}
+
+	public String getParametersModifierClassname() {
+		return this.paramsClass;
+	}
+	
+	public void setParametersModifierClassname(String paramsModifierClassname) {
+		this.paramsClass = paramsModifierClassname;
+	}
+
 	public List<Path> getClassesPath() {
-		return this.classesPath;
+		return new ArrayList<>(this.classesPath);
 	}
 
 	public void setClassesPath(Path... paths) {
@@ -359,43 +449,114 @@ public final class Options {
 		this.numMOSATargets = numMOSATargets;
 	}
 
-	public Level getLogLevel() {
-		return this.logLevel;
-	}
-
-	public void setLogLevel(Level logLevel) {
-		this.logLevel = logLevel;
-	}
-
-	public boolean isVerbose() {
-		return this.verbose;
-	}
-
-	public void setVerbose(boolean verbose) {
-		this.verbose = verbose;
-	}
-
-	public Path getParametersModifierPath() {
-		return this.paramsHome;
-	}
-
-	public void setParametersModifierPath(Path paramsModifierPath) {
-		this.paramsHome = paramsModifierPath;
-	}
-
-	public String getParametersModifierClassname() {
-		return this.paramsClass;
+	public Pattern getBranchesToIgnore() {
+		return this.branchesToIgnore;
 	}
 	
-	public void setParametersModifierClassname(String paramsModifierClassname) {
-		this.paramsClass = paramsModifierClassname;
+	public void setBranchesToIgnore(String branchesToIgnore) {
+		this.branchesToIgnore = Pattern.compile(branchesToIgnore);
+		this.branchesToCover = null;
 	}
 	
-	public ParametersModifier getParametersModifier() {
-		return this.parametersModifier;
+	public Pattern getBranchesToCover() {
+		return this.branchesToCover;
+	}
+
+	public void setBranchesToCover(String branchesToCover) {
+		this.branchesToIgnore = null;
+		this.branchesToCover = Pattern.compile(branchesToCover);
 	}
 	
-	void setParametersModifier(ParametersModifier parametersModifier) {
-		this.parametersModifier = parametersModifier;
+	public List<String> getAdditionalEvosuiteArgs() {
+		return Arrays.asList(this.additionalEvosuiteArgs.split(" "));
+	}
+
+	public void setAdditionalEvosuiteArgs(String additionalEvosuiteArgs) {
+		this.additionalEvosuiteArgs = additionalEvosuiteArgs;
+	}
+	
+	public List<Path> getHEXFiles() {
+		return new ArrayList<>(this.hexFiles);
+	}
+	
+	public void setHEXFiles(Path... hexFiles) {
+		this.hexFiles = Arrays.asList(hexFiles);
+	}
+	
+	public Map<String, Integer> getHeapScope() {
+		if (this.heapScope == null) {
+			return new HashMap<>();
+		} else {
+			return new HashMap<>(this.heapScope);
+		}
+	}
+
+	public void setHeapScope(String className, int heapScope) {
+		if (this.heapScope == null) {
+			this.heapScope = new HashMap<>();
+		}
+		this.heapScope.put(className, Integer.valueOf(heapScope)); 
+	}
+
+	public void setHeapScopeUnlimited(String className) { 
+		if (this.heapScope == null) {
+			return;
+		}
+		this.heapScope.remove(className); 
+	}
+
+	public void setHeapScopeUnlimited() { 
+		if (this.heapScope == null) {
+			return;
+		}
+		this.heapScope.clear(); 
+	}
+	
+    public int getDepthScope() {
+        return this.depthScope;
+    }
+
+    public void setDepthScope(int depthScope) { 
+        this.depthScope = depthScope; 
+    }
+
+    public void setDepthScopeUnlimited() { 
+        this.depthScope = 0; 
+    }
+
+    public int getCountScope() {
+        return this.countScope;
+    }
+	
+    public void setCountScope(int countScope) { 
+        this.countScope = countScope; 
+    }
+
+    public void setCountScopeUnlimited() { 
+        this.countScope = 0; 
+    }
+	
+	public boolean getDoSignAnalysis() {
+		return this.doSignAnalysis;
+	}
+	
+	public void setDoSignAnalysis(boolean doSignAnalysis) {
+		this.doSignAnalysis = doSignAnalysis;
+	}
+
+	public boolean getDoEqualityAnalysis() {
+		return this.doEqualityAnalysis;
+	}
+	
+	public void setDoEqualityAnalysis(boolean doEqualityAnalysis) {
+		this.doEqualityAnalysis = doEqualityAnalysis;
+	}
+	
+	public EnumSet<Rewriter> getRewriters() {
+		return this.rewriters.clone();
+	}
+	
+	public void setRewriters(Rewriter rewriter, Rewriter... rewriters) {
+		this.rewriters = EnumSet.of(rewriter, rewriters);
 	}
 }

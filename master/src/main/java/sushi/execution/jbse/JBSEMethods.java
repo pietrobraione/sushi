@@ -53,6 +53,7 @@ public final class JBSEMethods extends JBSEAbstract {
 		p.setShowUnsafe(true);
 		p.setShowOutOfScope(false);
 		p.setShowContradictory(false);
+		p.setShowUnmanageable(false);
 		return p;
 	}
 	

@@ -4,7 +4,7 @@
 
 SUSHI is an automatic test case generator for Java programs, aimed at achieving high branch coverage. It leverages a technique called symbolic execution, performed with the symbolic executor [JBSE](http://pietrobraione.github.io/jbse/), to calculate from a program path that reaches a branch a *path constraint*, i.e., a constraint on the program inputs that, when satisfied, allows to cover the path. To solve path constraints and generate the corresponding tests SUSHI transforms path constraints in search problems and feeds by them the search-based test case generator [EvoSuite](http://www.evosuite.org/).
 
-The main advantage of SUSHI is its ability of generating test inputs including complex data structures This allows, for instance, to automatically test compiler passes that take parse trees as inputs.
+The main advantage of SUSHI is its ability of generating test inputs including complex data structures. This allows, for instance, to automatically test compiler passes that take parse trees as inputs.
 
 ## Installing SUSHI
 

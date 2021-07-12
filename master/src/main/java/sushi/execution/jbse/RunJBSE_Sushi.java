@@ -75,7 +75,6 @@ import jbse.val.Rewriter;
 import jbse.val.Simplex;
 import jbse.val.Value;
 import sushi.execution.jbse.JBSEParameters.DecisionProcedureCreationStrategy;
-import sushi.execution.jbse.JBSEParameters.DecisionProcedureType;
 import sushi.execution.jbse.JBSEParameters.StateFormatMode;
 import sushi.execution.jbse.JBSEParameters.TraceTypes;
 import sushi.formatters.FormatterSushi;
@@ -606,33 +605,14 @@ public class RunJBSE_Sushi {
 		
 		try {
 			//wraps cores with external numeric decision procedure
-			final DecisionProcedureType type = this.parameters.getDecisionProcedureType();
-			if (type == DecisionProcedureType.Z3) {
-				final String switchChar = System.getProperty("os.name").toLowerCase().contains("windows") ? "/" : "-";
-				final ArrayList<String> z3CommandLine = new ArrayList<>();
-				z3CommandLine.add(path == null ? "z3" : path.toString());
-				z3CommandLine.add(switchChar + "smt2");
-				z3CommandLine.add(switchChar + "in");
-				z3CommandLine.add(switchChar + "t:10");
-				core = new DecisionProcedureSMTLIB2_AUFNIRA(core, z3CommandLine);
-				coreNumeric = (needHeapCheck ? new DecisionProcedureSMTLIB2_AUFNIRA(coreNumeric, z3CommandLine) : null);
-			} else if (type == DecisionProcedureType.CVC4) {
-				final ArrayList<String> cvc4CommandLine = new ArrayList<>();
-				cvc4CommandLine.add(path == null ? "cvc4" : path.toString());
-				cvc4CommandLine.add("--lang=smt2");
-				cvc4CommandLine.add("--output-lang=smt2");
-				cvc4CommandLine.add("--no-interactive");
-				cvc4CommandLine.add("--incremental");
-				cvc4CommandLine.add("--tlimit-per=10000");
-				core = new DecisionProcedureSMTLIB2_AUFNIRA(core, cvc4CommandLine);
-				coreNumeric = (needHeapCheck ? new DecisionProcedureSMTLIB2_AUFNIRA(coreNumeric, cvc4CommandLine) : null);
-			} else {
-				core.close();
-				if (coreNumeric != null) {
-					coreNumeric.close();
-				}
-				throw new CannotBuildDecisionProcedureException("Wrong decision procedure type " + type);
-			}
+			final String switchChar = System.getProperty("os.name").toLowerCase().contains("windows") ? "/" : "-";
+			final ArrayList<String> z3CommandLine = new ArrayList<>();
+			z3CommandLine.add(path == null ? "z3" : path.toString());
+			z3CommandLine.add(switchChar + "smt2");
+			z3CommandLine.add(switchChar + "in");
+			z3CommandLine.add(switchChar + "t:10");
+			core = new DecisionProcedureSMTLIB2_AUFNIRA(core, z3CommandLine);
+			coreNumeric = (needHeapCheck ? new DecisionProcedureSMTLIB2_AUFNIRA(coreNumeric, z3CommandLine) : null);
 
 			//further wraps cores with sign analysis, if required
 			if (this.parameters.getDoSignAnalysis()) {

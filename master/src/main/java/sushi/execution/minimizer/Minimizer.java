@@ -23,13 +23,7 @@ public class Minimizer extends Tool<MinimizerParameters> {
 		p.setNumberOfTasks(this.options.getParallelismEvosuite() / this.options.getRedundanceEvosuite());
 		p.setTimeout(this.options.getMinimizerBudget());
 		
-		setUserDefinedParameters(p);
-		
 		return p;
-	}
-	
-	private void setUserDefinedParameters(MinimizerParameters p) {
-		this.options.getParametersModifier().modify(p);
 	}
 	
 	@Override
