@@ -200,7 +200,7 @@ If you want to run SUSHI on the pre-built sushi-experiments subjects included in
     
 or you can invoke the launcher as follows:
 
-    $ java -cp ${CLASSPATH}:/root/sushi-experiments/bin avl.RunAvl
+    $ java -cp ${CLASSPATH}:/root/sushi-experiments/bin avl.RunAvlAccurate
     
 See the `README.md` file of the sushi-experiment project for more information on where the configurators and the launchers are. SUSHI will put the generated tests in `/root/sushi-experiments/sushi-test` and the intermediate files in a subdirectory of `/root/sushi-experiments/sushi-out`.
 
