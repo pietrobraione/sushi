@@ -21,7 +21,7 @@ Alternatively, download the `Dockerfile` to the current directory and from the c
     $ docker build -t sushi .
     $ docker run -it sushi
    
-The resulting environment is an Ubuntu container, where at the current (`/root`) directory you will find a clone of the head revision of the master branch of the SUSHI and of the [sushi-experiments](https://github.com/pietrobraione/sushi-experiments) repositories. On the path you will find a `sushi` command that alleviates the need of invoking Java and passing most of the command line parameters (see the "Usage" section below). The `sushi` script is at `/usr/local/bin` in the case you want to study it.
+The resulting environment is an Ubuntu container, where at the current (`/root`) directory you will find a clone of the head revision of the master branch of the SUSHI and of the [sushi-experiments](https://github.com/pietrobraione/sushi-experiments) repositories.
 
 ## Building SUSHI
 
@@ -106,36 +106,49 @@ If you deploy the `sushi-master-<VERSION>-shaded.jar` uber-jar you do not need t
 
 ## Usage
 
-Compile the target program with the debug symbols, then launch SUSHI from the command line as follows:
+Compile the target program with the debug symbols, then launch SUSHI either from the command line or from another program, e.g., from the `main` of an application. In the first case you need to invoke it as follows:
 
     $ java -Xms16G -Xmx16G -cp <classpath> -Djava.library.path=<nativeLibraryPath> sushi.Main <options>
 
-where `<classpath>` and `<nativeLibraryPath>` must be set according to the indications of the previous section. Under the Docker container we have provided a more convenient `sushi` script that invokes java, passes the classpath and the native library path and some of the indispensable options, so you can invoke SUSHI as follows:
+where `<classpath>` and `<nativeLibraryPath>` must be set according to the indications of the previous section. (Note that SUSHI is resource-consuming, thus we increased to 16 GB the memory allocated to the JVM running it).
 
-    $ sushi <options>
+If you prefer to invoke SUSHI programmatically, this is a possible template of a launcher class:
 
-If you launch SUSHI without options it will print a help screen that lists all the available options. The indispensable ones, that you *must* set in order for SUSHI to work, are:
+```Java
+import sushi.Main;
+import sushi.Options;
 
-* `-java8_home`: the path to the home directory of a Java 8 full JDK setup, in case the default JDK installed on the deploy platform should be overridden. If this parameter is not provided, SUSHI will try with the default JDK installed on the deploy platform.
-* `-evosuite`: the path to the EvoSuite jar file from the `libs` directory.
-* `-jbse_lib`: this must be set to the path of the JBSE jar file from the `jbse/build/libs` directory. It must be the same you put in the classpath. If you chose to deploy the `sushi-master-<VERSION>-shaded.jar` uber-jar, set this option to point to it.
-* `-sushi_lib`: this must be set to the path of the SUSHI-Lib jar file from the `runtime/build/libs` directory. If you chose to deploy the `sushi-master-<VERSION>-shaded.jar` uber-jar, set this option to point to it.
-* `-z3`:  the path to the Z3 binary.
-* `-classes`: a colon- or semicolon-separated (depending on the OS) list of paths; It is the classpath of the software under test.
-* `-target_class`: the name in [internal classfile format](https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.2.1) of the class to test: SUSHI will generate tests for all the methods in the class. Or alternatively:
-* `-target_method`: the signature of a method to test. The signature is a colon-separated list of: the name of the container class in internal classfile format; the [descriptor](https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.3.3) of the method; the name of the method. You can use the `javap` command, included with every JDK setup, to obtain the internal format signatures of methods: `javap -s my.Class` prints the list of all the methods in `my.Class` with their signatures in internal format.
-* `-tmp_base`: a path to a temporary directory; SUSHI needs to create many intermediate files, and will put them in a subdirectory of the one that you specify with this option. The subdirectory will have as name the date and time when SUSHI was launched.
-* `-out`: a path to a directory where SUSHI will put the generated tests.
-* `-evosuite_no_dependency`: when active, the generated test classes will not depend on the EvoSuite jar (i.e., no scaffolding class will be generated).
+public final class Launcher {
+  public static void main(String[] args) {
+    final Options o = new Options();
+    o.setZ3Path(...);
+    o.setTargetClass(...);
+    ...
+    final Main m = new Main(o);
+    m.start();
+  }
+}
+```
 
-If you are using the `sushi` script under the Docker environment, you do not need to pass the `-java8_home`, `-evosuite`, `-jbse_lib`, `-sushi_lib` and `-z3` options - the script does it already.
+The launcher must create a `sushi.Options` object, configure it with the necessary options, then it must create a `sushi.Main` object and pass to its constructor the previously configured `sushi.Options` object. Finally, it must invoke the `sushi.Main.start()` method. Note that the command line SUSHI launcher is not much different from this example, the main difference being that the command line launcher parses the command line arguments to create the `sushi.Options` object.
 
-An alternative way to configure SUSHI is to define a subclass of the class `sushi.configure.ParametersModifier` contained in the runtime subproject. The subclass should override one or more of the `modify` methods that receive as input a  parameter object, and modify the object by setting the parameters of interest. In this case SUSHI must be invoked by specifying the following options:
+Shall you launch SUSHI via the command line or programmatically, you will need to set a number of options for it to work. The indispensable ones, that you *must* set in order to obtain any result, are:
 
-* `-params_modifier_path`: the path where your custom subclass of  `sushi.configure.ParametersModifier` is.
-* `-params_modifier_class`: the name of your custom subclass of  `sushi.configure.ParametersModifier`.
+* `-java8_home` (command line) or `setJava8Home` (`sushi.Options`): the path to the home directory of a Java 8 full JDK setup, in case the default JDK installed on the deploy platform is not Java 8, or should be overridden. If this parameter is not provided, SUSHI will try with the default JDK installed on the deploy platform.
+* `-evosuite` (command line) or `setEvosuitePath` (`sushi.Options`): the path to the EvoSuite jar file `evosuite-shaded-1.0.6-SNAPSHOT.jar` contained in the `libs/` folder.
+* `-jbse_lib` (command line) or `setJBSELibraryPath` (`sushi.Options`): this must be set to the path of the JBSE jar file from the `jbse/build/libs` directory. It must be the same you put in the classpath. If you chose to deploy the `sushi-master-<VERSION>-shaded.jar` uber-jar, set this option to point to it.
+* `-sushi_lib` (command line) or `setSushiLibPath` (`sushi.Options`): this must be set to the path of the SUSHI-Lib jar file from the `runtime/build/libs` directory. If you chose to deploy the `sushi-master-<VERSION>-shaded.jar` uber-jar, set this option to point to it.
+* `-z3` (command line) or `setZ3Path` (`sushi.Options`):  the path to the Z3 binary.
+* `-classes` (command line) or `setClassesPath` (`sushi.Options`): a colon- or semicolon-separated (depending on the OS) list of paths; It is the classpath of the software under test.
+* `-target_class` (command line) or `setTargetClass` (`sushi.Options`): the name in [internal classfile format](https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.2.1) of the class to test: SUSHI will generate tests for all the methods in the class. Or alternatively:
+* `-target_method` (command line) or `setTargetMethod` (`sushi.Options`): the signature of a method to test. The signature is a colon-separated list of: the name of the container class in internal classfile format; the [descriptor](https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.3.3) of the method; the name of the method. You can use the `javap` command, included with every JDK setup, to obtain the internal format signatures of methods: `javap -s my.Class` prints the list of all the nonprivate methods in `my.Class` with their signatures in internal format.
+* `-tmp_base` (command line) or `setTmpDirectoryBase` (`sushi.Options`): a path to a temporary directory; SUSHI needs to create many intermediate files, and will put them in a subdirectory of the one that you specify with this option. The subdirectory will have as name the date and time when SUSHI was launched.
+* `-out` (command line) or `setOutDirectory` (`sushi.Options`): a path to a directory where SUSHI will put the generated tests.
+* `-evosuite_no_dependency` (command line) or `setEvosuiteNoDependency` (`tardis.Options`): when active, the generated test classes will not depend on the EvoSuite jar (i.e., no scaffolding class will be generated).
 
-You will find examples of this way of configuring SUSHI in the [sushi-experiments](https://github.com/pietrobraione/sushi-experiments), [sushi-experiments-closure01](https://github.com/pietrobraione/sushi-experiments-closure01) and [sushi-experiments-closure72](https://github.com/pietrobraione/sushi-experiments-closure72) projects. A possible example of command line is the following:
+There are many more options that allow to control several aspects of SUSHI behaviour. You can see a synthetic description of all of them by invoking SUSHI from the command line with the `-help` option.
+
+A possible example of command line is the following:
 
     $ java -Xms16G -Xmx16G -cp /usr/lib/jvm/java-8-openjdk-amd64/lib/tools.jar:/usr/share/java/glpk-java.jar:./libs/sushi-master-0.2.0-SNAPSHOT.jar:./libs/sushi-lib-0.2.0-SNAPSHOT.jar:./libs/jbse-0.10.0-SNAPSHOT-shaded.jar:./libs/args4j-2.32.jar:./libs/ojalgo-48.0.0.jar -Djava.library.path=/usr/lib/jni sushi.Main -jbse_lib ./libs/jbse-0.10.0-SNAPSHOT-shaded.jar -sushi_lib ./libs/sushi-lib-0.2.0-SNAPSHOT.jar -evosuite ./libs/evosuite-shaded-1.0.6-SNAPSHOT.jar -z3 /usr/bin/z3 -classes ./my-application/bin -target_class my/Class -tmp_base ./tmp -out ./tests
     
@@ -143,17 +156,53 @@ where we assume that all the jars except for `tools.jar` and `glpk-java.jar` are
 
     $ java -Xms16G -Xmx16G -cp /usr/lib/jvm/java-8-openjdk-amd64/lib/tools.jar:/usr/share/java/glpk-java.jar:./libs/sushi-master-0.2.0-SNAPSHOT-shaded.jar -Djava.library.path=/usr/lib/jni sushi.Main -jbse_lib ./libs/sushi-master-0.2.0-SNAPSHOT-shaded.jar -sushi_lib ./libs/sushi-master-0.2.0-SNAPSHOT-shaded.jar -evosuite ./libs/evosuite-shaded-1.0.6-SNAPSHOT.jar -z3 /usr/bin/z3 -classes ./my-application/bin -target_class my/Class -tmp_base ./tmp -out ./tests
     
+There is a third way of launching SUSHI that mixes the two approaches: You can launch it from the command line, but by configuring the options through an object of class `sushi.Options`. At the purpose you must define a class implementing the interface `sushi.OptionsConfigurator`. This interface declares only one method `configure`, that you must override to configure a `sushi.Options` object as in the following example:
+
+```Java
+import sushi.Options;
+import sushi.OptionsConfigurator;
+
+public final class MyConfigurator implements OptionsConfigurator {
+  @Override
+  public void configure(Options o) {
+    o.setZ3Path(...);
+    o.setTargetClass(...);
+    ...
+  }
+}
+```
+
+As you can see, the resulting code resembles that of a SUSHI launcher, but you do not need to explicitly create the `sushi.Options` object (it is received as a parameter) nor to create the `sushi.Main` object and start it. Once created your configurator class, compile it (remember to put the `sushi-master` jar in the compilation classpath), put the generated classfile where you prefer and invoke SUSHI as follows:
+
+    $ java -Xms16G -Xmx16G -cp /usr/lib/jvm/java-8-openjdk-amd64/lib/tools.jar:/usr/share/java/glpk-java.jar:./libs/sushi-master-0.2.0-SNAPSHOT.jar:./libs/sushi-lib-0.2.0-SNAPSHOT.jar:./libs/jbse-0.10.0-SNAPSHOT-shaded.jar:./libs/args4j-2.32.jar:./libs/ojalgo-48.0.0.jar -Djava.library.path=/usr/lib/jni sushi.Main -options_config_path ./my-config -options_config_class MyConfigurator
+
+(here we assume that we put the `MyConfigurator.class` classfile in the `./my-config` directory). You will find examples of both launcher and configurator classes in the [sushi-experiments](https://github.com/pietrobraione/sushi-experiments), [sushi-experiments-closure01](https://github.com/pietrobraione/sushi-experiments-closure01) and [sushi-experiments-closure72](https://github.com/pietrobraione/sushi-experiments-closure72) projects. 
+
 ### Running SUSHI from the Docker environment
 
-Under the Docker environment the previous example command would be very shorter:
+Under the Docker environment you can find a more convenient `sushi` script that is installed on the `PATH`. When invoked, it runs java, passes to it the classpath and some of the indispensable options, and starts `sushi.Main`. This allows you to invoke SUSHI as follows:
+
+    $ sushi <options>
+
+relieving you from most of the command line boilerplate. More precisely, you do not need to pass the `-java8_home`, `-evosuite`, `-jbse_lib`, `-sushi_lib` and `-z3` options, because the script does it already for you. This way the previous example commands become much shorter:
 
     $ sushi -classes ./my-application/bin -target_class my/Class -tmp_base ./tmp -out ./tests
 
-If you want to run SUSHI on the sushi-experiments subjects included in the Docker image you can exploit the settings classes included in the project. For instance, if you want to generate tests for the AVL tree example with accurate HEX invariants, run the following command from the `/root` directory:
+with the options on the command line, and
 
-    $ sushi -params_modifier_path sushi-experiments/bin -params_modifier_class avl_tree.settings.AvlTreeParametersAccurate
+    $ sushi -options_config_path ./my-config -options_config_class MyConfigurator
     
-SUSHI will put the generated tests in `/root/sushi-experiments/sushi-test` and the intermediate files in a subdirectory of `/root/sushi-experiments/sushi-out`.
+with the configurator classes. The `sushi` script is at `/usr/local/bin` in the case you want to study it.
+
+If you want to run SUSHI on the pre-built sushi-experiments subjects included in the Docker image you can exploit the configurators and the launchers included in the sushi-experiment project. For instance, if you want to generate tests for the AVL tree example with accurate HEX invariants, you can run the following command using the configurator:
+
+    $ sushi -options_config_path /root/sushi-experiments/bin -options_config_class avl.AvlConfiguratorAccurate
+    
+or you can invoke the launcher as follows:
+
+    $ java -cp ${CLASSPATH}:/root/sushi-experiments/bin avl.RunAvl
+    
+See the `README.md` file of the sushi-experiment project for more information on where the configurators and the launchers are. SUSHI will put the generated tests in `/root/sushi-experiments/sushi-test` and the intermediate files in a subdirectory of `/root/sushi-experiments/sushi-out`.
 
 ## Generated tests
 
