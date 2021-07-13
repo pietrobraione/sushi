@@ -29,11 +29,11 @@ RUN ln --symbolic ${GLPK_JNI_HOME} /usr/local/lib/jni
 RUN ./gradlew build
 RUN cp jbse/build/libs/jbse-0.10.0-SNAPSHOT-shaded.jar ${JARS_HOME}/.
 RUN cp master/build/libs/sushi-master-0.2.0-SNAPSHOT.jar ${JARS_HOME}/.
-RUN cp master/build/libs/args4j-2.32.jar ${JARS_HOME}/.
-RUN cp master/build/libs/ojalgo-48.0.0.jar ${JARS_HOME}/.
+RUN cp master/deps/args4j-2.32.jar ${JARS_HOME}/.
+RUN cp master/deps/ojalgo-48.0.0.jar ${JARS_HOME}/.
 RUN cp runtime/build/libs/sushi-lib-0.2.0-SNAPSHOT.jar ${JARS_HOME}/.
-RUN cp runtime/build/libs/asm-debug-all-5.0.1.jar ${JARS_HOME}/.
-RUN cp runtime/build/libs/org.jacoco.core-0.7.5.201505241946.jar ${JARS_HOME}/.
+RUN cp runtime/deps/asm-debug-all-5.0.1.jar ${JARS_HOME}/.
+RUN cp runtime/deps/org.jacoco.core-0.7.5.201505241946.jar ${JARS_HOME}/.
 RUN cp libs/evosuite-shaded-1.0.6-SNAPSHOT.jar ${JARS_HOME}/.
 
 # Create script
