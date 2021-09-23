@@ -29,7 +29,7 @@ SUSHI is composed by several projects, some of which are imported as git submodu
 
 ### Dependencies
 
-SUSHI has many dependencies. It must be built using a JDK version 8 - neither less, nor more. We suggest to use the latest [AdoptOpenJDK](https://adoptopenjdk.net/) v8 with HotSpot JVM (note that the JDK with the OpenJ9 JVM currently does not work, because there are some slight differences in the standard library classes). The Gradle wrapper `gradlew` included in the repository will take care to select the right version of Java. Gradle will automatically resolve and use the following compile-time-only dependencies:
+SUSHI has many dependencies. It must be built using a JDK version 8 - neither less, nor more. We suggest to use the latest Eclipse Temurin from [Adoptium](https://adoptium.net/) v8 with HotSpot JVM (note that the JDK with the OpenJ9 JVM currently does not work, because there are some slight differences in the standard library classes). The Gradle wrapper `gradlew` included in the repository will take care to select the right version of Java. Gradle will automatically resolve and use the following compile-time-only dependencies:
 
 * [JavaCC](https://javacc.org) is used in the JBSE submodule for compiling the parser for the JBSE settings files.
 * [JUnit](http://junit.org) is used in the JBSE submodule for running the test suite that comes with JBSE (in future SUSHI might come with a test suite of its own).
@@ -67,7 +67,7 @@ Once installed GLPK-Java, you will (possibly) need to modify the `build.gradle` 
 
 ### Working under Eclipse
 
-If you want to build (and possibly modify) SUSHI by using (as we do) Eclipse 2021-06 for Java Developers, you are lucky: All the Eclipse plugins that are necessary to import and build SUSHI are already present in the distribution. The only caveat is that, since starting from version 2020-09 Eclipse requires at least Java 11 to run, your development machine will need to have both a Java 11 (to run Eclipse) and a Java 8 setup (to build JBSE and SUSHI). Gradle will automatically select the right version of the JDK when building SUSHI. If you use a different flavor, or an earlier version, of Eclipse you might need to install the egit and the Buildship plugins, both available from the Eclipse Marketplace. After that, to import SUSHI under Eclipse follow these steps:
+If you want to build (and possibly modify) SUSHI by using (as we do) the latest Eclipse for Java Developers, you are lucky: All the Eclipse plugins that are necessary to import and build SUSHI are already present in the distribution. The only caveat is that, since starting from version 2020-09 Eclipse requires at least Java 11 to run, your development machine will need to have both a Java 11 or greater (to run Eclipse) and a Java 8 setup (to build and run JBSE and SUSHI). Gradle will automatically select the right version of the JDK when building SUSHI. If you use a different flavor, or an earlier version, of Eclipse you might need to install the egit and the Buildship plugins, both available from the Eclipse Marketplace. After that, to import SUSHI under Eclipse follow these steps:
 
 * To avoid conflicts we advise to import SUSHI under an empty workspace.
 * Be sure that the default Eclipse JRE is the JRE subdirectory of a full JDK 8 setup, *not* a standalone (i.e., not part of a JDK) JRE.
