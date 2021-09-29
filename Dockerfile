@@ -34,11 +34,11 @@ RUN cp master/deps/ojalgo-48.0.0.jar ${JARS_HOME}/.
 RUN cp runtime/build/libs/sushi-lib-0.2.0-SNAPSHOT.jar ${JARS_HOME}/.
 RUN cp runtime/deps/asm-debug-all-5.0.1.jar ${JARS_HOME}/.
 RUN cp runtime/deps/org.jacoco.core-0.7.5.201505241946.jar ${JARS_HOME}/.
-RUN cp libs/evosuite-shaded-1.0.6-SNAPSHOT.jar ${JARS_HOME}/.
+RUN cp libs/evosuite-shaded-1.1.1-SNAPSHOT.jar ${JARS_HOME}/.
 
 # Create script
 RUN echo "#!/bin/sh" > /usr/local/bin/sushi
-RUN echo "java -Xms16G -Xmx16G -cp ${CLASSPATH} -Djava.library.path=${JNI_HOME} sushi.Main -evosuite ${JARS_HOME}/evosuite-shaded-1.0.6-SNAPSHOT.jar -jbse_lib ${JARS_HOME}/jbse-0.10.0-SNAPSHOT-shaded.jar -sushi_lib ${JARS_HOME}/sushi-lib-0.2.0-SNAPSHOT.jar -z3 ${Z3_HOME}/z3 \$@" >> /usr/local/bin/sushi
+RUN echo "java -Xms16G -Xmx16G -cp ${CLASSPATH} -Djava.library.path=${JNI_HOME} sushi.Main -evosuite ${JARS_HOME}/evosuite-shaded-1.1.1-SNAPSHOT.jar -jbse_lib ${JARS_HOME}/jbse-0.10.0-SNAPSHOT-shaded.jar -sushi_lib ${JARS_HOME}/sushi-lib-0.2.0-SNAPSHOT.jar -z3 ${Z3_HOME}/z3 \$@" >> /usr/local/bin/sushi
 RUN chmod +x /usr/local/bin/sushi
 
 # Get some examples and compile them
