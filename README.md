@@ -135,7 +135,7 @@ The launcher must create a `sushi.Options` object, configure it with the necessa
 Shall you launch SUSHI via the command line or programmatically, you will need to set a number of options for it to work. The indispensable ones, that you *must* set in order to obtain any result, are:
 
 * `-java8_home` (command line) or `setJava8Home` (`sushi.Options`): the path to the home directory of a Java 8 full JDK setup, in case the default JDK installed on the deploy platform is not Java 8, or should be overridden. If this parameter is not provided, SUSHI will try with the default JDK installed on the deploy platform.
-* `-evosuite` (command line) or `setEvosuitePath` (`sushi.Options`): the path to the EvoSuite jar file `evosuite-shaded-1.0.6-SNAPSHOT.jar` contained in the `libs/` folder.
+* `-evosuite` (command line) or `setEvosuitePath` (`sushi.Options`): the path to the EvoSuite jar file `evosuite-shaded-1.1.1-SNAPSHOT.jar` contained in the `libs/` folder.
 * `-jbse_lib` (command line) or `setJBSELibraryPath` (`sushi.Options`): this must be set to the path of the JBSE jar file from the `jbse/build/libs` directory. It must be the same you put in the classpath. If you chose to deploy the `sushi-master-<VERSION>-shaded.jar` uber-jar, set this option to point to it.
 * `-sushi_lib` (command line) or `setSushiLibPath` (`sushi.Options`): this must be set to the path of the SUSHI-Lib jar file from the `runtime/build/libs` directory. If you chose to deploy the `sushi-master-<VERSION>-shaded.jar` uber-jar, set this option to point to it.
 * `-z3` (command line) or `setZ3Path` (`sushi.Options`):  the path to the Z3 binary.
@@ -150,11 +150,11 @@ There are many more options that allow to control several aspects of SUSHI behav
 
 A possible example of command line is the following:
 
-    $ java -Xms16G -Xmx16G -cp /usr/lib/jvm/java-8-openjdk-amd64/lib/tools.jar:/usr/share/java/glpk-java.jar:./libs/sushi-master-0.2.0-SNAPSHOT.jar:./libs/sushi-lib-0.2.0-SNAPSHOT.jar:./libs/jbse-0.10.0-SNAPSHOT-shaded.jar:./libs/args4j-2.32.jar:./libs/ojalgo-48.0.0.jar -Djava.library.path=/usr/lib/jni sushi.Main -jbse_lib ./libs/jbse-0.10.0-SNAPSHOT-shaded.jar -sushi_lib ./libs/sushi-lib-0.2.0-SNAPSHOT.jar -evosuite ./libs/evosuite-shaded-1.0.6-SNAPSHOT.jar -z3 /usr/bin/z3 -classes ./my-application/bin -target_class my/Class -tmp_base ./tmp -out ./tests
+    $ java -Xms16G -Xmx16G -cp /usr/lib/jvm/java-8-openjdk-amd64/lib/tools.jar:/usr/share/java/glpk-java.jar:./libs/sushi-master-0.2.0-SNAPSHOT.jar:./libs/sushi-lib-0.2.0-SNAPSHOT.jar:./libs/jbse-0.10.0-SNAPSHOT-shaded.jar:./libs/args4j-2.32.jar:./libs/ojalgo-48.0.0.jar -Djava.library.path=/usr/lib/jni sushi.Main -jbse_lib ./libs/jbse-0.10.0-SNAPSHOT-shaded.jar -sushi_lib ./libs/sushi-lib-0.2.0-SNAPSHOT.jar -evosuite ./libs/evosuite-shaded-1.1.1-SNAPSHOT.jar -z3 /usr/bin/z3 -classes ./my-application/bin -target_class my/Class -tmp_base ./tmp -out ./tests
     
 where we assume that all the jars except for `tools.jar` and `glpk-java.jar` are in `./libs`, that the software to be tested is in `./my-application/bin`, that the class to generate tests for is `my.Class`, that a work directory where SUSHI can put intermediate files is `./tmp`, and that we want SUSHI to emit the generated tests in `./tests`. In the case you prefer (at your own risk) to use the SUSHI uber-jar the command line becomes a bit, but not that much, shorter:
 
-    $ java -Xms16G -Xmx16G -cp /usr/lib/jvm/java-8-openjdk-amd64/lib/tools.jar:/usr/share/java/glpk-java.jar:./libs/sushi-master-0.2.0-SNAPSHOT-shaded.jar -Djava.library.path=/usr/lib/jni sushi.Main -jbse_lib ./libs/sushi-master-0.2.0-SNAPSHOT-shaded.jar -sushi_lib ./libs/sushi-master-0.2.0-SNAPSHOT-shaded.jar -evosuite ./libs/evosuite-shaded-1.0.6-SNAPSHOT.jar -z3 /usr/bin/z3 -classes ./my-application/bin -target_class my/Class -tmp_base ./tmp -out ./tests
+    $ java -Xms16G -Xmx16G -cp /usr/lib/jvm/java-8-openjdk-amd64/lib/tools.jar:/usr/share/java/glpk-java.jar:./libs/sushi-master-0.2.0-SNAPSHOT-shaded.jar -Djava.library.path=/usr/lib/jni sushi.Main -jbse_lib ./libs/sushi-master-0.2.0-SNAPSHOT-shaded.jar -sushi_lib ./libs/sushi-master-0.2.0-SNAPSHOT-shaded.jar -evosuite ./libs/evosuite-shaded-1.1.1-SNAPSHOT.jar -z3 /usr/bin/z3 -classes ./my-application/bin -target_class my/Class -tmp_base ./tmp -out ./tests
     
 There is a third way of launching SUSHI that mixes the two approaches: You can launch it from the command line, but by configuring the options through an object of class `sushi.Options`. At the purpose you must define a class implementing the interface `sushi.OptionsConfigurator`. This interface declares only one method `configure`, that you must override to configure a `sushi.Options` object as in the following example:
 
@@ -217,8 +217,8 @@ where `<class name>` is the name of the class under test, `<method number>` is a
 
 The generated scaffolding/actual suite classes are in the same package as the class under test, so they can access its package-level members. This means, for example, that if you have specified the option `-out /your/out/dir`, an `avl_tree.AvlTree` class under test will produce a test `/your/out/dir/avl_tree/AvlTree_2_1_Test.java`. If you want to compile and execute the test suites add the output directory to the classpath and qualify the class name of the test suite with the package name, e.g.:
 
-    $ javac -cp junit.jar:evosuite-shaded-1.0.6-SNAPSHOT.jar:avltree.jar ./tests/AvlTree_2_1_Test.java
-    $ java -cp junit.jar:evosuite-shaded-1.0.6-SNAPSHOT.jar:avltree.jar:./tests org.junit.runner.JUnitCore avl_tree.AvlTree_2_1_Test
+    $ javac -cp junit.jar:evosuite-shaded-1.1.1-SNAPSHOT.jar:avltree.jar ./tests/AvlTree_2_1_Test.java
+    $ java -cp junit.jar:evosuite-shaded-1.1.1-SNAPSHOT.jar:avltree.jar:./tests org.junit.runner.JUnitCore avl_tree.AvlTree_2_1_Test
 
 ## Disclaimer
 
