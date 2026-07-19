@@ -21,7 +21,7 @@ ENV JARS_HOME=/usr/share/java
 ENV JNI_HOME=/usr/lib/x86_64-linux-gnu/jni
 ENV Z3_HOME=/usr/bin
 ENV JARS_8=${JARS_HOME}/glpk-java-1.12.0.jar:${JARS_HOME}/jbse-0.12.0-SNAPSHOT-shaded.jar:${JARS_HOME}/sushi-master-0.3.0-SNAPSHOT.jar:${JARS_HOME}/args4j-2.32.jar:${JARS_HOME}/ojalgo-48.0.0.jar:${JARS_HOME}/sushi-lib-0.3.0-SNAPSHOT.jar
-ENV CLASSPATH_8=${JAVA_HOME_8}/lib/tools.jar:{JARS_8}
+ENV CLASSPATH_8=${JAVA_HOME_8}/lib/tools.jar:${JARS_8}
 
 # Build and install
 WORKDIR ${HOME}
