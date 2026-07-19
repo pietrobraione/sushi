@@ -48,20 +48,20 @@ WORKDIR ${HOME}
 RUN git clone https://github.com/pietrobraione/sushi-experiments
 WORKDIR ${HOME}/sushi-experiments
 RUN mkdir bin
-RUN env JAVA_HOME=${JAVA_HOME_8} javac -cp ${CLASSPATH}:${HOME}/sushi-experiments/bin -d bin -g src/common/*.java
-RUN env JAVA_HOME=${JAVA_HOME_8} javac -cp ${CLASSPATH}:${HOME}/sushi-experiments/bin -d bin -g src/avl/*.java
-RUN env JAVA_HOME=${JAVA_HOME_8} javac -cp ${CLASSPATH}:${HOME}/sushi-experiments/bin -d bin -g src/dll_hard/*.java
-RUN env JAVA_HOME=${JAVA_HOME_8} javac -cp ${CLASSPATH}:${HOME}/sushi-experiments/bin:${HOME}/sushi-experiments/libs/ganttproject-guava.jar -d bin -g src/ganttproject/*.java
-RUN env JAVA_HOME=${JAVA_HOME_8} javac -cp ${CLASSPATH}:${HOME}/sushi-experiments/bin -d bin -g src/ncll/*.java
-RUN env JAVA_HOME=${JAVA_HOME_8} javac -cp ${CLASSPATH}:${HOME}/sushi-experiments/bin -d bin -g src/treemap/*.java
-RUN env JAVA_HOME=${JAVA_HOME_8} javac -cp ${CLASSPATH}:${HOME}/sushi-experiments/bin -d bin -g src/tsafe/*.java
-RUN env JAVA_HOME=${JAVA_HOME_8} javac -cp ${CLASSPATH}:${HOME}/sushi-experiments/bin -d bin sushi-src/common/*.java
-RUN env JAVA_HOME=${JAVA_HOME_8} javac -cp ${CLASSPATH}:${HOME}/sushi-experiments/bin -d bin sushi-src/avl/*.java
-RUN env JAVA_HOME=${JAVA_HOME_8} javac -cp ${CLASSPATH}:${HOME}/sushi-experiments/bin -d bin sushi-src/dll_hard/*.java
-RUN env JAVA_HOME=${JAVA_HOME_8} javac -cp ${CLASSPATH}:${HOME}/sushi-experiments/bin -d bin sushi-src/ganttproject/*.java
-RUN env JAVA_HOME=${JAVA_HOME_8} javac -cp ${CLASSPATH}:${HOME}/sushi-experiments/bin -d bin sushi-src/ncll/*.java
-RUN env JAVA_HOME=${JAVA_HOME_8} javac -cp ${CLASSPATH}:${HOME}/sushi-experiments/bin -d bin sushi-src/treemap/*.java
-RUN env JAVA_HOME=${JAVA_HOME_8} javac -cp ${CLASSPATH}:${HOME}/sushi-experiments/bin -d bin sushi-src/tsafe/*.java
+RUN env JAVA_HOME=${JAVA_HOME_8} javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin -g src/common/*.java
+RUN env JAVA_HOME=${JAVA_HOME_8} javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin -g src/avl/*.java
+RUN env JAVA_HOME=${JAVA_HOME_8} javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin -g src/dll_hard/*.java
+RUN env JAVA_HOME=${JAVA_HOME_8} javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin:${HOME}/sushi-experiments/libs/ganttproject-guava.jar -d bin -g src/ganttproject/*.java
+RUN env JAVA_HOME=${JAVA_HOME_8} javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin -g src/ncll/*.java
+RUN env JAVA_HOME=${JAVA_HOME_8} javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin -g src/treemap/*.java
+RUN env JAVA_HOME=${JAVA_HOME_8} javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin -g src/tsafe/*.java
+RUN env JAVA_HOME=${JAVA_HOME_8} javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin sushi-src/common/*.java
+RUN env JAVA_HOME=${JAVA_HOME_8} javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin sushi-src/avl/*.java
+RUN env JAVA_HOME=${JAVA_HOME_8} javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin sushi-src/dll_hard/*.java
+RUN env JAVA_HOME=${JAVA_HOME_8} javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin sushi-src/ganttproject/*.java
+RUN env JAVA_HOME=${JAVA_HOME_8} javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin sushi-src/ncll/*.java
+RUN env JAVA_HOME=${JAVA_HOME_8} javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin sushi-src/treemap/*.java
+RUN env JAVA_HOME=${JAVA_HOME_8} javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin sushi-src/tsafe/*.java
 
 WORKDIR ${HOME}
 
