@@ -29,7 +29,7 @@ WORKDIR ${HOME}
 RUN git clone https://github.com/pietrobraione/sushi
 WORKDIR ${HOME}/sushi
 RUN git submodule init && git submodule update
-RUN ln --symbolic ${GLPK_JNI_HOME} /usr/local/lib/jni
+RUN ln --symbolic ${JNI_HOME} /usr/local/lib/jni
 RUN ./gradlew build
 RUN cp jbse/build/libs/jbse-0.12.0-SNAPSHOT-shaded.jar ${JARS_HOME}/.
 RUN cp master/build/libs/sushi-master-0.3.0-SNAPSHOT.jar ${JARS_HOME}/.
