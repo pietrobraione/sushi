@@ -1,35 +1,51 @@
 package sushi.execution;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.util.concurrent.TimeUnit;
 
-import sushi.exceptions.TerminationException;
-import sushi.exceptions.WorkerException;
-import sushi.logging.Logger;
+import sushi.exceptions.ToolException;
+import sushi.exceptions.WorkerFailureException;
+import sushi.exceptions.WorkerTerminationException;
 
 public class DefaultCoordinator extends Coordinator {
-	private static final Logger logger = new Logger(DefaultCoordinator.class);
+	private static final Logger LOGGER = LogManager.getFormatterLogger(DefaultCoordinator.class);
 	
 	public DefaultCoordinator(Tool<?> tool) { super(tool); }
 	
+	//attribute to report the anomalous termination of a task
 	private boolean terminate;
+	private boolean fail;
 	private String message;
+	private Throwable exception;
+	private int taskNumber;
 
 	@Override
-	public ExecutionResult[] start(ArrayList<ArrayList<Future<ExecutionResult>>> tasksFutures) {
-		setTerminate(false, null);
-		final ExecutionResult[] retVal = new ExecutionResult[this.tool.tasks().size() * this.tool.redundance()];
+	public ExitStatus[] start(ArrayList<ArrayList<Future<ExitStatus>>> allTasksFutures) 
+	throws ToolException, WorkerTerminationException, WorkerFailureException {
+		init();
+		final List<Integer> tasks;
+		try {
+			tasks = this.tool.tasks();
+		} catch (Exception e) {
+			throw new ToolException(e);
+		}
+		final ExitStatus[] retVal = new ExitStatus[tasks.size() * this.tool.redundance()];
 		final Thread[] takers = new Thread[retVal.length];
 		for (int i = 0; i < takers.length; ++i) {
 			final int threadNumber = i; //to make the compiler happy
 			final int taskNumber = threadNumber / this.tool.redundance();
 			final int replicaNumber = threadNumber % this.tool.redundance();
-			final ArrayList<Future<ExecutionResult>> futures = tasksFutures.get(taskNumber);
-			final Future<ExecutionResult> thisThreadFuture = futures.get(replicaNumber);
+			final ArrayList<Future<ExitStatus>> thisTaskFutures = allTasksFutures.get(taskNumber);
+			final Future<ExitStatus> thisThreadFuture = thisTaskFutures.get(replicaNumber);
 			takers[i] = new Thread(() -> {
 				//waits for the result of its worker
 				try {
@@ -38,31 +54,33 @@ public class DefaultCoordinator extends Coordinator {
 					} else {
 						retVal[threadNumber] = thisThreadFuture.get();
 					}
+					//the worker correctly terminated and produced a result: 
+					//cancels all the redundant workers (i.e., its replicas)
+					cancelTask(thisTaskFutures);
 				} catch (TimeoutException e) {
-					logger.debug("Task " + taskNumber + " replica " + replicaNumber + " timed out");
+					//the worker timed out
+					LOGGER.info("Task %s replica %s timed out.", taskNumber, replicaNumber);
+					retVal[threadNumber] = null;
 					thisThreadFuture.cancel(true);
-					return;
 				} catch (CancellationException e) {
-					//the worker was cancelled: nothing left to do
-					return;
-				} catch (ExecutionException e) {
-					if (e.getCause() instanceof TerminationException) {
-						//schedules relaunch of exception
-						setTerminate(true, e.getCause().getMessage());
-						
-						//cancels all the workers and exits
-						cancelAll(tasksFutures);
-						return;
-					} else {
-						logger.fatal("Error occurred during execution of tool " + this.tool.getName());
-						throw new WorkerException(e);
+					//the worker was cancelled
+					retVal[threadNumber] = null;
+				} catch (ExecutionException e) { 
+					//the worker threw an exception
+					if (e.getCause() instanceof WorkerTerminationException) {
+						//notifies the coordinator the need to relaunch the WorkerTerminationException
+						setTerminate(e.getCause().getMessage());
+					} else { //any other exception
+						//notifies the coordinator the need to launch a WorkerFailureException
+						setFail(taskNumber, e.getCause());
 					}
+					//cancels all the workers and exits
+					cancelAllTasks(allTasksFutures);
 				} catch (InterruptedException e)  {
 					//should never happen, but if it happens
-					//it's ok to fall through to shutdown
+					//behaves as a cancellation
+					retVal[threadNumber] = null;
 				}
-				//cancels redundant workers
-				cancelReplicas(futures);
 			});
 			takers[i].start();
 		}
@@ -76,29 +94,51 @@ public class DefaultCoordinator extends Coordinator {
 			}
 		}
 		
-		//if a thread required termination, launches the exception
+		//if termination/failure happened, launches the corresponding exception
 		if (this.terminate) {
-			throw new TerminationException(this.message);
+			throw new WorkerTerminationException(this.taskNumber, this.message);
+		} else if (this.fail) {
+			throw new WorkerFailureException(this.taskNumber, this.exception);
 		}
 		
+		//otherwise returns retVal
 		return retVal;
 	}
 	
-	private synchronized void setTerminate(boolean terminate, String message) {
-		this.terminate = terminate;
-		this.message = message;
+	private void init() {
+		this.terminate = false;
+		this.fail = false;
+		this.message = null;
+		this.exception = null;
+		this.taskNumber = -1;
 	}
 	
-	private synchronized void cancelAll(ArrayList<ArrayList<Future<ExecutionResult>>> tasksFutures) {
-		for (final ArrayList<Future<ExecutionResult>> group : tasksFutures) {
-			for (final Future<ExecutionResult> f : group) {
+	private synchronized void setTerminate(String message) {
+		this.terminate = true;
+		this.fail = false;
+		this.message = message;
+		this.exception = null;
+		this.taskNumber = -1;
+	}
+	
+	private synchronized void setFail(int taskNumber, Throwable cause) {
+		this.terminate = false;
+		this.fail = true;
+		this.message = null;
+		this.exception = cause;
+		this.taskNumber = taskNumber;
+	}
+	
+	private synchronized void cancelAllTasks(ArrayList<ArrayList<Future<ExitStatus>>> allTasksFutures) {
+		for (final ArrayList<Future<ExitStatus>> group : allTasksFutures) {
+			for (final Future<ExitStatus> f : group) {
 				f.cancel(true);
 			}
 		}
 	}
 	
-	private synchronized void cancelReplicas(ArrayList<Future<ExecutionResult>> futures) {
-		for (final Future<ExecutionResult> f : futures) {
+	private synchronized void cancelTask(ArrayList<Future<ExitStatus>> thisTaskFutures) {
+		for (final Future<ExitStatus> f : thisTaskFutures) {
 			f.cancel(true);
 		}
 	}

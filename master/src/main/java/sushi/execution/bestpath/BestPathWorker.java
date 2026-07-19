@@ -5,14 +5,10 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 
-import sushi.exceptions.BestPathException;
-import sushi.execution.ExecutionResult;
+import sushi.execution.ExitStatus;
 import sushi.execution.Worker;
-import sushi.logging.Logger;
 
-public class BestPathWorker extends Worker {
-	private static final Logger logger = new Logger(BestPathWorker.class);
-	
+public final class BestPathWorker extends Worker {
 	private final BestPath listPaths;
 
 	public BestPathWorker(BestPath listPaths) {
@@ -20,7 +16,7 @@ public class BestPathWorker extends Worker {
 	}
 
 	@Override
-	public ExecutionResult call() throws BestPathException {
+	public ExitStatus call() throws IOException, NumberFormatException {
 		final BestPathParameters p = this.listPaths.getInvocationParameters(this.taskNumber);
 
 		int bestTraceGlobal = 0; //to keep the compiler happy
@@ -46,24 +42,13 @@ public class BestPathWorker extends Worker {
 				}
 				++traceGlobal;
 			}
-		} catch (IOException e) {
-			logger.error("I/O error while reading file " + p.getCoverageFilePath().toString());
-			throw new BestPathException(e);
-		} catch (NumberFormatException e) {
-			logger.error("File " + p.getCoverageFilePath().toString() + " has wrong format, expected number is missing");
-			throw new BestPathException(e);
 		}
 
 		try (final BufferedWriter w = Files.newBufferedWriter(p.getOutputFilePath())) {
 			w.write(bestTraceGlobal + ", " + bestMethod + ", " + bestTraceLocal + "\n");
-		} catch (IOException e) {
-			logger.error("I/O error while writing file " + p.getOutputFilePath().toString());
-			throw new BestPathException(e);
 		}
 		
-		final ExecutionResult result = new ExecutionResult();
-		result.setExitStatus(0);
-
+		final ExitStatus result = new ExitStatus(0);
 		return result;
 	}
 }

@@ -9,15 +9,17 @@ import java.nio.file.Path;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import sushi.Options;
-import sushi.exceptions.JavacException;
-import sushi.execution.ExecutionResult;
+import sushi.exceptions.WorkerFailureException;
+import sushi.execution.ExitStatus;
 import sushi.execution.Worker;
-import sushi.logging.Logger;
 import sushi.util.DirectoryUtils;
 
-public class JavacWorker extends Worker {
-	private static final Logger logger = new Logger(JavacWorker.class);
+public final class JavacWorker extends Worker {
+	private static final Logger LOGGER = LogManager.getFormatterLogger(JavacWorker.class);
 	
 	private final Options options;
 	private final Javac javac;
@@ -29,26 +31,20 @@ public class JavacWorker extends Worker {
 	}
 
 	@Override
-	public ExecutionResult call() throws JavacException {		
+	public ExitStatus call() throws IOException, WorkerFailureException {		
 		final String[] p = this.javac.getInvocationParameters(this.taskNumber);
-		logger.debug("Invoking " + this.javac.getCommandLine());
+		LOGGER.debug("Task %s: invoking %s.", Integer.toString(this.taskNumber), this.javac.getCommandLine());
 
 		final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 		if (compiler == null) {
-			logger.error("Unable to find javac");
-			throw new JavacException(new NullPointerException());
+			throw new WorkerFailureException(this.taskNumber, "Unable to find javac.");
 		}
 
 		final Path logFilePath = DirectoryUtils.getTmpDirPath(this.options).resolve("javac-task-" + this.taskNumber + "-" + Thread.currentThread().getName() + ".log");		
 		try (final OutputStream w = new BufferedOutputStream(Files.newOutputStream(logFilePath))) {
 			final int exitStatus = compiler.run(null, w, w, p);
-
-			final ExecutionResult result = new ExecutionResult();
-			result.setExitStatus(exitStatus);
+			final ExitStatus result = new ExitStatus(exitStatus);
 			return result;
-		} catch (IOException e) {
-			logger.error("I/O error while creating javac log file");
-			throw new JavacException(e);
 		}
 	}
 }
