@@ -21,7 +21,7 @@ ENV JAVA_HOME=${JAVA_HOME_21}
 ENV JARS_HOME=/usr/share/java
 ENV JNI_HOME=/usr/lib/x86_64-linux-gnu/jni
 ENV Z3_HOME=/usr/bin
-ENV JARS_8=${JARS_HOME}/glpk-java-1.12.0.jar:${JARS_HOME}/jbse-0.12.0-SNAPSHOT-shaded.jar:${JARS_HOME}/sushi-master-0.3.0-SNAPSHOT.jar:${JARS_HOME}/args4j-2.32.jar:${JARS_HOME}/ojalgo-48.0.0.jar:${JARS_HOME}/sushi-lib-0.3.0-SNAPSHOT.jar
+ENV JARS_8=${JARS_HOME}/glpk-java-1.12.0.jar:${JARS_HOME}/jbse-0.12.0-SNAPSHOT-shaded.jar:${JARS_HOME}/sushi-master-0.3.0-SNAPSHOT.jar:${JARS_HOME}/args4j-2.32.jar:${JARS_HOME}/ojalgo-48.0.0.jar:${JARS_HOME}/log4j-api-2.14.0.jar:${JARS_HOME}/log4j-core-2.14.0.jar
 ENV CLASSPATH_8=${JAVA_HOME_8}/lib/tools.jar:${JARS_8}
 
 # Build and install
@@ -36,6 +36,8 @@ RUN cp master/build/libs/sushi-master-0.3.0-SNAPSHOT.jar ${JARS_HOME}/.
 RUN cp master/deps/glpk-java-1.12.0.jar ${JARS_HOME}/.
 RUN cp master/deps/args4j-2.32.jar ${JARS_HOME}/.
 RUN cp master/deps/ojalgo-48.0.0.jar ${JARS_HOME}/.
+RUN cp master/deps/log4j-api-2.14.0.jar ${JARS_HOME}/.
+RUN cp master/deps/log4j-core-2.14.0.jar ${JARS_HOME}/.
 RUN cp libs/sushi-lib-0.3.0-SNAPSHOT.jar ${JARS_HOME}/.
 RUN cp libs/evosuite-shaded-1.2.1-SNAPSHOT.jar ${JARS_HOME}/.
 
