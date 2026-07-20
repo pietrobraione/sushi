@@ -1,7 +1,7 @@
 package sushi.execution.loopend;
 
-import sushi.exceptions.TerminationException;
-import sushi.execution.ExecutionResult;
+import sushi.exceptions.WorkerTerminationException;
+import sushi.execution.ExitStatus;
 import sushi.execution.Worker;
 
 public class LoopEndWorker extends Worker {
@@ -10,7 +10,7 @@ public class LoopEndWorker extends Worker {
 	}
 
 	@Override
-	public ExecutionResult call() throws TerminationException {
-		throw new TerminationException();
+	public ExitStatus call() throws WorkerTerminationException {
+		throw new WorkerTerminationException();
 	}
 }

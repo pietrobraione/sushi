@@ -26,6 +26,9 @@ import jbse.apps.run.CannotBuildFormatterException;
 import jbse.apps.run.DecisionProcedureConservativeRepOk;
 import jbse.apps.run.DecisionProcedureGuidance;
 import jbse.apps.run.DecisionProcedureGuidanceJDI;
+import jbse.apps.FormatterSushi;
+import jbse.apps.StateFormatterSushiPartialHeap;
+import jbse.apps.StateFormatterSushiPathCondition;
 import jbse.bc.Opcodes;
 import jbse.bc.exc.InvalidClassFileFactoryClassException;
 import jbse.common.exc.ClasspathException;
@@ -77,9 +80,6 @@ import jbse.val.Value;
 import sushi.execution.jbse.JBSEParameters.DecisionProcedureCreationStrategy;
 import sushi.execution.jbse.JBSEParameters.StateFormatMode;
 import sushi.execution.jbse.JBSEParameters.TraceTypes;
-import sushi.formatters.FormatterSushi;
-import sushi.formatters.StateFormatterSushiPartialHeap;
-import sushi.formatters.StateFormatterSushiPathCondition;
 
 public class RunJBSE_Sushi {
 	/** The {@link JBSEParameters} of the symbolic execution. */

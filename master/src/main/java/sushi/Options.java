@@ -12,11 +12,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.apache.logging.log4j.Level;
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.spi.PathOptionHandler;
 import org.kohsuke.args4j.spi.PatternOptionHandler;
 
 import sushi.optionhandlers.HeapScopeOptionHandler;
+import sushi.optionhandlers.LoggingLevelOptionHandler;
 import sushi.optionhandlers.MultiPathOptionHandlerPatched;
 import sushi.optionhandlers.MultiSignatureOptionHandler;
 import sushi.optionhandlers.PhasesOptionHandler;
@@ -35,7 +37,8 @@ public final class Options {
 	private boolean help = false;
 
 	@Option(name = "-log_level",
-			usage = "Logging level to be used: FATAL, ERROR, WARN, INFO, DEBUG")
+			usage = "Logging level to be used: OFF, FATAL, ERROR, WARN, INFO, DEBUG, TRACE, ALL",
+			handler = LoggingLevelOptionHandler.class)
 	private Level logLevel = Level.INFO;
 
 	@Option(name = "-verbose",
@@ -43,15 +46,15 @@ public final class Options {
 	private boolean verbose = false;
 
 	@Option(name = "-options_config_path",
-			usage = "Path for the classfile of the parameters modifier",
+			usage = "Path for the classfile of the options configurator",
 			handler = PathOptionHandler.class)
-	private Path paramsHome = Paths.get(".", "params");
+	private Path optionsConfiguratorPath = Paths.get(".");
 
 	@Option(name = "-options_config_class",
 			forbids = {"-target_class", "-target_method"},
 			depends = {"-options_config_path"},
-			usage = "Parameters modifier class name (default: none, either this or the -target_class option or the -target_method option must be specified)")
-	private String paramsClass;
+			usage = "Class name of the options configurator (default: none, either this or the -target_class option or the -target_method option must be specified)")
+	private String optionsConfiguratorClass;
 
 	@Option(name = "-classes",
 			usage = "Classpath of the project to analyze",
@@ -216,7 +219,7 @@ public final class Options {
 	private EnumSet<Rewriter> rewriters = EnumSet.noneOf(Rewriter.class);
 	
 	public boolean isConsistent() {
-		if (this.paramsClass == null &&
+		if (this.optionsConfiguratorClass == null &&
 			this.targetClassSignature == null &&
 			this.targetMethodSignature == null) {
 			return false;
@@ -244,20 +247,30 @@ public final class Options {
 		this.verbose = verbose;
 	}
 
-	public Path getParametersModifierPath() {
-		return this.paramsHome;
+    public boolean hasOptionsConfigurator() {
+    	return this.optionsConfiguratorClass != null;
+    }
+    
+	public Path getOptionsConfiguratorPath() {
+		return this.optionsConfiguratorPath;
 	}
 
-	public void setParametersModifierPath(Path paramsModifierPath) {
-		this.paramsHome = paramsModifierPath;
+	public void setOptionsConfiguratorPath(Path optionsConfiguratorPath) {
+        if (optionsConfiguratorPath == null) {
+            throw new IllegalArgumentException("Attempted to set options configurator path to null.");
+        }
+		this.optionsConfiguratorPath = optionsConfiguratorPath;
 	}
 
-	public String getParametersModifierClassname() {
-		return this.paramsClass;
+	public String getOptionsConfiguratorClass() {
+		return this.optionsConfiguratorClass;
 	}
 	
-	public void setParametersModifierClassname(String paramsModifierClassname) {
-		this.paramsClass = paramsModifierClassname;
+	public void setOptionsConfiguratorClass(String optionsConfiguratorClass) {
+        if (optionsConfiguratorClass == null) {
+            throw new IllegalArgumentException("Attempted to set options configurator class to null.");
+        }
+		this.optionsConfiguratorClass = optionsConfiguratorClass;
 	}
 
 	public List<Path> getClassesPath() {

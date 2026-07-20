@@ -11,13 +11,14 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import sushi.exceptions.MergerException;
-import sushi.execution.ExecutionResult;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import sushi.execution.ExitStatus;
 import sushi.execution.Worker;
-import sushi.logging.Logger;
 
 public class MergerWorker extends Worker {
-	private static final Logger logger = new Logger(MergerWorker.class);
+	private static final Logger LOGGER = LogManager.getFormatterLogger(MergerWorker.class);
 	
 	private final Merger merger;
 
@@ -26,26 +27,15 @@ public class MergerWorker extends Worker {
 	}
 
 	@Override
-	public ExecutionResult call() throws MergerException {
+	public ExitStatus call() throws IOException {
 		final MergerParameters p = this.merger.getInvocationParameters(this.taskNumber);
 
-		final int methods;
-		try {
-			methods = (int) Files.lines(p.getMethodsFilePath()).count();
-		} catch (IOException e) {
-			logger.error("I/O error while reading " + p.getMethodsFilePath().toString());
-			throw new MergerException(e);
-		}
+		final int methods = (int) Files.lines(p.getMethodsFilePath()).count();
 		
-		try {
-			Files.deleteIfExists(p.getCoverageFilePathGlobal());
-			Files.createFile(p.getCoverageFilePathGlobal());
-			Files.deleteIfExists(p.getTracesFilePathGlobal());
-			Files.createFile(p.getTracesFilePathGlobal());
-		} catch (IOException e) {
-			logger.error("I/O error while deleting/creating " + p.getCoverageFilePathGlobal().toString());
-			throw new MergerException(e);
-		}
+		Files.deleteIfExists(p.getCoverageFilePathGlobal());
+		Files.createFile(p.getCoverageFilePathGlobal());
+		Files.deleteIfExists(p.getTracesFilePathGlobal());
+		Files.createFile(p.getTracesFilePathGlobal());
 
 		final ArrayList<String> branches = new ArrayList<>();
 		final TreeMap<String, Integer> branchNumbers = new TreeMap<>();
@@ -69,9 +59,6 @@ public class MergerWorker extends Worker {
 					}
 					localToGlobal.add(branchNumberGlobal);
 				}
-			} catch (IOException e) {
-				logger.error("I/O error while reading " + p.getBranchesFilePathLocal(method).toString());
-				throw new MergerException(e);
 			}
 			
 			//translates the local coverage file for the method and updates
@@ -96,9 +83,6 @@ public class MergerWorker extends Worker {
 					w.newLine();
 					++nTraces;
 				}
-			} catch (IOException e) {
-				logger.error("I/O error while reading " + p.getCoverageFilePathLocal(method).toString() + " or writing " + p.getCoverageFilePathGlobal().toString());
-				throw new MergerException(e);
 			}
 
 			//translates the local alltraces file for the method and updates
@@ -115,9 +99,6 @@ public class MergerWorker extends Worker {
 					w.write(fieldsRead[1].trim());
 					w.newLine();
 				}
-			} catch (IOException e) {
-				logger.error("I/O error while reading " + p.getTracesFilePathLocal(method).toString() + " or writing " + p.getTracesFilePathGlobal().toString());
-				throw new MergerException(e);
 			}
 		}
 		
@@ -127,9 +108,6 @@ public class MergerWorker extends Worker {
 				w.write(branch);
 				w.newLine();
 			}
-		} catch (IOException e) {
-			logger.error("I/O error while writing " + p.getBranchesFilePathGlobal().toString());
-			throw new MergerException(e);
 		}
 		
 		//emits the branches to ignore file
@@ -148,13 +126,8 @@ public class MergerWorker extends Worker {
 		int nBranchesToCover = branches.size();
 		if (pt == null) {
 			//creates an empty file
-			try {
-				Files.deleteIfExists(p.getBranchesToIgnoreFilePath());
-				Files.createFile(p.getBranchesToIgnoreFilePath());
-			} catch (IOException e) {
-				logger.error("I/O error while deleting/creating " + p.getBranchesToIgnoreFilePath().toString());
-				throw new MergerException(e);
-			}
+			Files.deleteIfExists(p.getBranchesToIgnoreFilePath());
+			Files.createFile(p.getBranchesToIgnoreFilePath());
 		} else {
 			try (final BufferedWriter w = Files.newBufferedWriter(p.getBranchesToIgnoreFilePath())) {
 				int branchNumber = 0;
@@ -167,26 +140,16 @@ public class MergerWorker extends Worker {
 					}
 					++branchNumber;
 				}
-			} catch (IOException e) {
-				logger.error("I/O error while writing " + p.getBranchesToIgnoreFilePath().toString());
-				throw new MergerException(e);
 			}
 		}
 		
 		//emits the traces to ignore (empty) file
-		try {
-			Files.deleteIfExists(p.getTracesToIgnoreFilePath());
-			Files.createFile(p.getTracesToIgnoreFilePath());
-		} catch (IOException e) {
-			logger.error("I/O error while deleting/creating " + p.getTracesToIgnoreFilePath().toString());
-			throw new MergerException(e);
-		}
+		Files.deleteIfExists(p.getTracesToIgnoreFilePath());
+		Files.createFile(p.getTracesToIgnoreFilePath());
 		
 		//some logging
-		logger.info("Found " + nBranchesToCover + " branches to cover along " + nTraces + " paths.");
-		final ExecutionResult result = new ExecutionResult();
-		result.setExitStatus(0);
-
+		LOGGER.info("Found %s branches to cover along %s paths.", Integer.toString(nBranchesToCover), Integer.toString(nTraces));
+		final ExitStatus result = new ExitStatus(0);
 		return result;
 	}
 }

@@ -9,7 +9,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 
 import sushi.exceptions.MinimizerException;
-import sushi.exceptions.TerminationException;
+import sushi.exceptions.WorkerTerminationException;
 
 public class RunMinimizer {
 	private final MinimizerParameters parameters;
@@ -23,8 +23,10 @@ public class RunMinimizer {
 	 * (desired) branches that the set of all the traces covers. 
 	 * 
 	 * @return 0 if everything ok, >=1 if some error.
+	 * @throws WorkerTerminationException if we must terminate SUSHI.
+	 * @throws MinimizerException if the minimizer fails.
 	 */
-	public int run() {
+	public int run() throws WorkerTerminationException, MinimizerException {
 		final long start = System.currentTimeMillis();
 		
 		final MinimizerProblemFactory<?> factory;
@@ -51,7 +53,7 @@ public class RunMinimizer {
 				}
 				final boolean found = p.solutionFound();
 				if (!found) {
-					throw new TerminationException("Minimizer was unable to find a set of traces that covers the uncovered branches");
+					throw new WorkerTerminationException(this.parameters.getTaskNumber(), "Minimizer was unable to find a set of traces that covers the uncovered branches.");
 				}
 				final ArrayList<Integer> solution = p.getSolution();
 				emitSolution(solution, !firstIteration);
@@ -71,7 +73,7 @@ public class RunMinimizer {
 		return 0;
 	}
 
-	private void emitSolution(ArrayList<Integer> solution, boolean append) throws IOException {
+	private void emitSolution(ArrayList<Integer> solution, boolean append) throws IOException, MinimizerException {
 		final OpenOption[] options = (append ? new OpenOption[]{ StandardOpenOption.APPEND } : new OpenOption[]{ StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE });
 		try (final BufferedWriter wOutput = Files.newBufferedWriter(this.parameters.getOutputFilePath(), options)) {
 			for (int traceNumberGlobal : solution) {

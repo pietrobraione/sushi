@@ -1,8 +1,10 @@
 package sushi.execution.listpaths;
 
+import static sushi.util.DirectoryUtils.getCoverageFilePath;
+import static sushi.util.DirectoryUtils.getMinimizerOutFilePath;
+
 import sushi.Options;
 import sushi.execution.Tool;
-import sushi.util.DirectoryUtils;
 
 public final class ListPaths extends Tool<ListPathsParameters> {
 	private final Options options;
@@ -14,8 +16,8 @@ public final class ListPaths extends Tool<ListPathsParameters> {
 	@Override
 	public ListPathsParameters getInvocationParameters(int i) {
 		final ListPathsParameters p = new ListPathsParameters();
-		p.setCoverageFilePath(DirectoryUtils.getCoverageFilePath(this.options));
-		p.setOutputFilePath(DirectoryUtils.getMinimizerOutFilePath(this.options));
+		p.setCoverageFilePath(getCoverageFilePath(this.options));
+		p.setOutputFilePath(getMinimizerOutFilePath(this.options));
 
 		return p;
 	}

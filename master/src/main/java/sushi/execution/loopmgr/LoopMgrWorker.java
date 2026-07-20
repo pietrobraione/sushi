@@ -8,14 +8,15 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.TreeSet;
 
-import sushi.exceptions.LoopMgrException;
-import sushi.exceptions.TerminationException;
-import sushi.execution.ExecutionResult;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import sushi.exceptions.WorkerTerminationException;
+import sushi.execution.ExitStatus;
 import sushi.execution.Worker;
-import sushi.logging.Logger;
 
 public class LoopMgrWorker extends Worker {
-	private static final Logger logger = new Logger(LoopMgrWorker.class);
+	private static final Logger LOGGER = LogManager.getFormatterLogger(LoopMgrWorker.class);
 	
 	private final LoopMgr loopMgr;
 
@@ -24,18 +25,12 @@ public class LoopMgrWorker extends Worker {
 	}
 
 	@Override
-	public ExecutionResult call() throws LoopMgrException, TerminationException {
+	public ExitStatus call() throws WorkerTerminationException, IOException {
 		final LoopMgrParameters p = this.loopMgr.getInvocationParameters(this.taskNumber);
 		
 		//nBranches is the total number of branches, nTraces is the total number of traces
-		final int nBranches, nTraces;
-		try {
-			nBranches = (int) Files.lines(p.getBranchesFilePath()).count();
-			nTraces = (int) Files.lines(p.getCoverageFilePath()).count();
-		} catch (IOException e) {
-			logger.error("I/O error while reading " + p.getBranchesFilePath().toString() + " or " + p.getCoverageFilePath().toString());
-			throw new LoopMgrException(e);
-		}
+		final int nBranches = (int) Files.lines(p.getBranchesFilePath()).count();
+		final int nTraces = (int) Files.lines(p.getCoverageFilePath()).count();
 		
 		//branch numbers are just all the numbers between 0 and nBranches - 1
 		final TreeSet<Integer> branchNumbers = new TreeSet<>();
@@ -51,22 +46,10 @@ public class LoopMgrWorker extends Worker {
 		
 		//the branches to ignore are those that the user do not want to cover
 		//or that have already been covered by previously generated tests
-		final TreeSet<Integer> branchNumbersToIgnore;
-		try {
-			branchNumbersToIgnore = branchNumbersToIgnore(p);
-		} catch (IOException e) {
-			logger.error("I/O error while reading " + p.getBranchesToIgnoreFilePath().toString());
-			throw new LoopMgrException(e);
-		}
+		final TreeSet<Integer> branchNumbersToIgnore = branchNumbersToIgnore(p);
 		
 		//the traces to ignore are those that have been tried before
-		final TreeSet<Integer> traceNumbersToIgnore;
-		try {
-			traceNumbersToIgnore = traceNumbersToIgnore(p);
-		} catch (IOException e) {
-			logger.error("I/O error while reading " + p.getTracesToIgnoreFilePath().toString());
-			throw new LoopMgrException(e);
-		}
+		final TreeSet<Integer> traceNumbersToIgnore = traceNumbersToIgnore(p);
 		
 		//detects the traces that cover only branches to ignore and adds them 
 		//to the traces to ignore
@@ -89,9 +72,6 @@ public class LoopMgrWorker extends Worker {
 				}
 				++traceNumber;
 			}
-		} catch (IOException e) {
-			logger.error("I/O error while reading " + p.getCoverageFilePath().toString());
-			throw new LoopMgrException(e);
 		}
 		
 		//finished calculation of traceNumbersToIgnore:
@@ -113,7 +93,7 @@ public class LoopMgrWorker extends Worker {
 			}
 			if (!mayBeCovered) {
 				branchNumbersToIgnore.add(branchNumber);
-				logger.info("Unable to cover branch #" + branchNumber);
+				LOGGER.info("Unable to cover branch # %s.", Integer.toString(branchNumber));
 			}
 		}
 		
@@ -122,26 +102,20 @@ public class LoopMgrWorker extends Worker {
 		branchNumbers.removeAll(branchNumbersToIgnore);
 
 		//some logging
-		logger.info("Branches to cover: " + branchNumbers.size() + ", paths to explore: " + traceNumbers.size());
+		LOGGER.info("Branches to cover: %s, paths to explore: %s.", Integer.toString(branchNumbers.size()), Integer.toString((traceNumbers.size())));
 
 		//decides whether to terminate
 		if (branchNumbers.isEmpty()) {
-			throw new TerminationException("All targets covered");
+			throw new WorkerTerminationException(this.taskNumber, "All targets covered.");
 		} else if (traceNumbers.isEmpty()) {
-			throw new TerminationException("Traces exhausted");
+			throw new WorkerTerminationException(this.taskNumber, "Traces exhausted.");
 		}
 		
 		//emits the files
-		try {
-			writeFile(p.getBranchesToIgnoreFilePath(), branchNumbersToIgnore);
-			writeFile(p.getTracesToIgnoreFilePath(), traceNumbersToIgnore);
-		} catch (IOException e) {
-			logger.error("I/O error while writing " + p.getBranchesToIgnoreFilePath().toString() + " or " + p.getTracesToIgnoreFilePath().toString());
-			throw new LoopMgrException(e);
-		}
+		writeFile(p.getBranchesToIgnoreFilePath(), branchNumbersToIgnore);
+		writeFile(p.getTracesToIgnoreFilePath(), traceNumbersToIgnore);
 		
-		final ExecutionResult result = new ExecutionResult();
-		result.setExitStatus(0);
+		final ExitStatus result = new ExitStatus(0);
 		return result;
 	}
 	

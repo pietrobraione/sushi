@@ -14,6 +14,8 @@ import org.ojalgo.optimisation.Expression;
 import org.ojalgo.optimisation.ExpressionsBasedModel;
 import org.ojalgo.optimisation.Variable;
 
+import sushi.exceptions.WorkerTerminationException;
+
 final class MinimizerProblemFactoryOjAlgo extends MinimizerProblemFactory<MinimizerProblemOjAlgo> {
 	/** The set of the relevant branches (i.e., the branches to cover). */
 	private TreeSet<Integer> relevantBranchNumbers;
@@ -48,7 +50,7 @@ final class MinimizerProblemFactoryOjAlgo extends MinimizerProblemFactory<Minimi
 	 */
 	private ArrayList<Integer> cols2Traces;
 	
-	MinimizerProblemFactoryOjAlgo(MinimizerParameters parameters) throws IOException {
+	MinimizerProblemFactoryOjAlgo(MinimizerParameters parameters) throws IOException, WorkerTerminationException {
 		super(parameters);
 	}
 

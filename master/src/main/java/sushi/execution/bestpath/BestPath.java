@@ -1,8 +1,10 @@
 package sushi.execution.bestpath;
 
+import static sushi.util.DirectoryUtils.getCoverageFilePath;
+import static sushi.util.DirectoryUtils.getMinimizerOutFilePath;
+
 import sushi.Options;
 import sushi.execution.Tool;
-import sushi.util.DirectoryUtils;
 
 public final class BestPath extends Tool<BestPathParameters> {
 	private final Options options;
@@ -13,10 +15,8 @@ public final class BestPath extends Tool<BestPathParameters> {
 
 	@Override
 	public BestPathParameters getInvocationParameters(int i) {
-		final BestPathParameters p = new BestPathParameters();
-		p.setCoverageFilePath(DirectoryUtils.getCoverageFilePath(this.options));
-		p.setOutputFilePath(DirectoryUtils.getMinimizerOutFilePath(this.options));
-
+		final BestPathParameters p = new BestPathParameters(getCoverageFilePath(this.options),
+		getMinimizerOutFilePath(this.options));
 		return p;
 	}
 

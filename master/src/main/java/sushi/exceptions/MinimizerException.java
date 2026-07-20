@@ -1,6 +1,6 @@
 package sushi.exceptions;
 
-public class MinimizerException extends RuntimeException {
+public class MinimizerException extends Exception {
 
 	private static final long serialVersionUID = -4915882424522724921L;
 
