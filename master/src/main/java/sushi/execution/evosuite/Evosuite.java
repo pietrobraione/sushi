@@ -36,7 +36,7 @@ public class Evosuite extends Tool<String[]> {
 		return this.commandLine; 
 	}
 	
-	public TestGenerationNotifier getTestGenerationNotifier() {
+	public TestGenerationListener getTestGenerationNotifier() {
 		return this.evosuiteCoordinator::onTestGenerated;
 	}
 	

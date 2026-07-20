@@ -32,7 +32,7 @@ import sushi.execution.Coordinator;
 import sushi.execution.ExitStatus;
 import sushi.execution.Tool;
 
-public class EvosuiteCoordinator extends Coordinator implements TestGenerationNotifier {
+public class EvosuiteCoordinator extends Coordinator implements TestGenerationListener {
 	private static final Logger LOGGER = LogManager.getFormatterLogger(EvosuiteCoordinator.class);
 	
 	private final Options options;
