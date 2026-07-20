@@ -5,6 +5,7 @@ MAINTAINER Pietro Braione <pietro.braione@gmail.com>
 RUN apt-get update -y
 RUN apt-get install -y openjdk-8-jdk
 RUN apt-get install -y openjdk-21-jdk
+RUN apt-get install -y java-common
 RUN apt-get install -y unzip
 RUN apt-get install -y nano
 RUN apt-get install -y git
@@ -21,8 +22,11 @@ ENV JAVA_HOME=${JAVA_HOME_21}
 ENV JARS_HOME=/usr/share/java
 ENV JNI_HOME=/usr/lib/x86_64-linux-gnu/jni
 ENV Z3_HOME=/usr/bin
-ENV JARS_8=${JARS_HOME}/glpk-java-1.12.0.jar:${JARS_HOME}/jbse-0.12.0-SNAPSHOT-shaded.jar:${JARS_HOME}/sushi-master-0.3.0-SNAPSHOT.jar:${JARS_HOME}/args4j-2.32.jar:${JARS_HOME}/ojalgo-48.0.0.jar:${JARS_HOME}/log4j-api-2.14.0.jar:${JARS_HOME}/log4j-core-2.14.0.jar
-ENV CLASSPATH_8=${JAVA_HOME_8}/lib/tools.jar:${JARS_8}
+ENV JARS=${JARS_HOME}/glpk-java-1.12.0.jar:${JARS_HOME}/jbse-0.12.0-SNAPSHOT-shaded.jar:${JARS_HOME}/sushi-master-0.3.0-SNAPSHOT.jar:${JARS_HOME}/args4j-2.32.jar:${JARS_HOME}/ojalgo-48.0.0.jar:${JARS_HOME}/log4j-api-2.14.0.jar:${JARS_HOME}/log4j-core-2.14.0.jar
+ENV CLASSPATH_8=${JAVA_HOME_8}/lib/tools.jar:${JARS}
+
+# Use Java 21
+ENV JAVA_HOME=${JAVA_HOME_21}
 
 # Build and install
 WORKDIR ${HOME}
@@ -41,9 +45,13 @@ RUN cp master/deps/log4j-core-2.14.0.jar ${JARS_HOME}/.
 RUN cp libs/sushi-lib-0.3.0-SNAPSHOT.jar ${JARS_HOME}/.
 RUN cp libs/evosuite-shaded-1.2.1-SNAPSHOT.jar ${JARS_HOME}/.
 
+# Use Java 8
+ENV JAVA_HOME=${JAVA_HOME_8}
+RUN update-java-alternatives --set java-1.8.0-openjdk-amd64
+
 # Create script
 RUN echo "#!/bin/sh" > /usr/local/bin/sushi
-RUN echo "${JAVA_HOME_8}/bin/java -Xms16G -Xmx16G -cp ${CLASSPATH_8} -Djava.library.path=${JNI_HOME} sushi.Main -evosuite ${JARS_HOME}/evosuite-shaded-1.2.1-SNAPSHOT.jar -jbse_lib ${JARS_HOME}/jbse-0.12.0-SNAPSHOT-shaded.jar -sushi_lib ${JARS_HOME}/sushi-lib-0.3.0-SNAPSHOT.jar -z3 ${Z3_HOME}/z3 \$@" >> /usr/local/bin/sushi
+RUN echo "java -Xms16G -Xmx16G -cp ${CLASSPATH_8} -Djava.library.path=${JNI_HOME} sushi.Main -evosuite ${JARS_HOME}/evosuite-shaded-1.2.1-SNAPSHOT.jar -jbse_lib ${JARS_HOME}/jbse-0.12.0-SNAPSHOT-shaded.jar -sushi_lib ${JARS_HOME}/sushi-lib-0.3.0-SNAPSHOT.jar -z3 ${Z3_HOME}/z3 \$@" >> /usr/local/bin/sushi
 RUN chmod +x /usr/local/bin/sushi
 
 # Get some examples and compile them
@@ -51,20 +59,20 @@ WORKDIR ${HOME}
 RUN git clone https://github.com/pietrobraione/sushi-experiments
 WORKDIR ${HOME}/sushi-experiments
 RUN mkdir bin
-RUN ${JAVA_HOME_8}/bin/javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin -g src/common/*.java
-RUN ${JAVA_HOME_8}/bin/javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin -g src/avl/*.java
-RUN ${JAVA_HOME_8}/bin/javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin -g src/dll_hard/*.java
-RUN ${JAVA_HOME_8}/bin/javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin:${HOME}/sushi-experiments/libs/ganttproject-guava.jar -d bin -g src/ganttproject/*.java
-RUN ${JAVA_HOME_8}/bin/javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin -g src/ncll/*.java
-RUN ${JAVA_HOME_8}/bin/javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin -g src/treemap/*.java
-RUN ${JAVA_HOME_8}/bin/javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin -g src/tsafe/*.java
-RUN ${JAVA_HOME_8}/bin/javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin sushi-src/common/*.java
-RUN ${JAVA_HOME_8}/bin/javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin sushi-src/avl/*.java
-RUN ${JAVA_HOME_8}/bin/javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin sushi-src/dll_hard/*.java
-RUN ${JAVA_HOME_8}/bin/javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin sushi-src/ganttproject/*.java
-RUN ${JAVA_HOME_8}/bin/javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin sushi-src/ncll/*.java
-RUN ${JAVA_HOME_8}/bin/javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin sushi-src/treemap/*.java
-RUN ${JAVA_HOME_8}/bin/javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin sushi-src/tsafe/*.java
+RUN javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin -g src/common/*.java
+RUN javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin -g src/avl/*.java
+RUN javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin -g src/dll_hard/*.java
+RUN javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin:${HOME}/sushi-experiments/libs/ganttproject-guava.jar -d bin -g src/ganttproject/*.java
+RUN javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin -g src/ncll/*.java
+RUN javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin -g src/treemap/*.java
+RUN javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin -g src/tsafe/*.java
+RUN javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin sushi-src/common/*.java
+RUN javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin sushi-src/avl/*.java
+RUN javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin sushi-src/dll_hard/*.java
+RUN javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin sushi-src/ganttproject/*.java
+RUN javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin sushi-src/ncll/*.java
+RUN javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin sushi-src/treemap/*.java
+RUN javac -cp ${CLASSPATH_8}:${HOME}/sushi-experiments/bin -d bin sushi-src/tsafe/*.java
 
 WORKDIR ${HOME}
 

@@ -32,7 +32,7 @@ import sushi.execution.Coordinator;
 import sushi.execution.ExitStatus;
 import sushi.execution.Tool;
 
-public class EvosuiteCoordinator extends Coordinator implements TestGenerationNotifier {
+public class EvosuiteCoordinator extends Coordinator implements TestGenerationListener {
 	private static final Logger LOGGER = LogManager.getFormatterLogger(EvosuiteCoordinator.class);
 	
 	private final Options options;
@@ -52,16 +52,7 @@ public class EvosuiteCoordinator extends Coordinator implements TestGenerationNo
 	}
 	
 	@Override
-	public ExitStatus[] start(ArrayList<ArrayList<Future<ExitStatus>>> allTasksFutures) 
-	throws CoordinatorException, ToolException, WorkerFailureException {
-		List<Integer> tasks;
-		try {
-			tasks = this.tool.tasks();
-		} catch (Exception e) {
-			throw new ToolException(e);
-		}
-		final ExitStatus[] retVal = new ExitStatus[tasks.size() * this.tool.redundance()];
-		this.allTasksFutures = allTasksFutures; //from here this.allTasksFutures is read-only
+	public void init() throws CoordinatorException {
 		try {
 			loadMethods();
 			loadCoverageData();
@@ -72,6 +63,19 @@ public class EvosuiteCoordinator extends Coordinator implements TestGenerationNo
 			throw new CoordinatorException(e);
 		}
 		//from here this.coverageData and this.traceOfTask are read-only
+	}
+	
+	@Override
+	public ExitStatus[] start(ArrayList<ArrayList<Future<ExitStatus>>> allTasksFutures) 
+	throws CoordinatorException, ToolException, WorkerFailureException {
+		List<Integer> tasks;
+		try {
+			tasks = this.tool.tasks();
+		} catch (Exception e) {
+			throw new ToolException(e);
+		}
+		final ExitStatus[] retVal = new ExitStatus[tasks.size() * this.tool.redundance()];
+		this.allTasksFutures = allTasksFutures; //from here this.allTasksFutures is read-only
 		
 		for (int i = 0; i < retVal.length; ++i) {
 			final int threadNumber = i; //to make the compiler happy
