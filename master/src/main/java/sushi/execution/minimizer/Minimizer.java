@@ -1,9 +1,15 @@
 package sushi.execution.minimizer;
 
+import static sushi.util.DirectoryUtils.getBranchesFilePath;
+import static sushi.util.DirectoryUtils.getBranchesToIgnoreFilePath;
+import static sushi.util.DirectoryUtils.getCoverageFilePath;
+import static sushi.util.DirectoryUtils.getMinimizerOutFilePath;
+import static sushi.util.DirectoryUtils.getTracesToIgnoreFilePath;
+
+
 import sushi.Options;
 import sushi.execution.Tool;
 import sushi.execution.Worker;
-import sushi.util.DirectoryUtils;
 
 public class Minimizer extends Tool<MinimizerParameters> {
 	private final Options options;
@@ -13,13 +19,14 @@ public class Minimizer extends Tool<MinimizerParameters> {
 	}
 
 	@Override
-	public MinimizerParameters getInvocationParameters(int i) {
+	public MinimizerParameters getInvocationParameters(int taskNumber) {
 		final MinimizerParameters p = new MinimizerParameters();
-		p.setBranchesFilePath(DirectoryUtils.getBranchesFilePath(this.options));
-		p.setCoverageFilePath(DirectoryUtils.getCoverageFilePath(this.options));
-		p.setOutputFilePath(DirectoryUtils.getMinimizerOutFilePath(this.options));
-		p.setBranchesToIgnoreFilePath(DirectoryUtils.getBranchesToIgnoreFilePath(this.options));
-		p.setTracesToIgnoreFilePath(DirectoryUtils.getTracesToIgnoreFilePath(this.options));
+		p.setTaskNumber(taskNumber);
+		p.setBranchesFilePath(getBranchesFilePath(this.options));
+		p.setCoverageFilePath(getCoverageFilePath(this.options));
+		p.setOutputFilePath(getMinimizerOutFilePath(this.options));
+		p.setBranchesToIgnoreFilePath(getBranchesToIgnoreFilePath(this.options));
+		p.setTracesToIgnoreFilePath(getTracesToIgnoreFilePath(this.options));
 		p.setNumberOfTasks(this.options.getParallelismEvosuite() / this.options.getRedundanceEvosuite());
 		p.setTimeout(this.options.getMinimizerBudget());
 		

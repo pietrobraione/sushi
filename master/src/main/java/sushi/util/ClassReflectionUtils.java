@@ -15,11 +15,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import sushi.Options;
-import sushi.exceptions.ReflectionUtilsException;
-import sushi.logging.Logger;
 
 public final class ClassReflectionUtils {
-	private static final Logger logger = new Logger(ClassReflectionUtils.class);
 	
 	private static final Set<String> excluded;
 	
@@ -32,39 +29,33 @@ public final class ClassReflectionUtils {
 		excluded.add("immutableEnumSet");
 	}
 	
-	public static ClassLoader getInternalClassloader(Options options) {
+	public static ClassLoader getInternalClassloader(Options options) throws MalformedURLException, SecurityException {
 		final List<Path> classpath = options.getClassesPath();
+		ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
+
 		final ClassLoader classLoader;
-		try {
-			ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
-
-			if (classpath == null || classpath.size() == 0) {
-				logger.debug("The inner classpath is empty, relying on SystemClassLoader");
-				classLoader = systemClassLoader;
-			} else {
-				final List<File> paths = new ArrayList<File>();
-				for (Path path : classpath) {
-					File newPath = path.toFile();
-					if (!newPath.exists()) {
-						throw new MalformedURLException("The new path " + newPath + " does not exist");
-					} else {
-						paths.add(newPath);
-					}
+		if (classpath == null || classpath.size() == 0) {
+			classLoader = systemClassLoader;
+		} else {
+			final List<File> paths = new ArrayList<File>();
+			for (Path path : classpath) {
+				File newPath = path.toFile();
+				if (!newPath.exists()) {
+					throw new MalformedURLException("The new path " + newPath + " does not exist");
+				} else {
+					paths.add(newPath);
 				}
-
-				final List<URL> urls = new ArrayList<URL>();
-				if (systemClassLoader instanceof URLClassLoader) {
-					urls.addAll(Arrays.asList(((URLClassLoader) systemClassLoader).getURLs()));
-				}
-
-				for (File newPath : paths) {
-					urls.add(newPath.toURI().toURL());
-				}
-				classLoader = new URLClassLoader(urls.toArray(new URL[0]), ClassReflectionUtils.class.getClassLoader());
 			}
-		} catch (MalformedURLException | SecurityException e) {
-			logger.error("Unable to load ClassLoader", e);
-			throw new ReflectionUtilsException(e);
+
+			final List<URL> urls = new ArrayList<URL>();
+			if (systemClassLoader instanceof URLClassLoader) {
+				urls.addAll(Arrays.asList(((URLClassLoader) systemClassLoader).getURLs()));
+			}
+
+			for (File newPath : paths) {
+				urls.add(newPath.toURI().toURL());
+			}
+			classLoader = new URLClassLoader(urls.toArray(new URL[0]), ClassReflectionUtils.class.getClassLoader());
 		}
 		return classLoader;
 	}
@@ -81,8 +72,11 @@ public final class ClassReflectionUtils {
 	 *         If {@code onlyPublic == true} only the public methods are returned. Each {@link List}{@code <}{@link String}{@code >}
 	 *         has three elements and is a method signature.
 	 * @throws ClassNotFoundException if the class is not in the classpath.
+	 * @throws SecurityException if we have no rights to load the class.
+	 * @throws MalformedURLException if the URL of the class is ill-formed.
 	 */
-	public static List<List<String>> getVisibleMethods(Options options, String className, boolean onlyPublic) throws ClassNotFoundException {
+	public static List<List<String>> getVisibleMethods(Options options, String className, boolean onlyPublic) 
+	throws ClassNotFoundException, MalformedURLException, SecurityException {
 		final ClassLoader ic = getInternalClassloader(options);
 		final Class<?> clazz = ic.loadClass(className.replace('/', '.'));
 		final List<List<String>> methods = new ArrayList<>();

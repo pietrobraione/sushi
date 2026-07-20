@@ -5,11 +5,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import sushi.Options;
-import sushi.logging.Logger;
+import sushi.exceptions.NoTmpDirException;
 
 public final class DirectoryUtils {
-	private static final Logger logger = new Logger(DirectoryUtils.class);
-
 	public static final String jbseGeneratedOutClass = "EvoSuiteWrapper";
 	private static final String javaSourceExtension = ".java"; 
 	private static final String methodsFileName = "methods.txt"; 
@@ -24,18 +22,13 @@ public final class DirectoryUtils {
 	private static final String minimizerOutFileName = "traces.txt"; 
 	private static final String coveredByTestFileName = "covered_by_test.txt"; 
 	
-	public static void possiblyCreateTmpDir(Options options) throws IOException {
-		logger.debug("Creating experiment directories");
-		
+	public static void possiblyCreateTmpDir(Options options) throws NoTmpDirException {
 		final Path path = getJBSEOutDirPath(options);
 		try {
 			Files.createDirectories(path); //this creates the temporary directory and all the subdirectories for the wrappers
 		} catch (IOException e) {
-			logger.error("Unable to create experiment directories: ", e);
-			throw e;
+			throw new NoTmpDirException(e);
 		}
-
-		logger.debug("Creating experiment directories - done");
 	}
 	
 	public static String getJBSEOutClass(long targetMethodNumber, long traceNumberLocal) {
