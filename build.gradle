@@ -1,14 +1,15 @@
 allprojects {
     apply plugin: 'java'
     group = 'sushi'
-    version = '0.2.0-SNAPSHOT'
+    version = '0.3.0-SNAPSHOT'
+    description = 'SUSHI'
 
     repositories {
         mavenCentral()
     }
 
     dependencies {
-        testImplementation 'junit:junit:4.11'
+        testImplementation 'junit:junit:4.13.2'
     }
     
     ext {
@@ -20,7 +21,6 @@ allprojects {
     		languageVersion = javaVersion
     	}
     }
-
 
     tasks.withType(JavaCompile) {
         options.encoding = 'UTF-8'

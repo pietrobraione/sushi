@@ -1,7 +1,7 @@
 plugins {
     id 'application'
     id 'eclipse'
-    id 'com.github.johnrengelman.shadow' version '8.1.1'
+    id 'com.gradleup.shadow' version '9.2.0'
 }
 
 def glpkJavaVersion = '1.12.0'
@@ -19,15 +19,12 @@ repositories {
 
 dependencies {
     implementation 'args4j:args4j:2.32'
+    implementation 'org.apache.logging.log4j:log4j-api:2.14.0'
+    implementation 'org.apache.logging.log4j:log4j-core:2.14.0'
     implementation 'org.gnu.glpk:glpk-java:' + glpkJavaVersion
     implementation 'org.ojalgo:ojalgo:48.0.0'
     implementation name: 'tools'
-    implementation project(':sushi-lib')
     implementation project(':jbse')
-}
-
-task wrapper(type: Wrapper) {
-    gradleVersion = '8.4'
 }
 
 task copyToLib(type: Copy) {

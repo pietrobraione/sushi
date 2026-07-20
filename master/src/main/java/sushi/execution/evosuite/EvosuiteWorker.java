@@ -1,17 +1,20 @@
 package sushi.execution.evosuite;
 
+import static sushi.util.DirectoryUtils.getTmpDirPath;
+
 import java.io.IOException;
 import java.nio.file.Path;
 
-import sushi.Options;
-import sushi.exceptions.EvosuiteException;
-import sushi.execution.ExecutionResult;
-import sushi.execution.Worker;
-import sushi.logging.Logger;
-import sushi.util.DirectoryUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-public class EvosuiteWorker extends Worker {
-	private static final Logger logger = new Logger(EvosuiteWorker.class);
+import sushi.Options;
+import sushi.exceptions.ToolException;
+import sushi.execution.ExitStatus;
+import sushi.execution.Worker;
+
+public final class EvosuiteWorker extends Worker {
+	private static final Logger LOGGER = LogManager.getFormatterLogger(EvosuiteWorker.class);
 
 	private final Options options;
 	private final Evosuite evosuite;
@@ -23,29 +26,25 @@ public class EvosuiteWorker extends Worker {
 	}
 
 	@Override
-	public ExecutionResult call() throws EvosuiteException, InterruptedException {
+	public ExitStatus call() throws IOException, InterruptedException, ToolException {
 		final String[] p = this.evosuite.getInvocationParameters(this.taskNumber);
-		logger.debug("Task " + this.taskNumber + ": invoking " + this.evosuite.getCommandLine());
+		LOGGER.debug("Task %s: invoking %s.", Integer.toString(this.taskNumber), this.evosuite.getCommandLine());
 		
-		final Path logFilePath = DirectoryUtils.getTmpDirPath(this.options).resolve("evosuite-task-" + this.taskNumber + "-" + Thread.currentThread().getName() + ".log");		
 		final ProcessBuilder pb = new ProcessBuilder(p).redirectErrorStream(true);
 		Process process = null; //to keep the compiler happy
 		TestDetector td = null; //to keep the compiler happy
 		try {
+			final Path logFilePath = getTmpDirPath(this.options).resolve("evosuite-task-" + this.taskNumber + "-" + Thread.currentThread().getName() + ".log");		
 			final long start = System.currentTimeMillis();
 			process = pb.start();
 			td = new TestDetector(this.taskNumber, process.getInputStream(), logFilePath, this.evosuite.getTestGenerationNotifier());
 			td.start();
 			final int exitStatus = process.waitFor();
 			final long elapsed = System.currentTimeMillis() - start;
-			logger.debug("Task " + this.taskNumber + " ended, elapsed " + elapsed/1000 + " seconds");
+			LOGGER.debug("Task %s: task ended, elapsed %s seconds.", Integer.toString(this.taskNumber), Long.toString(elapsed/1000));
 			td.join();
-			final ExecutionResult result = new ExecutionResult();
-			result.setExitStatus(exitStatus);
-			return result;
-		} catch (IOException e) {
-			logger.error("I/O error while creating evosuite process or log file");
-			throw new EvosuiteException(e);
+			final ExitStatus retVal = new ExitStatus(exitStatus);
+			return retVal;
 		} catch (InterruptedException e) {
 			if (td != null) {
 				td.interrupt();

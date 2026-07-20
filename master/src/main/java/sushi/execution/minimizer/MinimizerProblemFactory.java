@@ -6,7 +6,7 @@ import java.nio.file.Files;
 import java.util.List;
 import java.util.TreeSet;
 
-import sushi.exceptions.TerminationException;
+import sushi.exceptions.WorkerTerminationException;
 
 abstract class MinimizerProblemFactory<P extends MinimizerProblem> {
 	/** The parameters. */
@@ -43,7 +43,7 @@ abstract class MinimizerProblemFactory<P extends MinimizerProblem> {
 	/** The number of columns in the linear problem. */
 	protected int cols;
 	
-	MinimizerProblemFactory(MinimizerParameters parameters) throws IOException {
+	MinimizerProblemFactory(MinimizerParameters parameters) throws IOException, WorkerTerminationException {
 		this.parameters = parameters;
 		this.nBranches = (int) Files.lines(this.parameters.getBranchesFilePath()).count();
 		this.nTraces = (int) Files.lines(this.parameters.getCoverageFilePath()).count();
@@ -76,7 +76,7 @@ abstract class MinimizerProblemFactory<P extends MinimizerProblem> {
 		this.rows = this.nBranches - this.branchNumbersToIgnore.size();
 		this.cols = this.nTraces - this.traceNumbersToIgnore.size();
 		if (this.rows == 0 || this.cols == 0) {
-			throw new TerminationException("Minimizer invoked with no branches to cover and/or no traces that cover the uncovered branches");
+			throw new WorkerTerminationException(this.parameters.getTaskNumber(), "Minimizer invoked with no branches to cover and/or no traces that cover the uncovered branches");
 		}
 	}
 	

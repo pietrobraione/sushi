@@ -1,6 +1,8 @@
 package sushi.execution.minimizer;
 
-import sushi.execution.ExecutionResult;
+import sushi.exceptions.MinimizerException;
+import sushi.exceptions.WorkerTerminationException;
+import sushi.execution.ExitStatus;
 import sushi.execution.Worker;
 
 public class MinimizerWorker extends Worker {
@@ -11,12 +13,11 @@ public class MinimizerWorker extends Worker {
 	}
 
 	@Override
-	public ExecutionResult call() {
+	public ExitStatus call() throws WorkerTerminationException, MinimizerException {
 		final MinimizerParameters p = this.minimizer.getInvocationParameters(this.taskNumber);
 		final RunMinimizer r = new RunMinimizer(p);
 		final int exitStatus = r.run();
-		final ExecutionResult result = new ExecutionResult();
-		result.setExitStatus(exitStatus);
+		final ExitStatus result = new ExitStatus(exitStatus);
 		return result;
 	}
 }
