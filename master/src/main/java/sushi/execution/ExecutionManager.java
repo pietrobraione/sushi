@@ -33,6 +33,13 @@ public final class ExecutionManager {
 			throw new ToolException(e);
 		}
 		
+		//inits the coordinator; this is done before
+		//starting the workers thread in the case the
+		//worker threads have some interaction with the
+		//coordinator, so to avoid races
+		final Coordinator coordinator = tool.getCoordinator();
+		coordinator.init();
+		
 		//for all the tasks of the tool creates and launches all the workers 
 		//for them by using the thread pool
 		final ArrayList<ArrayList<Future<ExitStatus>>> allTasksFutures = new ArrayList<>();
@@ -49,7 +56,6 @@ public final class ExecutionManager {
 
 		//uses the tool's coordinator to synchronize with the workers 
 		//and build the result
-		final Coordinator coordinator = tool.getCoordinator();
 		final ExitStatus[] retVal = coordinator.start(allTasksFutures);
 		return retVal;
 	}

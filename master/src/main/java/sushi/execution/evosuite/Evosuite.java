@@ -24,7 +24,6 @@ public class Evosuite extends Tool<String[]> {
 	
 	private final Options options;
 	private final EvosuiteCoordinator evosuiteCoordinator;
-	private String commandLine;
 	private ArrayList<Integer> tasks = null;
 
 	public Evosuite(Options options) { 
@@ -32,11 +31,7 @@ public class Evosuite extends Tool<String[]> {
 		this.evosuiteCoordinator = new EvosuiteCoordinator(this, options);
 	}
 
-	public String getCommandLine() {
-		return this.commandLine; 
-	}
-	
-	public TestGenerationListener getTestGenerationNotifier() {
+	public TestGenerationListener getTestGenerationListener() {
 		return this.evosuiteCoordinator::onTestGenerated;
 	}
 	
@@ -152,8 +147,6 @@ public class Evosuite extends Tool<String[]> {
 
 		evo.addAll(this.options.getAdditionalEvosuiteArgs());
 
-		this.commandLine = evo.toString().replaceAll("\\[", "").replaceAll("\\]", "").replaceAll(",", "");
-
 		final StringBuilder optionPC = new StringBuilder("-Dpath_condition=");
 		boolean firstDone = false;
 		for (int i = this.options.getNumMOSATargets() * taskNumber; i < Math.min(this.options.getNumMOSATargets() * (taskNumber + 1), targetMethodNumbers.size()); ++i) {
@@ -172,7 +165,6 @@ public class Evosuite extends Tool<String[]> {
 			optionPC.append(getJBSEOutClassQualified(this.options, targetMethodNumber_i, traceNumberLocal_i));
 		}
 		evo.add(optionPC.toString());
-		this.commandLine += " " + optionPC.toString();
 
 		return evo.toArray(EMPTY_STRING_ARRAY);
 	}

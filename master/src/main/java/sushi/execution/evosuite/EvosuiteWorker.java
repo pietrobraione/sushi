@@ -27,17 +27,17 @@ public final class EvosuiteWorker extends Worker {
 
 	@Override
 	public ExitStatus call() throws IOException, InterruptedException, ToolException {
-		final String[] p = this.evosuite.getInvocationParameters(this.taskNumber);
-		LOGGER.debug("Task %s: invoking %s.", Integer.toString(this.taskNumber), this.evosuite.getCommandLine());
+		final String[] evosuiteCommandLine = this.evosuite.getInvocationParameters(this.taskNumber);
+		LOGGER.debug("Task %s: invoking %s.", Integer.toString(this.taskNumber), stringify(evosuiteCommandLine));
 		
-		final ProcessBuilder pb = new ProcessBuilder(p).redirectErrorStream(true);
+		final ProcessBuilder pb = new ProcessBuilder(evosuiteCommandLine).redirectErrorStream(true);
 		Process process = null; //to keep the compiler happy
 		TestDetector td = null; //to keep the compiler happy
 		try {
 			final Path logFilePath = getTmpDirPath(this.options).resolve("evosuite-task-" + this.taskNumber + "-" + Thread.currentThread().getName() + ".log");		
 			final long start = System.currentTimeMillis();
 			process = pb.start();
-			td = new TestDetector(this.taskNumber, process.getInputStream(), logFilePath, this.evosuite.getTestGenerationNotifier());
+			td = new TestDetector(this.taskNumber, process.getInputStream(), logFilePath, this.evosuite.getTestGenerationListener());
 			td.start();
 			final int exitStatus = process.waitFor();
 			final long elapsed = System.currentTimeMillis() - start;
@@ -52,5 +52,19 @@ public final class EvosuiteWorker extends Worker {
 			process.destroy();
 			throw e;
 		}
+	}
+	
+	private static String stringify(String[] arg) {
+		final StringBuilder retVal = new StringBuilder();
+		boolean firstDone = false;
+		for (String s : arg) {
+			if (firstDone) {
+				retVal.append(' ');
+			} else {
+				firstDone = true;
+			}
+			retVal.append(s);
+		}
+		return retVal.toString();
 	}
 }
