@@ -29,9 +29,17 @@ public class DefaultCoordinator extends Coordinator {
 	private int taskNumber;
 
 	@Override
+	public void init() {
+		this.terminate = false;
+		this.fail = false;
+		this.message = null;
+		this.exception = null;
+		this.taskNumber = -1;
+	}
+	
+	@Override
 	public ExitStatus[] start(ArrayList<ArrayList<Future<ExitStatus>>> allTasksFutures) 
 	throws ToolException, WorkerTerminationException, WorkerFailureException {
-		init();
 		final List<Integer> tasks;
 		try {
 			tasks = this.tool.tasks();
@@ -105,13 +113,7 @@ public class DefaultCoordinator extends Coordinator {
 		return retVal;
 	}
 	
-	private void init() {
-		this.terminate = false;
-		this.fail = false;
-		this.message = null;
-		this.exception = null;
-		this.taskNumber = -1;
-	}
+	//invoked by takers threads
 	
 	private synchronized void setTerminate(String message) {
 		this.terminate = true;

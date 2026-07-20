@@ -12,19 +12,26 @@ import java.util.regex.Pattern;
 
 import sushi.exceptions.CoordinatorException;
 
+/**
+ * A {@link Thread} that listens for the output produced by 
+ * an instance of EvoSuite, and when this produces a test
+ * notifies a {@link TestGenerationListener}.
+ * 
+ * @author Pietro Braione
+ */
 public final class TestDetector extends Thread {
-    private static final Pattern PATTERN_EMITTED_TEST = Pattern.compile("^.*\\* EMITTED TEST CASE .*_(\\d+)_(\\d+)_Test, FOR GOALS:.*\\z");
+    private static final Pattern PATTERN_EMITTED_TEST = Pattern.compile("^.*\\* EMITTED TEST CASE .*_(\\d+)_(\\d+)_Test, .*$");
     
     private final int taskNumber;
 	private final BufferedReader evosuiteReader;
 	private final BufferedWriter logFileWriter;
-	private final TestGenerationNotifier testGenerationNotifier;
+	private final TestGenerationListener testGenerationListener;
 	
-	public TestDetector(int taskNumber, InputStream evosuiteInputStream, Path logFilePath, TestGenerationNotifier testGenerationNotifier) throws IOException {
+	public TestDetector(int taskNumber, InputStream evosuiteInputStream, Path logFilePath, TestGenerationListener testGenerationListener) throws IOException {
 		this.taskNumber = taskNumber;
 		this.evosuiteReader = new BufferedReader(new InputStreamReader(evosuiteInputStream));
 		this.logFileWriter = Files.newBufferedWriter(logFilePath);
-		this.testGenerationNotifier = testGenerationNotifier;
+		this.testGenerationListener = testGenerationListener;
 	}
 	
 	@Override
@@ -49,7 +56,7 @@ public final class TestDetector extends Thread {
                     final int methodNumber = Integer.parseInt(matcherEmittedTest.group(1));
                     final int localTraceNumber = Integer.parseInt(matcherEmittedTest.group(2));
                     try { 
-                    	this.testGenerationNotifier.onTestGenerated(this.taskNumber, methodNumber, localTraceNumber);
+                    	this.testGenerationListener.onTestGenerated(this.taskNumber, methodNumber, localTraceNumber);
                     } catch (CoordinatorException e) {
                     	//the coordinator failed in putting the Evosuite test in the
                     	//destination directory: just returns
