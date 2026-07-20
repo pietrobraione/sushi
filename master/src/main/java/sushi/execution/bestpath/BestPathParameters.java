@@ -2,16 +2,13 @@ package sushi.execution.bestpath;
 
 import java.nio.file.Path;
 
-public class BestPathParameters {
-	private Path fCoverage;
-	private Path fOutput;
+public final class BestPathParameters {
+	private final Path fCoverage;
+	private final Path fOutput;
 	
-	public void setCoverageFilePath(Path f) {
-		this.fCoverage = f;
-	}
-	
-	public void setOutputFilePath(Path f) {
-		this.fOutput = f;
+	public BestPathParameters(Path fCoverage, Path fOutput) {
+		this.fCoverage = fCoverage;
+		this.fOutput = fOutput;
 	}
 	
 	public Path getCoverageFilePath() {

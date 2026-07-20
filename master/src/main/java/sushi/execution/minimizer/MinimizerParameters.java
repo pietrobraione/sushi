@@ -10,6 +10,7 @@ class MinimizerParameters {
 	private Path fTracesToIgnore;
 	private int numberOfTasks;
 	private int timeout;
+	private int taskNumber;
 	
 	public Path getBranchesFilePath() {
 		return this.fBranches;
@@ -65,5 +66,13 @@ class MinimizerParameters {
 	
 	public int getTimeout() {
 		return this.timeout;
+	}
+
+	public void setTaskNumber(int taskNumber) {
+		this.taskNumber = taskNumber;
 	}	
+	
+	public int getTaskNumber() {
+		return this.taskNumber;
+	}
 }

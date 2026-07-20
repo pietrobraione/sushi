@@ -1,5 +1,12 @@
 package sushi.execution.evosuite;
 
+import static sushi.util.DirectoryUtils.getCoverageFilePath;
+import static sushi.util.DirectoryUtils.getJBSEOutClassQualified;
+import static sushi.util.DirectoryUtils.getMethodsFilePath;
+import static sushi.util.DirectoryUtils.getMinimizerOutFilePath;
+import static sushi.util.DirectoryUtils.getTmpDirPath;
+import static sushi.util.IOUtils.concatClassPath;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -7,17 +14,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import sushi.Options;
-import sushi.exceptions.EvosuiteException;
+import sushi.exceptions.ToolException;
 import sushi.execution.Coordinator;
 import sushi.execution.Tool;
 import sushi.execution.Worker;
-import sushi.logging.Logger;
-import sushi.util.ArrayUtils;
-import sushi.util.DirectoryUtils;
-import sushi.util.IOUtils;
 
 public class Evosuite extends Tool<String[]> {
-	private static final Logger logger = new Logger(Evosuite.class);
+    private static final String[] EMPTY_STRING_ARRAY = new String[0];
 	
 	private final Options options;
 	private final EvosuiteCoordinator evosuiteCoordinator;
@@ -38,17 +41,11 @@ public class Evosuite extends Tool<String[]> {
 	}
 	
 	@Override
-	public List<Integer> tasks() {
+	public List<Integer> tasks() throws IOException {
 		if (this.tasks == null) {
 			this.tasks = new ArrayList<>();
-			final int numTasks;
-			try {
-				final int numPaths = (int) Files.lines(DirectoryUtils.getMinimizerOutFilePath(this.options)).count();
-				numTasks = (numPaths / this.options.getNumMOSATargets()) + (numPaths % this.options.getNumMOSATargets() == 0 ? 0 : 1);
-			} catch (IOException e) {
-				logger.error("Unable to find and open minimizer output file " + DirectoryUtils.getMinimizerOutFilePath(this.options).toString());
-				throw new EvosuiteException(e);
-			}
+			final int numPaths = (int) Files.lines(getMinimizerOutFilePath(this.options)).count();
+			final int numTasks = (numPaths / this.options.getNumMOSATargets()) + (numPaths % this.options.getNumMOSATargets() == 0 ? 0 : 1);
 			for (int i = 0; i < numTasks; ++i) {
 				this.tasks.add(i);
 			}
@@ -57,28 +54,24 @@ public class Evosuite extends Tool<String[]> {
 	}
 	
 	@Override
-	public String[] getInvocationParameters(int taskNumber) {
+	public String[] getInvocationParameters(int taskNumber) throws IOException, ToolException {
 		final ArrayList<Integer> targetMethodNumbers = new ArrayList<>();
 		final ArrayList<Integer> traceNumbersLocal = new ArrayList<>();
 		{
 			Integer targetMethodNumber_ = null;
 			Integer traceNumberLocal_ = null;
-			try (final BufferedReader r = Files.newBufferedReader(DirectoryUtils.getMinimizerOutFilePath(this.options))) {
+			try (final BufferedReader r = Files.newBufferedReader(getMinimizerOutFilePath(this.options))) {
 				String line;
 				while ((line = r.readLine()) != null) {
 					final String[] fields = line.split(",");
 					targetMethodNumber_ = Integer.parseInt(fields[1].trim());
 					traceNumberLocal_ = Integer.parseInt(fields[2].trim());
 					if (targetMethodNumber_ == null || traceNumberLocal_ == null) {
-						logger.error("Minimizer output file " + DirectoryUtils.getMinimizerOutFilePath(this.options).toString() + " ill-formed, or task number " + taskNumber + " is wrong");
-						throw new EvosuiteException("Minimizer output file " + DirectoryUtils.getMinimizerOutFilePath(this.options).toString() + " ill-formed, or task number " + taskNumber + " is wrong");
+						throw new ToolException("Minimizer output file " + getMinimizerOutFilePath(this.options).toString() + " is ill-formed, or task number " + taskNumber + " is wrong.");
 					}
 					targetMethodNumbers.add(targetMethodNumber_.intValue());
 					traceNumbersLocal.add(traceNumberLocal_.intValue());
 				}
-			} catch (IOException e) {
-				logger.error("I/O error while reading " + DirectoryUtils.getMinimizerOutFilePath(this.options).toString());
-				throw new EvosuiteException(e);
 			}
 		}
 
@@ -90,36 +83,32 @@ public class Evosuite extends Tool<String[]> {
 		{
 			String[] signature = null;
 			if (this.options.getTargetMethod() == null) {
-				try (final BufferedReader r = Files.newBufferedReader(DirectoryUtils.getMethodsFilePath(this.options))) {
+				try (final BufferedReader r = Files.newBufferedReader(getMethodsFilePath(this.options))) {
 					String line;
 					while ((line = r.readLine()) != null) {
 						signature = line.split(":");
 						targetMethodSignatures.add(signature[2] + signature[1]);
 					}
-				} catch (IOException e) {
-					logger.error("I/O error while reading " + DirectoryUtils.getMethodsFilePath(this.options).toString());
-					throw new EvosuiteException(e);
 				}
 
 				if (signature == null) {
-					logger.error("Methods file " + DirectoryUtils.getMethodsFilePath(this.options) + " and coverage file " + DirectoryUtils.getCoverageFilePath(this.options).toString() + " disagree");
-					throw new EvosuiteException("Methods file " + DirectoryUtils.getMethodsFilePath(this.options) + " and coverage file " + DirectoryUtils.getCoverageFilePath(this.options).toString() + " disagree");
+					throw new ToolException("Methods file " + getMethodsFilePath(this.options) + " and coverage file " + getCoverageFilePath(this.options).toString() + " disagree.");
 				}
 			} else {
-				signature = this.options.getTargetMethod().toArray(ArrayUtils.EMPTY_STRING_ARRAY);
+				signature = this.options.getTargetMethod().toArray(EMPTY_STRING_ARRAY);
 			}
 
 			targetClassName = signature[0].replace('/', '.');
 			targetMethodSignature = signature[2] + signature[1];
 			
-			if (options.getTargetMethod() != null) {
+			if (this.options.getTargetMethod() != null) {
 				//must add the only targetMethodSignature to targetMethodSignatures, 
 				//because the previous code skipped the loop that populates it
 				targetMethodSignatures.add(targetMethodSignature);
 			}
 		}
 		
-		final List<String> evo = new ArrayList<String>();
+		final ArrayList<String> evo = new ArrayList<>();
 		if (this.options.getJava8Path() != null && !this.options.getJava8Path().toString().equals("")) {
 			evo.add(this.options.getJava8Path().resolve("bin/java").toString());
 		} else {
@@ -138,10 +127,10 @@ public class Evosuite extends Tool<String[]> {
 		evo.add("-Dp_functional_mocking=0.0");
 		evo.add("-DCP=" + getClassPath());
 		evo.add("-Dassertions=false");
-		evo.add("-Dreport_dir=" + DirectoryUtils.getTmpDirPath(this.options).toString());
+		evo.add("-Dreport_dir=" + getTmpDirPath(this.options).toString());
 		evo.add("-Djunit_suffix=_Test");
 		evo.add("-Dsearch_budget=" + getTimeBudget());
-		evo.add("-Dtest_dir=" + DirectoryUtils.getTmpDirPath(this.options).toString());
+		evo.add("-Dtest_dir=" + getTmpDirPath(this.options).toString());
 		evo.add("-Dvirtual_fs=false");
 		evo.add("-Dselection_function=ROULETTEWHEEL");
 		evo.add("-Dcriterion=PATHCONDITION");		
@@ -155,7 +144,7 @@ public class Evosuite extends Tool<String[]> {
         if (this.options.getEvosuiteNoDependency()) {
         	evo.add("-Dno_runtime_dependency");
         }
-        evo.add("-Dpath_condition_evaluators_dir=" + DirectoryUtils.getTmpDirPath(this.options).toString());
+        evo.add("-Dpath_condition_evaluators_dir=" + getTmpDirPath(this.options).toString());
         evo.add("-Demit_tests_incrementally=true");
         evo.add("-Dcrossover_function=SUSHI_HYBRID");
         evo.add("-Dalgorithm=DYNAMOSA");
@@ -176,18 +165,22 @@ public class Evosuite extends Tool<String[]> {
 			final int targetMethodNumber_i = targetMethodNumbers.get(i).intValue();
 			final int traceNumberLocal_i = traceNumbersLocal.get(i).intValue();
 			final String targetMethodSignature_i = targetMethodSignatures.get(targetMethodNumber_i);
-			optionPC.append(targetClassName + "," + targetMethodSignature_i + "," + DirectoryUtils.getJBSEOutClassQualified(this.options, targetMethodNumber_i, traceNumberLocal_i));
+			optionPC.append(targetClassName);
+			optionPC.append(",");
+			optionPC.append(targetMethodSignature_i);
+			optionPC.append(",");
+			optionPC.append(getJBSEOutClassQualified(this.options, targetMethodNumber_i, traceNumberLocal_i));
 		}
 		evo.add(optionPC.toString());
 		this.commandLine += " " + optionPC.toString();
 
-		return evo.toArray(ArrayUtils.EMPTY_STRING_ARRAY);
+		return evo.toArray(EMPTY_STRING_ARRAY);
 	}
 	
 	private String getClassPath() {
-		return IOUtils.concatClassPath(
-				IOUtils.concatClassPath(this.options.getClassesPath()),
-				IOUtils.concatClassPath(this.options.getSushiLibPath(), this.options.getJBSELibraryPath()));
+		return concatClassPath(
+			   concatClassPath(this.options.getClassesPath()), 
+			   concatClassPath(this.options.getSushiLibPath(), this.options.getJBSELibraryPath()));
 	}
 	
 	@Override
@@ -216,7 +209,7 @@ public class Evosuite extends Tool<String[]> {
 	}
 	
 	@Override
-	public int degreeOfParallelism() {
+	public int degreeOfParallelism() throws IOException {
 		return (this.options.getParallelismEvosuite() == 0 ? tasks().size() * redundance() : this.options.getParallelismEvosuite());
 	}
 	
